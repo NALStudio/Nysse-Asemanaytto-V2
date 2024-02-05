@@ -34,5 +34,6 @@ class LayoutData {
   double get padding => _mq.size.width * 0.025;
   double get widePadding => 2 * padding;
 
-  double get indent => 8 * padding;
+  double get indent => 7 * padding;
+  double get tileHeight => 3 * padding;
 }

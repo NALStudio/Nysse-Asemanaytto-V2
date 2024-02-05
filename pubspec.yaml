@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_svg: ^2.0.9
 
 dev_dependencies:
   flutter_test:
@@ -17,3 +18,19 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  assets:
+    - assets/images/
+
+  fonts:
+    - family: LotaGrotesque
+      fonts:
+        - asset: assets/fonts/Lota-Grotesque-Regular.otf
+        - asset: assets/fonts/BMWTypeNextTT-Bold.ttf
+          weight: 700
+
+    - family: BMWTypeNext
+      fonts:
+        - asset: assets/fonts/BMWTypeNextTT-Bold.ttf
+        - asset: assets/fonts/BMWTypeNextTT-Bold.ttf
+          weight: 700

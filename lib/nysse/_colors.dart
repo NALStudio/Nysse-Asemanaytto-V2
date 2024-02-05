@@ -53,15 +53,11 @@ class NysseColors {
   static const Color serviceBike = purple;
 
   Color getModeColor(NysseTransitMode mode) {
-    switch (mode) {
-      case NysseTransitMode.bus:
-        return serviceBus;
-      case NysseTransitMode.tram:
-        return serviceTram;
-      case NysseTransitMode.train:
-        return serviceTrain;
-      case NysseTransitMode.bike:
-        return serviceBike;
-    }
+    return switch (mode) {
+      NysseTransitMode.bus => serviceBus,
+      NysseTransitMode.tram => serviceTram,
+      NysseTransitMode.train => serviceTrain,
+      NysseTransitMode.bike => serviceBike
+    };
   }
 }

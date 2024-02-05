@@ -15,18 +15,28 @@ class NysseTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        SizedBox(
-          width: Layout.of(context).indent,
-          child: Align(
-            alignment: Alignment.centerLeft,
-            child: leading,
+    final layout = Layout.of(context);
+
+    return SizedBox(
+      height: layout.tileHeight,
+      child: Row(
+        children: [
+          SizedBox(
+            width: layout.indent,
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: leading,
+            ),
           ),
-        ),
-        Expanded(child: content),
-        trailing,
-      ],
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: content,
+            ),
+          ),
+          trailing,
+        ],
+      ),
     );
   }
 }
