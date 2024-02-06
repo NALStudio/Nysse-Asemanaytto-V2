@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 class ClockWidget extends StatefulWidget {
-  final bool displaySeconds;
   final TextStyle? textStyle;
+  final TextAlign? textAlign;
+
+  final bool displaySeconds;
 
   const ClockWidget({
     super.key,
     this.textStyle,
+    this.textAlign,
     this.displaySeconds = false,
   });
 
@@ -55,6 +58,8 @@ class _ClockWidgetState extends State<ClockWidget> {
     return Text(
       parts.map((i) => i.toString().padLeft(2, '0')).join(':'),
       style: widget.textStyle,
+      textAlign: widget.textAlign,
+      maxLines: 1,
     );
   }
 }

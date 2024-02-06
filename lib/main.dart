@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/svg.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/main/main_layout.dart';
-import 'package:nysse_asemanaytto/nysse/_colors.dart';
+import 'package:nysse_asemanaytto/nysse/nysse.dart';
 
 void main() {
   runApp(const MainApp());
@@ -43,6 +44,7 @@ class AppCanvas extends StatelessWidget {
         children: [
           MainCanvas(),
           EmbedCanvas(),
+          _Footer(),
         ],
       ),
     );
@@ -69,6 +71,44 @@ class EmbedCanvas extends StatelessWidget {
     return const Expanded(
       child: ColoredBox(
         color: Colors.orange,
+      ),
+    );
+  }
+}
+
+class _Footer extends StatelessWidget {
+  const _Footer();
+
+  @override
+  Widget build(BuildContext context) {
+    final layout = Layout.of(context);
+    final double iconHeight = layout.tileHeight * 0.6;
+
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: layout.padding,
+        top: layout.halfPadding,
+        right: layout.widePadding,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              "nysse.fi",
+              textAlign: TextAlign.right,
+              style: layout.shrinkedLabelStyle
+                  .copyWith(fontFamily: "LotaGrotesque"),
+            ),
+          ),
+          SizedBox(width: layout.padding),
+          SvgPicture(NyssePictograms.bus, height: iconHeight),
+          SizedBox(width: layout.halfPadding),
+          SvgPicture(NyssePictograms.train, height: iconHeight),
+          SizedBox(width: layout.halfPadding),
+          SvgPicture(NyssePictograms.routes, height: iconHeight),
+          SizedBox(width: layout.halfPadding),
+          SvgPicture(NyssePictograms.bike, height: iconHeight),
+        ],
       ),
     );
   }

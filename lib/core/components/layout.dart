@@ -31,9 +31,30 @@ class LayoutData {
   const LayoutData({required MediaQueryData mediaQueryData})
       : _mq = mediaQueryData;
 
-  double get padding => _mq.size.width * 0.025;
+  double get logicalPixelSize => _mq.size.width / 1080;
+
+  double get halfPadding => padding / 2;
+  double get padding => logicalPixelSize * 38;
   double get widePadding => 2 * padding;
 
-  double get indent => 7 * padding;
-  double get tileHeight => 3 * padding;
+  double get indent => logicalPixelSize * 190;
+  double get tileHeight => logicalPixelSize * 89;
+
+  /// Doesn't work with multiple lines.
+  TextStyle get labelStyle => TextStyle(
+        fontFamily: "Lato",
+        fontSize: tileHeight,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+        height: 1, // breaks multiple lines, but makes UI nicer
+      );
+
+  /// Doesn't work with multiple lines.
+  TextStyle get shrinkedLabelStyle => TextStyle(
+        fontFamily: "Lato",
+        fontSize: tileHeight * 0.8,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+        height: 1,
+      );
 }

@@ -29,6 +29,9 @@ class NyssePictograms {
     SvgAssetLoader("assets/images/pictogram_kaupunkipyora_borderless.svg"),
   );
 
+  static const SvgAssetLoader routes =
+      SvgAssetLoader("assets/images/pictogram_reitit.svg");
+
   NyssePictogramSvg getModePictogram(NysseTransitMode mode) {
     return switch (mode) {
       NysseTransitMode.bus => bus,
