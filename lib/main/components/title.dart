@@ -12,15 +12,13 @@ class MainLayoutTitle extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Divider(
-          color: Colors.white,
-          thickness: 2 * layout.logicalPixelSize,
-        ),
+        const _TitleDivider(),
+        SizedBox(height: layout.halfPadding),
         Row(
           children: [
             Expanded(
               child: Text(
-                "Turtola",
+                "Turtola B",
                 style: layout.labelStyle.copyWith(height: 1.1),
               ),
             ),
@@ -33,11 +31,29 @@ class MainLayoutTitle extends StatelessWidget {
             ),
           ],
         ),
-        Divider(
-          color: Colors.white,
-          thickness: 2 * layout.logicalPixelSize,
-        ),
+        SizedBox(height: layout.halfPadding),
+        const _TitleDivider(),
       ],
+    );
+  }
+}
+
+class _TitleDivider extends StatelessWidget {
+  const _TitleDivider();
+
+  @override
+  Widget build(BuildContext context) {
+    final double dividerHeight = 2 * Layout.of(context).logicalPixelSize;
+
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.white,
+            width: dividerHeight,
+          ),
+        ),
+      ),
     );
   }
 }

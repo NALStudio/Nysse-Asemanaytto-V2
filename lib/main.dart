@@ -4,9 +4,7 @@ import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/main/main_layout.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
 
-void main() {
-  runApp(const MainApp());
-}
+void main() => runApp(const MainApp());
 
 class MainApp extends StatelessWidget {
   const MainApp({super.key});
@@ -57,7 +55,12 @@ class MainCanvas extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.all(Layout.of(context).widePadding),
+      padding: EdgeInsets.only(
+        left: Layout.of(context).doublePadding,
+        right: Layout.of(context).doublePadding,
+        top: Layout.of(context).doubleWidePadding,
+        bottom: Layout.of(context).widePadding,
+      ),
       child: const MainLayout(),
     );
   }
@@ -86,9 +89,9 @@ class _Footer extends StatelessWidget {
 
     return Padding(
       padding: EdgeInsets.only(
-        bottom: layout.padding,
+        bottom: layout.widePadding,
         top: layout.halfPadding,
-        right: layout.widePadding,
+        right: layout.doublePadding,
       ),
       child: Row(
         children: [

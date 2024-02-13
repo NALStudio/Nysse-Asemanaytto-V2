@@ -34,11 +34,16 @@ class LayoutData {
   double get logicalPixelSize => _mq.size.width / 1080;
 
   double get halfPadding => padding / 2;
-  double get padding => logicalPixelSize * 38;
-  double get widePadding => 2 * padding;
+
+  double get padding => logicalPixelSize * 28;
+  double get doublePadding => 2 * padding;
+
+  // currently padding + halfPadding
+  double get widePadding => logicalPixelSize * 42;
+  double get doubleWidePadding => 2 * widePadding;
 
   double get indent => logicalPixelSize * 190;
-  double get tileHeight => logicalPixelSize * 89;
+  double get tileHeight => logicalPixelSize * 88;
 
   /// Doesn't work with multiple lines.
   TextStyle get labelStyle => TextStyle(
@@ -52,7 +57,7 @@ class LayoutData {
   /// Doesn't work with multiple lines.
   TextStyle get shrinkedLabelStyle => TextStyle(
         fontFamily: "Lato",
-        fontSize: tileHeight * 0.8,
+        fontSize: tileHeight * 0.85,
         fontWeight: FontWeight.bold,
         color: Colors.white,
         height: 1,

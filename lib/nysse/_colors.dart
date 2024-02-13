@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nysse_asemanaytto/nysse/_transit_modes.dart';
+import 'package:nysse_asemanaytto/digitransit/enums.dart';
 
 class NysseColor extends ColorSwatch<int> {
   const NysseColor(super.primary, super.swatch);
@@ -52,12 +52,22 @@ class NysseColors {
   static const Color serviceTrain = Color(0xff40ba53);
   static const Color serviceBike = purple;
 
-  Color getModeColor(NysseTransitMode mode) {
-    return switch (mode) {
-      NysseTransitMode.bus => serviceBus,
-      NysseTransitMode.tram => serviceTram,
-      NysseTransitMode.train => serviceTrain,
-      NysseTransitMode.bike => serviceBike
-    };
+  Color getModeColor(DigitransitMode mode) {
+    switch (mode) {
+      case DigitransitMode.bus:
+        return serviceBus;
+      case DigitransitMode.tram:
+        return serviceTram;
+      case DigitransitMode.rail:
+        return serviceTrain;
+      case DigitransitMode.bicycle:
+        return serviceBike;
+      default:
+        throw ArgumentError.value(
+          mode,
+          "mode",
+          "No color defined for mode: '$mode'",
+        );
+    }
   }
 }

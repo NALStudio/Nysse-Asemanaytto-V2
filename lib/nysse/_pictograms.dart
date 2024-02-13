@@ -1,6 +1,5 @@
 import 'package:flutter_svg/flutter_svg.dart';
-
-import '_transit_modes.dart';
+import 'package:nysse_asemanaytto/digitransit/enums.dart';
 
 class NyssePictogramSvg extends SvgAssetLoader {
   const NyssePictogramSvg(super.assetName, this.borderless);
@@ -32,12 +31,22 @@ class NyssePictograms {
   static const SvgAssetLoader routes =
       SvgAssetLoader("assets/images/pictogram_reitit.svg");
 
-  NyssePictogramSvg getModePictogram(NysseTransitMode mode) {
-    return switch (mode) {
-      NysseTransitMode.bus => bus,
-      NysseTransitMode.tram => tram,
-      NysseTransitMode.train => train,
-      NysseTransitMode.bike => bike,
-    };
+  NyssePictogramSvg getModePictogram(DigitransitMode mode) {
+    switch (mode) {
+      case DigitransitMode.bus:
+        return bus;
+      case DigitransitMode.tram:
+        return tram;
+      case DigitransitMode.rail:
+        return train;
+      case DigitransitMode.bicycle:
+        return bike;
+      default:
+        throw ArgumentError.value(
+          mode,
+          "mode",
+          "No pictogram defined for mode: '$mode'",
+        );
+    }
   }
 }

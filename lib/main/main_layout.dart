@@ -13,10 +13,12 @@ class MainLayout extends StatelessWidget {
 
     return Column(
       children: [
-        MainLayoutHeader(),
+        const MainLayoutHeader(),
         SizedBox(height: layout.padding),
-        const MainLayoutTitle(),
-        SizedBox(height: layout.padding),
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: layout.halfPadding),
+          child: const MainLayoutTitle(),
+        ),
         const _Stoptimes(
           shrinkWrap: true,
         ),
@@ -40,16 +42,25 @@ class _StoptimesState extends State<_Stoptimes> {
 
   @override
   Widget build(BuildContext context) {
-    final double childSpacing = Layout.of(context).padding;
+    const int childVisibleCount = 6;
 
-    return AnimatedList(
-      key: _listKey,
-      itemBuilder: (context, index, ___) => Padding(
-        padding: EdgeInsets.only(bottom: childSpacing),
-        child: MainLayoutStoptime(),
+    final layout = Layout.of(context);
+    final double childTotalSize = layout.tileHeight + layout.widePadding;
+
+    return SizedBox(
+      height: childVisibleCount * childTotalSize,
+      child: AnimatedList(
+        key: _listKey,
+        itemBuilder: (context, index, ___) => SizedBox(
+          height: childTotalSize,
+          child: Dismissible(
+            key: Key("stoptime_$index"),
+            child: const MainLayoutStoptime(),
+          ),
+        ),
+        initialItemCount: 6, // TODO: Implement stoptime fetching
+        shrinkWrap: widget.shrinkWrap,
       ),
-      initialItemCount: 6,
-      shrinkWrap: widget.shrinkWrap,
     );
   }
 }

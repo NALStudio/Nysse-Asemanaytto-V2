@@ -3,6 +3,8 @@ import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/widgets/nysse_tile.dart';
 
 class MainLayoutStoptime extends StatelessWidget {
+  const MainLayoutStoptime({super.key});
+
   @override
   Widget build(BuildContext context) {
     final layout = Layout.of(context);
@@ -12,21 +14,15 @@ class MainLayoutStoptime extends StatelessWidget {
         "3",
         style: layout.labelStyle,
       ),
-      content: Align(
-        alignment: Alignment.bottomLeft,
-        child: Text(
-          "Pyynikintori",
-          style: layout.shrinkedLabelStyle.copyWith(
-            fontWeight: FontWeight.normal,
-          ),
+      content: Text(
+        "Hervanta",
+        style: layout.labelStyle.copyWith(
+          fontWeight: FontWeight.normal,
         ),
       ),
-      trailing: Align(
-        alignment: Alignment.bottomRight,
-        child: Text(
-          "4",
-          style: layout.shrinkedLabelStyle,
-        ),
+      trailing: Text(
+        "8",
+        style: layout.labelStyle,
       ),
     );
   }

@@ -34,7 +34,10 @@ class NysseTile extends StatelessWidget {
               child: content,
             ),
           ),
-          trailing,
+          Align(
+            alignment: Alignment.centerRight,
+            child: trailing,
+          ),
         ],
       ),
     );
