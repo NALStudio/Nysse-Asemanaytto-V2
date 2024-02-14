@@ -71,6 +71,9 @@ class _StoptimeRecord {
   final String lineNumber;
   final String headsign;
   final DateTime arrivalTime;
+
+  _StoptimeRecord.fromQuery(
+      Query$FetchStopStoptimes$stop$stoptimesWithoutPatterns stoptimes):lineNumber = stoptimes.
 }
 
 class _StoptimeQueryLayout extends StatelessWidget {
