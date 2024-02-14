@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/digitransit/enums.dart';
+import 'package:nysse_asemanaytto/digitransit/schema.graphql.dart';
 
 class NysseColor extends ColorSwatch<int> {
   const NysseColor(super.primary, super.swatch);
@@ -52,15 +53,15 @@ class NysseColors {
   static const Color serviceTrain = Color(0xff40ba53);
   static const Color serviceBike = purple;
 
-  Color getModeColor(DigitransitMode mode) {
+  Color getModeColor(Enum$Mode mode) {
     switch (mode) {
-      case DigitransitMode.bus:
+      case Enum$Mode.BUS:
         return serviceBus;
-      case DigitransitMode.tram:
+      case Enum$Mode.TRAM:
         return serviceTram;
-      case DigitransitMode.rail:
+      case Enum$Mode.RAIL:
         return serviceTrain;
-      case DigitransitMode.bicycle:
+      case Enum$Mode.BICYCLE:
         return serviceBike;
       default:
         throw ArgumentError.value(

@@ -3,7 +3,9 @@ import 'package:flutter_svg/svg.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 
 class MainLayoutTitle extends StatelessWidget {
-  const MainLayoutTitle({super.key});
+  final String stopName;
+
+  const MainLayoutTitle({super.key, required this.stopName});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +20,7 @@ class MainLayoutTitle extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                "Turtola B",
+                stopName,
                 style: layout.labelStyle.copyWith(height: 1.1),
               ),
             ),

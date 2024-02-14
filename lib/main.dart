@@ -1,19 +1,51 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/main/main_layout.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
 
-void main() => runApp(const MainApp());
+void main() async {
+  await dotenv.load(fileName: ".env");
+
+  final HttpLink digitransitHttpLink = HttpLink(
+    "https://api.digitransit.fi/routing/v1/routers/waltti/index/graphql",
+  );
+  final AuthLink digitransitAuthLink = AuthLink(
+    headerKey: "digitransit-subscription-key",
+    getToken: () => dotenv.env["DIGITRANSIT_API_KEY"],
+  );
+  final Link digitransitLink = digitransitAuthLink.concat(digitransitHttpLink);
+
+  ValueNotifier<GraphQLClient> digitransitClient = ValueNotifier(
+    GraphQLClient(
+      link: digitransitLink,
+      cache: GraphQLCache(
+        store: InMemoryStore(),
+      ),
+    ),
+  );
+
+  runApp(MainApp(digitransitClient: digitransitClient));
+}
 
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  final ValueNotifier<GraphQLClient> digitransitClient;
+
+  const MainApp({
+    super.key,
+    required this.digitransitClient,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: "Nysse Asemanäyttö",
-      home: AppServices(),
+    return GraphQLProvider(
+      client: digitransitClient,
+      child: const MaterialApp(
+        title: "Nysse Asemanäyttö",
+        home: AppServices(),
+      ),
     );
   }
 }

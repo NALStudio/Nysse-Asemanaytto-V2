@@ -1,0 +1,8 @@
+targets:
+  $default:
+    builders:
+      graphql_codegen:
+        options:
+          scalars:
+            Long:
+              type: int

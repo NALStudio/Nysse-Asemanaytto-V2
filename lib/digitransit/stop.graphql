@@ -1,0 +1,22 @@
+query FetchStopInfo($id: String!) {
+    stop(id: $id) {
+        name
+        code
+        lat
+        lon
+        vehicleMode
+    }
+}
+
+query FetchStopStoptimes($id: String!, $numberOfDepartures: Int!, $omitNonPickups: Boolean! = true, $omitCanceled: Boolean! = false) {
+    stop(id: $id) {
+        stoptimesWithoutPatterns(numberOfDepartures: $numberOfDepartures, omitNonPickups: $omitNonPickups, omitCanceled: $omitCanceled) {
+            scheduledDeparture
+            realtimeDeparture
+            serviceDay
+            realtime
+            realtimeState
+            headsign
+        }
+    }
+}

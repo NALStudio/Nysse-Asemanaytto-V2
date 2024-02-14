@@ -3,16 +3,22 @@ import 'package:flutter_svg/svg.dart';
 import 'package:nysse_asemanaytto/core/components/clock.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/widgets/nysse_tile.dart';
-import 'package:nysse_asemanaytto/nysse/_pictograms.dart';
+import 'package:nysse_asemanaytto/digitransit/schema.graphql.dart';
+import 'package:nysse_asemanaytto/nysse/nysse.dart';
 
 class MainLayoutHeader extends StatelessWidget {
-  const MainLayoutHeader({super.key});
+  final Enum$Mode stopVehicleMode;
+
+  const MainLayoutHeader({
+    super.key,
+    required this.stopVehicleMode,
+  });
 
   @override
   Widget build(BuildContext context) {
     return NysseTile(
       leading: SvgPicture(
-        NyssePictograms.tram.borderless,
+        NyssePictograms.getModePictogram(stopVehicleMode!),
         colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
         alignment: Alignment.centerLeft,
       ),

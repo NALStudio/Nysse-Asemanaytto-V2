@@ -1,5 +1,5 @@
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:nysse_asemanaytto/digitransit/enums.dart';
+import 'package:nysse_asemanaytto/digitransit/schema.graphql.dart';
 
 class NyssePictogramSvg extends SvgAssetLoader {
   const NyssePictogramSvg(super.assetName, this.borderless);
@@ -31,15 +31,15 @@ class NyssePictograms {
   static const SvgAssetLoader routes =
       SvgAssetLoader("assets/images/pictogram_reitit.svg");
 
-  NyssePictogramSvg getModePictogram(DigitransitMode mode) {
+  static NyssePictogramSvg getModePictogram(Enum$Mode mode) {
     switch (mode) {
-      case DigitransitMode.bus:
+      case Enum$Mode.BUS:
         return bus;
-      case DigitransitMode.tram:
+      case Enum$Mode.TRAM:
         return tram;
-      case DigitransitMode.rail:
+      case Enum$Mode.RAIL:
         return train;
-      case DigitransitMode.bicycle:
+      case Enum$Mode.BICYCLE:
         return bike;
       default:
         throw ArgumentError.value(
