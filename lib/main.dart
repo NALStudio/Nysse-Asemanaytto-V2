@@ -1,20 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
+import 'package:nysse_asemanaytto/core/config.dart';
+import 'package:nysse_asemanaytto/main/error_layout.dart';
 import 'package:nysse_asemanaytto/main/main_layout.dart';
+import 'package:nysse_asemanaytto/main/settings_layout.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() => runApp(const MainApp());
+const String _kRouteHome = "/home";
+const String _kRouteSettings = "/settings";
+
+Future<void> main() async {
+  final SharedPreferences prefs = await SharedPreferences.getInstance();
+
+  runApp(MainApp(sharedPreferences: prefs));
+}
 
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  final SharedPreferences sharedPreferences;
+
+  const MainApp({super.key, required this.sharedPreferences});
 
   @override
   Widget build(BuildContext context) {
-    return const MaterialApp(
-      title: "Nysse Asemanäyttö",
-      home: AppServices(),
+    return ConfigWidget(
+      prefs: sharedPreferences,
+      child: MaterialApp(
+        title: "Nysse Asemanäyttö",
+        initialRoute: _kRouteHome,
+        routes: {
+          _kRouteHome: (context) =>
+              const _SettingsVerificationRouter(child: AppServices()),
+          _kRouteSettings: (context) => const SettingsLayout(),
+        },
+      ),
     );
+  }
+}
+
+class _SettingsVerificationRouter extends StatelessWidget {
+  final Widget child;
+
+  const _SettingsVerificationRouter({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final Config config = Config.of(context);
+    if (config.digitransitSubscriptionKey == null) {
+      return const ErrorLayout(
+        message: "No Digitransit subscription key provided",
+        description: "Open settings by pressing F1",
+      );
+    }
+
+    return child;
   }
 }
 

@@ -5,9 +5,13 @@ class DigitransitEnum {
 
   @override
   bool operator ==(Object other) {
-    return other is DigitransitEnum &&
-        runtimeType == other.runtimeType &&
-        value == other.value;
+    if (other is DigitransitEnum) {
+      return runtimeType == other.runtimeType && value == other.value;
+    } else if (other is String) {
+      return value == other;
+    } else {
+      return false;
+    }
   }
 
   @override
@@ -46,4 +50,19 @@ class DigitransitRealtimeState extends DigitransitEnum {
       DigitransitRealtimeState("ADDED");
   static const DigitransitRealtimeState modified =
       DigitransitRealtimeState("MODIFIED");
+}
+
+class DigitransitRoutingEndpoint extends DigitransitEnum {
+  const DigitransitRoutingEndpoint(super.value);
+
+  static const DigitransitRoutingEndpoint hsl =
+      DigitransitRoutingEndpoint("hsl");
+  static const DigitransitRoutingEndpoint waltti =
+      DigitransitRoutingEndpoint("waltti");
+  static const DigitransitRoutingEndpoint finland =
+      DigitransitRoutingEndpoint("finland");
+
+  String getEndpoint() {
+    return "https://api.digitransit.fi/routing/v1/routers/$this/index/graphql";
+  }
 }
