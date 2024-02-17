@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
+import 'package:nysse_asemanaytto/core/routes.dart';
 import 'package:nysse_asemanaytto/main/error_layout.dart';
 import 'package:nysse_asemanaytto/main/main_layout.dart';
 import 'package:nysse_asemanaytto/main/settings_layout.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-const String _kRouteHome = "/home";
-const String _kRouteSettings = "/settings";
 
 Future<void> main() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -28,21 +27,45 @@ class MainApp extends StatelessWidget {
       prefs: sharedPreferences,
       child: MaterialApp(
         title: "Nysse Asemanäyttö",
-        initialRoute: _kRouteHome,
+        initialRoute: Routes.home,
         routes: {
-          _kRouteHome: (context) =>
-              const _SettingsVerificationRouter(child: AppServices()),
-          _kRouteSettings: (context) => const SettingsLayout(),
+          Routes.home: (context) => const _HomeRouter(child: AppServices()),
+          Routes.settings: (context) => const SettingsWidget(),
         },
       ),
     );
   }
 }
 
-class _SettingsVerificationRouter extends StatelessWidget {
+class _HomeRouter extends StatefulWidget {
   final Widget child;
 
-  const _SettingsVerificationRouter({required this.child});
+  const _HomeRouter({required this.child});
+
+  @override
+  State<_HomeRouter> createState() => _HomeRouterState();
+}
+
+class _HomeRouterState extends State<_HomeRouter> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.keyboard.addHandler(_onKey);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.keyboard.removeHandler(_onKey);
+    super.dispose();
+  }
+
+  bool _onKey(KeyEvent event) {
+    if (event is KeyDownEvent && event.physicalKey == PhysicalKeyboardKey.f1) {
+      Navigator.pushNamed(context, Routes.settings);
+    }
+
+    return false;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,7 +77,7 @@ class _SettingsVerificationRouter extends StatelessWidget {
       );
     }
 
-    return child;
+    return widget.child;
   }
 }
 
