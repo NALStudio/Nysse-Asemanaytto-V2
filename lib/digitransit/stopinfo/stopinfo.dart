@@ -1,10 +1,13 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/digitransit/enums.dart';
 
 class StopInfo extends StatefulWidget {
+  final String stopId;
   final Widget child;
 
-  const StopInfo({super.key, required this.child});
+  const StopInfo({super.key, required this.stopId, required this.child});
 
   @override
   State<StopInfo> createState() => StopInfoState();
@@ -23,12 +26,22 @@ class StopInfo extends StatefulWidget {
 }
 
 class StopInfoState extends State<StopInfo> {
-  int? _stopCode;
-  int? get stopCode => _stopCode;
-  set stopCode(int? value) => setState(() => _stopCode = value);
-
   StopMeta? _stopMeta;
   StopMeta? get stopMeta => _stopMeta;
+
+  List<Stoptime>? _stoptimes;
+  List<Stoptime> get stoptimes =>
+      UnmodifiableListView(_stoptimes ?? const Iterable.empty());
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
