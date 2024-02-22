@@ -19,8 +19,11 @@ class ConfigWidget extends StatefulWidget {
 class Config extends State<ConfigWidget> {
   String? get digitransitSubscriptionKey =>
       widget._prefs.getString("digitransitSubscriptionKey");
-  set digitransitSubscriptionKey(String? key) =>
+  set digitransitSubscriptionKey(String? key) {
+    setState(() {
       _setStringOrNull("digitransitSubscriptionKey", key);
+    });
+  }
 
   DigitransitRoutingEndpoint get endpoint {
     String? endpoint = widget._prefs.getString("endpoint");
@@ -30,11 +33,19 @@ class Config extends State<ConfigWidget> {
     return DigitransitRoutingEndpoint(endpoint);
   }
 
-  set endpoint(DigitransitRoutingEndpoint endpoint) =>
+  set endpoint(DigitransitRoutingEndpoint endpoint) {
+    setState(() {
+      // block body so setState doesn't get a future.
       widget._prefs.setString("endpoint", endpoint.value);
+    });
+  }
 
   String get stopId => widget._prefs.getString("stopId") ?? "tampere:3522";
-  set stopId(String id) => widget._prefs.setString("stopId", id);
+  set stopId(String? id) {
+    setState(() {
+      widget._prefs.setString("stopId", id ?? "tampere:3522");
+    });
+  }
 
   String get stopFeedId {
     final String stopId = this.stopId;
@@ -48,9 +59,12 @@ class Config extends State<ConfigWidget> {
     return stopId.substring(colonIndex + 1);
   }
 
-  int get displayedStoptimesCount => widget._prefs.getInt("stoptimeCount") ?? 6;
-  set displayedStoptimesCount(int count) =>
+  int get stoptimesCount => widget._prefs.getInt("stoptimeCount") ?? 6;
+  set stoptimesCount(int count) {
+    setState(() {
       widget._prefs.setInt("stoptimeCount", count);
+    });
+  }
 
   Future<void> _setStringOrNull(String key, String? value) {
     if (value != null) {

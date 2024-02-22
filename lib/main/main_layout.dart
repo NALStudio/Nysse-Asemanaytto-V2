@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
+import 'package:nysse_asemanaytto/core/ratelimits.dart';
 import 'package:nysse_asemanaytto/core/widgets/query_error.dart';
-import 'package:nysse_asemanaytto/digitransit/queries.dart';
+import 'package:nysse_asemanaytto/digitransit/queries/queries.dart';
 import 'package:nysse_asemanaytto/main/components/header.dart';
-import 'package:nysse_asemanaytto/main/components/stoptime.dart';
+import 'package:nysse_asemanaytto/main/components/stoptime_list.dart';
 import 'package:nysse_asemanaytto/main/components/title.dart';
 
 class MainLayout extends StatelessWidget {
@@ -17,13 +18,19 @@ class MainLayout extends StatelessWidget {
 
     return Column(
       children: [
-        const MainLayoutHeader(),
-        SizedBox(height: layout.padding),
-        Padding(
-          padding: EdgeInsets.symmetric(vertical: layout.halfPadding),
-          child: const MainLayoutTitle(),
+        _StopInfoQuery(
+          childBuilder: (context, stopInfo) => Column(
+            children: [
+              MainLayoutHeader(stopInfo: stopInfo),
+              SizedBox(height: layout.padding),
+              Padding(
+                padding: EdgeInsets.symmetric(vertical: layout.halfPadding),
+                child: MainLayoutTitle(stopInfo: stopInfo),
+              ),
+            ],
+          ),
         ),
-        const _Stoptimes(
+        const MainLayoutStoptimeList(
           shrinkWrap: true,
         ),
       ],
@@ -31,21 +38,23 @@ class MainLayout extends StatelessWidget {
   }
 }
 
-class _Stoptimes extends StatefulWidget {
-  final bool shrinkWrap;
+class _StopInfoQuery extends StatelessWidget {
+  final Widget Function(BuildContext context, DigitransitStopInfoQuery stopInfo)
+      childBuilder;
 
-  const _Stoptimes({this.shrinkWrap = false});
+  const _StopInfoQuery({required this.childBuilder});
 
-  @override
-  State<_Stoptimes> createState() => _StoptimesState();
-}
-
-class _StoptimesState extends State<_Stoptimes> {
   @override
   Widget build(BuildContext context) {
+    final Config config = Config.of(context);
+
     return Query(
       options: QueryOptions(
-        document: gql(DigitransitStoptimeQuery.query),
+        document: gql(DigitransitStopInfoQuery.query),
+        variables: {
+          "stopId": config.stopId,
+        },
+        pollInterval: Ratelimits.stopInfoRequest,
       ),
       builder: (result, {fetchMore, refetch}) {
         if (result.hasException) {
@@ -53,71 +62,17 @@ class _StoptimesState extends State<_Stoptimes> {
         }
 
         final Map<String, dynamic>? data = result.data;
-        final DigitransitStoptimeQuery? parsed =
-            data != null ? DigitransitStoptimeQuery.parse(data) : null;
+        final DigitransitStopInfoQuery? parsed =
+            DigitransitStopInfoQuery.parse(data);
 
-        return _StoptimesList(
-          shrinkWrap: widget.shrinkWrap,
-          stoptimes: parsed?.stoptimesWithoutPatterns ?? List.empty(),
-        );
+        if (parsed == null) {
+          return const QueryError(
+            errorMsg: "Could not parse stop info response.",
+          );
+        }
+
+        return childBuilder(context, parsed);
       },
-    );
-  }
-}
-
-class _StoptimesList extends StatefulWidget {
-  final bool shrinkWrap;
-  final List<DigitransitStoptime> stoptimes;
-
-  const _StoptimesList({
-    required this.shrinkWrap,
-    required this.stoptimes,
-  });
-
-  @override
-  State<_StoptimesList> createState() => _StoptimesListState();
-}
-
-class _StoptimeInfo {
-  final String tripGtfsId;
-  final GlobalKey<DismissibleState> key;
-  final DigitransitStoptime stoptime;
-
-  _StoptimeInfo({
-    required this.tripGtfsId,
-    required this.key,
-    required this.stoptime,
-  });
-}
-
-class _StoptimesListState extends State<_StoptimesList> {
-  final GlobalKey<AnimatedListState> _listKey = GlobalKey();
-
-  List<_StoptimeInfo> animatedStoptimes = List.empty(growable: true);
-  AnimatedListState get animatedList => _listKey.currentState!;
-
-  @override
-  Widget build(BuildContext context) {
-    final childCount = Config.of(context).displayedStoptimesCount;
-
-    final layout = Layout.of(context);
-    final double childTotalSize = layout.tileHeight + layout.widePadding;
-
-    return SizedBox(
-      height: childCount * childTotalSize,
-      child: AnimatedList(
-        key: _listKey,
-        itemBuilder: (context, index, ___) => SizedBox(
-          height: childTotalSize,
-          // TODO: Switch away from dismissibles
-          child: Dismissible(
-            key: animatedStoptimes[index].key,
-            child: const MainLayoutStoptime(),
-          ),
-        ),
-        initialItemCount: 0,
-        shrinkWrap: widget.shrinkWrap,
-      ),
     );
   }
 }

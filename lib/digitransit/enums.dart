@@ -63,6 +63,6 @@ class DigitransitRoutingEndpoint extends DigitransitEnum {
       DigitransitRoutingEndpoint("finland");
 
   String getEndpoint() {
-    return "https://api.digitransit.fi/routing/v1/routers/$this/index/graphql";
+    return "https://api.digitransit.fi/routing/v1/routers/$value/index/graphql";
   }
 }

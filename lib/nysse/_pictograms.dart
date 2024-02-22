@@ -31,7 +31,7 @@ class NyssePictograms {
   static const SvgAssetLoader routes =
       SvgAssetLoader("assets/images/pictogram_reitit.svg");
 
-  NyssePictogramSvg getModePictogram(DigitransitMode mode) {
+  static NyssePictogramSvg getModePictogram(DigitransitMode mode) {
     switch (mode) {
       case DigitransitMode.bus:
         return bus;

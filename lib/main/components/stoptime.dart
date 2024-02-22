@@ -1,27 +1,48 @@
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/widgets/nysse_tile.dart';
+import 'package:nysse_asemanaytto/digitransit/enums.dart';
+import 'package:nysse_asemanaytto/digitransit/queries/queries.dart';
 
 class MainLayoutStoptime extends StatelessWidget {
-  const MainLayoutStoptime({super.key});
+  final DigitransitStoptime stoptime;
+
+  const MainLayoutStoptime({super.key, required this.stoptime});
 
   @override
   Widget build(BuildContext context) {
     final layout = Layout.of(context);
 
+    String time;
+    if (stoptime.realtimeState == DigitransitRealtimeState.canceled) {
+      time = "PERUTTU";
+    } else if (stoptime.realtime != true) {
+      final int nowSinceEpochMs = DateTime.now().millisecondsSinceEpoch;
+      final int departureSinceEpochMs =
+          stoptime.realtimeDepartureDateTime!.millisecondsSinceEpoch;
+      final int deltaMs = departureSinceEpochMs - nowSinceEpochMs;
+      time = (deltaMs / 60000).round().toString(); // ms to min => toString
+    } else {
+      final DateTime departure = stoptime.scheduledDepartureDateTime!;
+      final String hour = departure.hour.toString().padLeft(2, '0');
+      final String minute = departure.minute.toString().padLeft(2, '0');
+      time = "$hour:$minute";
+    }
+
     return NysseTile(
       leading: Text(
-        "3",
+        stoptime.routeShortName ?? "<null>",
         style: layout.labelStyle,
       ),
       content: Text(
-        "Hervanta",
+        stoptime.headsign ?? "<null>",
+        maxLines: 1,
         style: layout.labelStyle.copyWith(
           fontWeight: FontWeight.normal,
         ),
       ),
       trailing: Text(
-        "8",
+        time,
         style: layout.labelStyle,
       ),
     );

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
+import 'package:nysse_asemanaytto/digitransit/queries/queries.dart';
 
 class MainLayoutTitle extends StatelessWidget {
-  const MainLayoutTitle({super.key});
+  final DigitransitStopInfoQuery stopInfo;
+
+  const MainLayoutTitle({super.key, required this.stopInfo});
 
   @override
   Widget build(BuildContext context) {
@@ -18,7 +21,7 @@ class MainLayoutTitle extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                "Turtola B",
+                stopInfo.name,
                 style: layout.labelStyle.copyWith(height: 1.1),
               ),
             ),
