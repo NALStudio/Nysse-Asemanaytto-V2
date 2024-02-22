@@ -37,23 +37,20 @@ class Config extends State<ConfigWidget> {
   set stopId(String id) => widget._prefs.setString("stopId", id);
 
   String get stopFeedId {
-    final List<String> stopIdParts = stopId.split(':');
-    if (stopIdParts.length != 2) throw StateError("Invalid stopId");
-    return stopIdParts[0];
+    final String stopId = this.stopId;
+    int colonIndex = stopId.indexOf(':');
+    return stopId.substring(0, colonIndex);
   }
 
   String get stopGtfsId {
-    final List<String> stopIdParts = stopId.split(':');
-    if (stopIdParts.length != 2) throw StateError("Invalid stopId");
-    return stopIdParts[1];
+    final String stopId = this.stopId;
+    int colonIndex = stopId.indexOf(':');
+    return stopId.substring(colonIndex + 1);
   }
 
-  // set stopFeedId(String id) {
-  //   List<String> idParts = stopId.split(':');
-  //   if (idParts.isEmpty) throw StateError("Invalid stopId");
-  //   idParts[0] = id;
-  //   stopId = idParts.join(':');
-  // }
+  int get displayedStoptimesCount => widget._prefs.getInt("stoptimeCount") ?? 6;
+  set displayedStoptimesCount(int count) =>
+      widget._prefs.setInt("stoptimeCount", count);
 
   Future<void> _setStringOrNull(String key, String? value) {
     if (value != null) {

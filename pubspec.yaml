@@ -7,9 +7,11 @@ environment:
   sdk: '>=3.2.6 <4.0.0'
 
 dependencies:
+  auto_size_text: ^3.0.0
   flutter:
     sdk: flutter
   flutter_svg: ^2.0.9
+  graphql_flutter: ^5.2.0-beta.6
   shared_preferences: ^2.2.2
 
 dev_dependencies:

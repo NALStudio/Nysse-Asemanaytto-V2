@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/routes.dart';
@@ -13,18 +14,34 @@ import 'package:shared_preferences/shared_preferences.dart';
 Future<void> main() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  runApp(MainApp(sharedPreferences: prefs));
+  runApp(
+    ConfigWidget(
+      prefs: prefs,
+      child: const MainApp(),
+    ),
+  );
 }
 
 class MainApp extends StatelessWidget {
-  final SharedPreferences sharedPreferences;
-
-  const MainApp({super.key, required this.sharedPreferences});
+  const MainApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ConfigWidget(
-      prefs: sharedPreferences,
+    final Config config = Config.of(context);
+
+    return GraphQLProvider(
+      client: ValueNotifier<GraphQLClient>(
+        GraphQLClient(
+          link: HttpLink(
+            config.endpoint.value,
+            defaultHeaders: {
+              "digitransit-subscription-key":
+                  config.digitransitSubscriptionKey!,
+            },
+          ),
+          cache: GraphQLCache(),
+        ),
+      ),
       child: MaterialApp(
         title: "Nysse Asemanäyttö",
         initialRoute: Routes.home,
