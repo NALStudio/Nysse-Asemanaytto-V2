@@ -6,6 +6,7 @@ import 'package:nysse_asemanaytto/core/ratelimits.dart';
 import 'package:nysse_asemanaytto/core/widgets/query_error.dart';
 import 'package:nysse_asemanaytto/digitransit/queries/queries.dart';
 import 'package:nysse_asemanaytto/main/components/stoptime.dart';
+import 'package:nysse_asemanaytto/main/components/stoptime_dismiss_animation.dart';
 
 class MainLayoutStoptimeList extends StatefulWidget {
   final bool shrinkWrap;
@@ -84,16 +85,7 @@ class _StoptimesListState extends State<_StoptimesList> {
         continue;
       }
 
-      final DigitransitStoptime removed = _internalList.removeAt(removeIndex);
-      _animatedList.removeItem(
-        removeIndex,
-        (context, animation) => _buildAnimatedListStoptime(
-          context,
-          stoptime: removed,
-          height: childTotalSize,
-          animationProgress: animation.value,
-        ),
-      );
+      _removeItem(removeIndex, stoptimeHeight: childTotalSize);
     }
 
     // Set new trips to correct indexes
@@ -109,16 +101,9 @@ class _StoptimesListState extends State<_StoptimesList> {
 
     // Remove overflowing items
     while (_internalList.length > widget.stoptimes.length) {
-      int lastIndex = _internalList.length - 1;
-      final DigitransitStoptime removed = _internalList.removeAt(lastIndex);
-      _animatedList.removeItem(
-        lastIndex,
-        (context, animation) => _buildAnimatedListStoptime(
-          context,
-          stoptime: removed,
-          height: childTotalSize,
-          animationProgress: animation.value,
-        ),
+      _removeItem(
+        _internalList.length - 1,
+        stoptimeHeight: childTotalSize,
       );
     }
 
@@ -136,22 +121,36 @@ class _StoptimesListState extends State<_StoptimesList> {
       ),
     );
   }
+
+  void _removeItem(int index, {required double stoptimeHeight}) {
+    final DigitransitStoptime removed = _internalList.removeAt(index);
+    _animatedList.removeItem(
+      index,
+      (context, animation) => _buildAnimatedListStoptime(
+        context,
+        stoptime: removed,
+        height: stoptimeHeight,
+      ),
+      duration: const Duration(seconds: 1),
+    );
+  }
 }
 
 Widget _buildAnimatedListStoptime(
   BuildContext context, {
   required DigitransitStoptime stoptime,
   required double height,
-  double? animationProgress,
+  Animation<double>? removeAnimation,
 }) {
   Widget widget = SizedBox(
     height: height,
     child: MainLayoutStoptime(stoptime: stoptime),
   );
 
-  if (animationProgress != null) {
-    widget = FractionalTranslation(
-      translation: Offset(animationProgress, 0),
+  if (removeAnimation != null) {
+    widget = StoptimeDismissAnimation(
+      key: UniqueKey(),
+      animation: removeAnimation,
       child: widget,
     );
   }
