@@ -1,19 +1,25 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
+import 'package:nysse_asemanaytto/core/painters/nysse_wave_painter.dart';
 import 'package:nysse_asemanaytto/core/routes.dart';
 import 'package:nysse_asemanaytto/main/error_layout.dart';
 import 'package:nysse_asemanaytto/main/main_layout.dart';
 import 'package:nysse_asemanaytto/main/settings_layout.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// ignore: depend_on_referenced_packages
 import "package:http/http.dart" as http;
 import 'dart:developer' as developer;
+import 'dart:math' as math;
 
 Future<void> main() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -31,13 +37,30 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: "Nysse Asemanäyttö",
-      initialRoute: Routes.home,
-      routes: {
-        Routes.home: (context) => const _HomeRouter(child: AppServices()),
-        Routes.settings: (context) => const SettingsWidget(),
-      },
+    final Config config = Config.of(context);
+
+    return GraphQLProvider(
+      client: ValueNotifier<GraphQLClient>(
+        GraphQLClient(
+          link: HttpLink(
+            config.endpoint.getEndpoint(),
+            defaultHeaders: {
+              "digitransit-subscription-key":
+                  config.digitransitSubscriptionKey!,
+            },
+            httpResponseDecoder: _handleGraphQLResponse,
+          ),
+          cache: GraphQLCache(),
+        ),
+      ),
+      child: MaterialApp(
+        title: "Nysse Asemanäyttö",
+        initialRoute: Routes.home,
+        routes: {
+          Routes.home: (context) => const _HomeRouter(child: AppServices()),
+          Routes.settings: (context) => const SettingsWidget(),
+        },
+      ),
     );
   }
 }
@@ -91,26 +114,9 @@ class AppServices extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final Config config = Config.of(context);
-
-    return GraphQLProvider(
-      client: ValueNotifier<GraphQLClient>(
-        GraphQLClient(
-          link: HttpLink(
-            config.endpoint.getEndpoint(),
-            defaultHeaders: {
-              "digitransit-subscription-key":
-                  config.digitransitSubscriptionKey!,
-            },
-            httpResponseDecoder: _handleGraphQLResponse,
-          ),
-          cache: GraphQLCache(),
-        ),
-      ),
-      child: Layout(
-        info: LayoutData(mediaQueryData: MediaQuery.of(context)),
-        child: const AppCanvas(),
-      ),
+    return Layout(
+      info: LayoutData(mediaQueryData: MediaQuery.of(context)),
+      child: const AppCanvas(),
     );
   }
 }
@@ -130,16 +136,37 @@ class AppCanvas extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
-      backgroundColor: NysseColors.mediumBlue,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          MainCanvas(),
-          EmbedCanvas(),
-          _Footer(),
-        ],
-      ),
+    final mediaQuery = MediaQuery.of(context);
+
+    return Stack(
+      children: [
+        SizedBox.expand(
+          child: ColoredBox(
+            color: NysseColors.mediumBlue,
+            child: CustomPaint(
+              painter: NysseWavePainter.fromAngle(
+                start: Offset(mediaQuery.size.width * 0.875, 0),
+                waveStartOffset: 0.375,
+                angleRadians: (3 * math.pi) / 4,
+                waveLength: mediaQuery.size.width / 3.6,
+                waveSize: mediaQuery.size.width / 40,
+                invert: false,
+              ),
+            ),
+          ),
+        ),
+        const Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              MainCanvas(),
+              EmbedCanvas(),
+              _Footer(),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -194,8 +221,8 @@ class _Footer extends StatelessWidget {
             child: Text(
               "nysse.fi",
               textAlign: TextAlign.right,
-              style: layout.shrinkedLabelStyle
-                  .copyWith(fontFamily: "LotaGrotesque"),
+              style:
+                  layout.smallLabelStyle.copyWith(fontFamily: "LotaGrotesque"),
             ),
           ),
           SizedBox(width: layout.padding),

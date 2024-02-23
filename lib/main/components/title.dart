@@ -4,7 +4,7 @@ import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/digitransit/queries/queries.dart';
 
 class MainLayoutTitle extends StatelessWidget {
-  final DigitransitStopInfoQuery stopInfo;
+  final DigitransitStopInfoQuery? stopInfo;
 
   const MainLayoutTitle({super.key, required this.stopInfo});
 
@@ -21,7 +21,7 @@ class MainLayoutTitle extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                stopInfo.name,
+                stopInfo?.name ?? "Loading...",
                 style: layout.labelStyle.copyWith(height: 1.1),
               ),
             ),

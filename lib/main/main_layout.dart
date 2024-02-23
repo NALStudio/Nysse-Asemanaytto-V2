@@ -39,8 +39,10 @@ class MainLayout extends StatelessWidget {
 }
 
 class _StopInfoQuery extends StatelessWidget {
-  final Widget Function(BuildContext context, DigitransitStopInfoQuery stopInfo)
-      childBuilder;
+  final Widget Function(
+    BuildContext context,
+    DigitransitStopInfoQuery? stopInfo,
+  ) childBuilder;
 
   const _StopInfoQuery({required this.childBuilder});
 
@@ -64,12 +66,6 @@ class _StopInfoQuery extends StatelessWidget {
         final Map<String, dynamic>? data = result.data;
         final DigitransitStopInfoQuery? parsed =
             DigitransitStopInfoQuery.parse(data);
-
-        if (parsed == null) {
-          return const QueryError(
-            errorMsg: "Could not parse stop info response.",
-          );
-        }
 
         return childBuilder(context, parsed);
       },

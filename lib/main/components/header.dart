@@ -8,7 +8,7 @@ import 'package:nysse_asemanaytto/digitransit/queries/queries.dart';
 import 'package:nysse_asemanaytto/nysse/_pictograms.dart';
 
 class MainLayoutHeader extends StatelessWidget {
-  final DigitransitStopInfoQuery stopInfo;
+  final DigitransitStopInfoQuery? stopInfo;
 
   const MainLayoutHeader({super.key, required this.stopInfo});
 
@@ -17,7 +17,7 @@ class MainLayoutHeader extends StatelessWidget {
     return NysseTile(
       leading: SvgPicture(
         NyssePictograms.getModePictogram(
-          stopInfo.vehicleMode ?? DigitransitMode.bus,
+          stopInfo?.vehicleMode ?? DigitransitMode.bus,
         ).borderless,
         colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
         alignment: Alignment.centerLeft,

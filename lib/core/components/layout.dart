@@ -57,6 +57,15 @@ class LayoutData {
   /// Doesn't work with multiple lines.
   TextStyle get shrinkedLabelStyle => TextStyle(
         fontFamily: "Lato",
+        fontSize: tileHeight * 0.9,
+        fontWeight: FontWeight.bold,
+        color: Colors.white,
+        height: 1,
+      );
+
+  /// Doesn't work with multiple lines.
+  TextStyle get smallLabelStyle => TextStyle(
+        fontFamily: "Lato",
         fontSize: tileHeight * 0.85,
         fontWeight: FontWeight.bold,
         color: Colors.white,

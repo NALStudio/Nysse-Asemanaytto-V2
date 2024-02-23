@@ -16,7 +16,7 @@ class MainLayoutStoptime extends StatelessWidget {
     String time;
     if (stoptime.realtimeState == DigitransitRealtimeState.canceled) {
       time = "PERUTTU";
-    } else if (stoptime.realtime != true) {
+    } else if (stoptime.realtime == true) {
       final int nowSinceEpochMs = DateTime.now().millisecondsSinceEpoch;
       final int departureSinceEpochMs =
           stoptime.realtimeDepartureDateTime!.millisecondsSinceEpoch;
@@ -29,6 +29,8 @@ class MainLayoutStoptime extends StatelessWidget {
       time = "$hour:$minute";
     }
 
+    final TextStyle headsignStyle = layout.shrinkedLabelStyle;
+
     return NysseTile(
       leading: Text(
         stoptime.routeShortName ?? "<null>",
@@ -37,8 +39,9 @@ class MainLayoutStoptime extends StatelessWidget {
       content: Text(
         stoptime.headsign ?? "<null>",
         maxLines: 1,
-        style: layout.labelStyle.copyWith(
+        style: headsignStyle.copyWith(
           fontWeight: FontWeight.normal,
+          height: layout.labelStyle.fontSize! / headsignStyle.fontSize!,
         ),
       ),
       trailing: Text(
