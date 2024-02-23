@@ -34,7 +34,7 @@ class _StoptimeDismissAnimationState extends State<StoptimeDismissAnimation> {
 
   void _update() {
     setState(() {
-      opacity = 1.0 - widget.animation.value;
+      opacity = widget.animation.value;
     });
   }
 

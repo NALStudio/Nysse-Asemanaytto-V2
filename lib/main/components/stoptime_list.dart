@@ -130,6 +130,7 @@ class _StoptimesListState extends State<_StoptimesList> {
         context,
         stoptime: removed,
         height: stoptimeHeight,
+        removeAnimation: animation,
       ),
       duration: const Duration(seconds: 1),
     );
