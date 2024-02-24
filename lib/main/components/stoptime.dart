@@ -3,6 +3,7 @@ import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/widgets/nysse_tile.dart';
 import 'package:nysse_asemanaytto/digitransit/enums.dart';
 import 'package:nysse_asemanaytto/digitransit/queries/queries.dart';
+import 'dart:math' as math;
 
 class MainLayoutStoptime extends StatelessWidget {
   final DigitransitStoptime stoptime;
@@ -21,7 +22,8 @@ class MainLayoutStoptime extends StatelessWidget {
       final int departureSinceEpochMs =
           stoptime.realtimeDepartureDateTime!.millisecondsSinceEpoch;
       final int deltaMs = departureSinceEpochMs - nowSinceEpochMs;
-      time = (deltaMs / 60000).round().toString(); // ms to min => toString
+      time = math.max((deltaMs / 60000).floor(), 0).toString();
+      // ^^ ms to min => toString, floor seems to yield better results
     } else {
       final DateTime departure = stoptime.scheduledDepartureDateTime!;
       final String hour = departure.hour.toString().padLeft(2, '0');

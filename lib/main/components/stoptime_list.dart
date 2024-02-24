@@ -76,16 +76,18 @@ class _StoptimesListState extends State<_StoptimesList> {
     final double childTotalSize = layout.tileHeight + layout.widePadding;
 
     // Remove trips that have left the station
+    // Only the first half of the trips can be removed with an animation
+    // Otherwise if the last buses change order and one is missing from the response
+    // Then the animation would play at the end of the list.
     Set<String> tripIds = widget.stoptimes.map((e) => e.tripGtfsId).toSet();
-    int removeIndex = 0;
-    while (removeIndex < _internalList.length) {
-      final DigitransitStoptime st = _internalList[removeIndex];
-      if (tripIds.contains(st.tripGtfsId)) {
-        removeIndex++;
-        continue;
-      }
+    final int maxAnimatedRemoves = (childCount / 2).floor();
+    for (int i = 0; i < maxAnimatedRemoves; i++) {
+      if (i >= _internalList.length) break;
 
-      _removeItem(removeIndex, stoptimeHeight: childTotalSize);
+      final DigitransitStoptime st = _internalList[i];
+      if (tripIds.contains(st.tripGtfsId)) continue;
+
+      _removeItem(i, stoptimeHeight: childTotalSize);
     }
 
     // Set new trips to correct indexes
@@ -132,7 +134,7 @@ class _StoptimesListState extends State<_StoptimesList> {
         height: stoptimeHeight,
         removeAnimation: animation,
       ),
-      duration: const Duration(seconds: 1),
+      duration: const Duration(milliseconds: 750),
     );
   }
 }

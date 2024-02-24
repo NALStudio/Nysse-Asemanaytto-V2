@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-const Curve _kTimeCurve = Interval(0.4, 1.0, curve: Curves.ease);
+const Curve _kTranslationCurve = Interval(0.0, 0.6, curve: Curves.easeIn);
+const Curve _kSizeCurve = Interval(0.5, 1.0, curve: Curves.easeInOut);
 
 class StoptimeDismissAnimation extends StatefulWidget {
   final Animation<double> animation;
@@ -18,7 +19,7 @@ class StoptimeDismissAnimation extends StatefulWidget {
 }
 
 class _StoptimeDismissAnimationState extends State<StoptimeDismissAnimation> {
-  double opacity = 1.0;
+  double progress = 0.0;
 
   @override
   void initState() {
@@ -34,16 +35,23 @@ class _StoptimeDismissAnimationState extends State<StoptimeDismissAnimation> {
 
   void _update() {
     setState(() {
-      // reversed for some fucking reason
-      opacity = widget.animation.value;
+      // goes from 1 to 0 for some reason
+      progress = 1.0 - widget.animation.value;
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: Color.fromRGBO(255, 0, 0, opacity),
-      child: widget.child,
+    double trans = _kTranslationCurve.transform(progress);
+    double height = _kSizeCurve.transform(progress);
+
+    return Align(
+      alignment: Alignment.topLeft,
+      heightFactor: 1.0 - height,
+      child: FractionalTranslation(
+        translation: Offset(trans, 0.0),
+        child: widget.child,
+      ),
     );
   }
 }

@@ -10,7 +10,7 @@ import 'package:nysse_asemanaytto/core/painters/nysse_wave_painter.dart';
 import 'package:nysse_asemanaytto/core/routes.dart';
 import 'package:nysse_asemanaytto/main/error_layout.dart';
 import 'package:nysse_asemanaytto/main/main_layout.dart';
-import 'package:nysse_asemanaytto/main/settings_layout.dart';
+import 'package:nysse_asemanaytto/settings/settings_layout.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 // ignore: depend_on_referenced_packages

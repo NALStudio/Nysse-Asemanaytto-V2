@@ -73,6 +73,7 @@ class _SettingsTextField extends StatefulWidget {
     required this.initialValue,
     this.hint,
     this.onSubmitted,
+    // ignore: unused_element
     this.autocorrect = false,
   });
 
