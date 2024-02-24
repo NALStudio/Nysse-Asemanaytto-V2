@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
+import 'package:nysse_asemanaytto/settings/controls/settings_control.dart';
 
 /// Visual only, does not actually provide any [Form] functionality.
 class SettingsForm extends StatelessWidget {
   final Widget title;
-  final List<Widget> children;
+  final List<SettingsControl> controls;
   final bool childPadding;
   final bool dividers;
 
@@ -14,7 +15,7 @@ class SettingsForm extends StatelessWidget {
   const SettingsForm({
     super.key,
     required this.title,
-    required this.children,
+    required this.controls,
     this.childPadding = true,
     this.dividers = true,
     this.mainAxisAlignment = MainAxisAlignment.start,
@@ -41,7 +42,7 @@ class SettingsForm extends StatelessWidget {
     final layout = Layout.of(context);
 
     // Add dividers between children.
-    List<Widget> children = this.children;
+    List<Widget> children = controls;
     if (childPadding) {
       children = children.map((c) {
         return Padding(

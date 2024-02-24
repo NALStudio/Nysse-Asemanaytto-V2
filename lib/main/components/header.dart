@@ -4,20 +4,18 @@ import 'package:nysse_asemanaytto/core/components/clock.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/widgets/nysse_tile.dart';
 import 'package:nysse_asemanaytto/digitransit/enums.dart';
-import 'package:nysse_asemanaytto/digitransit/queries/queries.dart';
+import 'package:nysse_asemanaytto/main/stopinfo.dart';
 import 'package:nysse_asemanaytto/nysse/_pictograms.dart';
 
 class MainLayoutHeader extends StatelessWidget {
-  final DigitransitStopInfoQuery? stopInfo;
-
-  const MainLayoutHeader({super.key, required this.stopInfo});
+  const MainLayoutHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
     return NysseTile(
       leading: SvgPicture(
         NyssePictograms.getModePictogram(
-          stopInfo?.vehicleMode ?? DigitransitMode.bus,
+          StopInfo.of(context)?.vehicleMode ?? DigitransitMode.bus,
         ).borderless,
         colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
         alignment: Alignment.centerLeft,

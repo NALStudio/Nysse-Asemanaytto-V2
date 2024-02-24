@@ -18,57 +18,16 @@ class MainLayout extends StatelessWidget {
 
     return Column(
       children: [
-        _StopInfoQuery(
-          childBuilder: (context, stopInfo) => Column(
-            children: [
-              MainLayoutHeader(stopInfo: stopInfo),
-              SizedBox(height: layout.padding),
-              Padding(
-                padding: EdgeInsets.symmetric(vertical: layout.halfPadding),
-                child: MainLayoutTitle(stopInfo: stopInfo),
-              ),
-            ],
-          ),
+        const MainLayoutHeader(),
+        SizedBox(height: layout.padding),
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: layout.halfPadding),
+          child: const MainLayoutTitle(),
         ),
         const MainLayoutStoptimeList(
           shrinkWrap: true,
         ),
       ],
-    );
-  }
-}
-
-class _StopInfoQuery extends StatelessWidget {
-  final Widget Function(
-    BuildContext context,
-    DigitransitStopInfoQuery? stopInfo,
-  ) childBuilder;
-
-  const _StopInfoQuery({required this.childBuilder});
-
-  @override
-  Widget build(BuildContext context) {
-    final Config config = Config.of(context);
-
-    return Query(
-      options: QueryOptions(
-        document: gql(DigitransitStopInfoQuery.query),
-        variables: {
-          "stopId": config.stopId,
-        },
-        pollInterval: Ratelimits.stopInfoRequest,
-      ),
-      builder: (result, {fetchMore, refetch}) {
-        if (result.hasException) {
-          return QueryError(errorMsg: result.exception.toString());
-        }
-
-        final Map<String, dynamic>? data = result.data;
-        final DigitransitStopInfoQuery? parsed =
-            DigitransitStopInfoQuery.parse(data);
-
-        return childBuilder(context, parsed);
-      },
     );
   }
 }

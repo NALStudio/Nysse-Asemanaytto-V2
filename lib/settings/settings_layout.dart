@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/routes.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
+import 'package:nysse_asemanaytto/settings/components/settings_titled.dart';
 
 class SettingsWidget extends StatefulWidget {
   const SettingsWidget({super.key});
@@ -63,48 +64,48 @@ class _SettingsWidgetState extends State<SettingsWidget> {
   }
 }
 
-class _SettingsTextField extends StatefulWidget {
-  final String? initialValue;
-  final String? hint;
-  final void Function(String)? onSubmitted;
-  final bool autocorrect;
-
-  const _SettingsTextField({
-    required this.initialValue,
-    this.hint,
-    this.onSubmitted,
-    // ignore: unused_element
-    this.autocorrect = false,
-  });
-
+class _MainSettings extends StatefulWidget {
   @override
-  State<_SettingsTextField> createState() => _SettingsTextFieldState();
+  State<_MainSettings> createState() => _MainSettingsState();
 }
 
-class _SettingsTextFieldState extends State<_SettingsTextField> {
-  late TextEditingController _controller;
+class _MainSettingsState extends State<_MainSettings> {
+  late TextEditingController _keyController;
+  late TextEditingController _stopIdController;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.initialValue);
+
+    final Config config = Config.of(context);
+    _keyController = TextEditingController(
+      text: config.digitransitSubscriptionKey,
+    );
+    _stopIdController = TextEditingController(
+      text: config.digitransitSubscriptionKey,
+    );
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _keyController.dispose();
+    _stopIdController.dispose();
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return TextField(
-      controller: _controller,
-      onSubmitted: widget.onSubmitted,
-      autocorrect: widget.autocorrect,
-      decoration: InputDecoration(
-        hintText: widget.hint,
-      ),
+    return Column(
+      children: [
+        SettingsTitled(
+          title: "Digitransit API Key",
+          child: TextField(
+            controller: _keyController,
+            autocorrect: false,
+          ),
+        ),
+      ],
     );
   }
 }

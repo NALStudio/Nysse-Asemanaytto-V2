@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
-import 'package:nysse_asemanaytto/digitransit/queries/queries.dart';
+import 'package:nysse_asemanaytto/main/stopinfo.dart';
 
 class MainLayoutTitle extends StatelessWidget {
-  final DigitransitStopInfoQuery? stopInfo;
-
-  const MainLayoutTitle({super.key, required this.stopInfo});
+  const MainLayoutTitle({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +19,7 @@ class MainLayoutTitle extends StatelessWidget {
           children: [
             Expanded(
               child: Text(
-                stopInfo?.name ?? "Loading...",
+                StopInfo.of(context)?.name ?? "Loading...",
                 style: layout.labelStyle.copyWith(height: 1.1),
               ),
             ),

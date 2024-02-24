@@ -1,22 +1,21 @@
+// TODO: RETHINK THIS THROUGH
+// I want an immutable class for embed settings
+// And I want to link them with a builder I suppose...
+// Embeds should be linked as well through a definition, but no idea how.
+
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/settings/components/settings_form.dart';
 
-abstract class StatelessEmbed<T extends EmbedSettings> extends StatelessWidget {
-  const StatelessEmbed({super.key});
-}
-
-abstract class StatefulEmbed<T extends EmbedSettings> extends StatefulWidget {
-  const StatefulEmbed({super.key});
-}
-
-class EmbedInfo {
+class EmbedDefinition<T extends EmbedSettings> {
   /// Must be unique between embeds.
   final String name;
-  final EmbedSettings settings;
 
-  EmbedInfo({required this.name, required this.settings});
+  EmbedDefinition({required this.name});
 }
 
 abstract class EmbedSettings {
   SettingsForm build(BuildContext context);
+
+  EmbedSettings.deserialize(String serialized);
+  String serialize();
 }
