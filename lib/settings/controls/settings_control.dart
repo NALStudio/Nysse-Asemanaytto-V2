@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nysse_asemanaytto/settings/components/settings_titled.dart';
+import 'package:nysse_asemanaytto/core/components/layout.dart';
 
 abstract class SettingsControl<T> extends StatelessWidget {
   const SettingsControl({super.key});
@@ -27,7 +27,7 @@ class _TitledSettingsControl<T> extends SettingsControl<T> {
 
   @override
   Widget build(BuildContext context) {
-    return SettingsTitled(
+    return _SettingsTitled(
       title: title,
       child: child,
     );
@@ -38,4 +38,26 @@ class _TitledSettingsControl<T> extends SettingsControl<T> {
 
   @override
   T get value => child.value;
+}
+
+class _SettingsTitled extends StatelessWidget {
+  final String title;
+  final Widget child;
+
+  const _SettingsTitled({super.key, required this.title, required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: Layout.of(context).labelStyle.copyWith(color: Colors.grey),
+        ),
+        child,
+      ],
+    );
+  }
 }

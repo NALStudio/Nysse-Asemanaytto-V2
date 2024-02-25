@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/routes.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
-import 'package:nysse_asemanaytto/settings/components/settings_titled.dart';
 
 class SettingsWidget extends StatefulWidget {
   const SettingsWidget({super.key});

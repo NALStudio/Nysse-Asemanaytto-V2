@@ -14,8 +14,6 @@ class EmbedDefinition<T extends EmbedSettings> {
 }
 
 abstract class EmbedSettings {
-  SettingsForm build(BuildContext context);
-
   EmbedSettings.deserialize(String serialized);
   String serialize();
 }
