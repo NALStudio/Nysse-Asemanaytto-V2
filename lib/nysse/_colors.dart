@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nysse_asemanaytto/digitransit/enums.dart';
+import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 
 class NysseColor extends ColorSwatch<int> {
   const NysseColor(super.primary, super.swatch);

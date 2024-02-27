@@ -1,5 +1,5 @@
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:nysse_asemanaytto/digitransit/enums.dart';
+import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 
 class NyssePictogramSvg extends SvgAssetLoader {
   const NyssePictogramSvg(super.assetName, this.borderless);

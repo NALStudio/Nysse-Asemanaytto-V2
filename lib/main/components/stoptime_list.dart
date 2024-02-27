@@ -4,7 +4,7 @@ import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/ratelimits.dart';
 import 'package:nysse_asemanaytto/core/widgets/query_error.dart';
-import 'package:nysse_asemanaytto/digitransit/queries/queries.dart';
+import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/main/components/stoptime.dart';
 import 'package:nysse_asemanaytto/main/components/stoptime_dismiss_animation.dart';
 
@@ -26,7 +26,7 @@ class _MainLayoutStoptimeListState extends State<MainLayoutStoptimeList> {
       options: QueryOptions(
         document: gql(DigitransitStoptimeQuery.query),
         variables: {
-          "stopId": config.stopId,
+          "stopId": config.stopId.value,
           "numberOfDepartures": config.stoptimesCount,
         },
         pollInterval: Ratelimits.stoptimesRequest,

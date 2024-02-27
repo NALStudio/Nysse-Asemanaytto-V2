@@ -1,4 +1,4 @@
-import 'package:nysse_asemanaytto/digitransit/enums.dart';
+import 'package:nysse_asemanaytto/digitransit/_enums.dart';
 
 class DigitransitStopInfoQuery {
   static const String query = """

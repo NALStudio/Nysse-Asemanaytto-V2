@@ -10,6 +10,7 @@ import 'package:nysse_asemanaytto/core/painters/nysse_wave_painter.dart';
 import 'package:nysse_asemanaytto/core/routes.dart';
 import 'package:nysse_asemanaytto/main/error_layout.dart';
 import 'package:nysse_asemanaytto/main/main_layout.dart';
+import 'package:nysse_asemanaytto/main/stopinfo.dart';
 import 'package:nysse_asemanaytto/settings/settings_layout.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -36,29 +37,35 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     final Config config = Config.of(context);
 
-    return GraphQLProvider(
-      client: ValueNotifier<GraphQLClient>(
-        GraphQLClient(
-          link: HttpLink(
-            config.endpoint.getEndpoint(),
-            defaultHeaders: {
-              "digitransit-subscription-key":
-                  config.digitransitSubscriptionKey!,
-            },
-            httpResponseDecoder: _handleGraphQLResponse,
-          ),
-          cache: GraphQLCache(),
-        ),
-      ),
-      child: MaterialApp(
-        title: "Nysse Asemanäyttö",
-        initialRoute: Routes.home,
-        routes: {
-          Routes.home: (context) => const _HomeRouter(child: AppServices()),
-          Routes.settings: (context) => const SettingsWidget(),
-        },
-      ),
+    Widget app = MaterialApp(
+      title: "Nysse Asemanäyttö",
+      initialRoute: Routes.home,
+      routes: {
+        Routes.home: (context) => const _HomeRouter(child: AppServices()),
+        Routes.settings: (context) => const SettingsWidget(),
+      },
     );
+
+    if (config.digitransitSubscriptionKey != null) {
+      app = GraphQLProvider(
+        client: ValueNotifier<GraphQLClient>(
+          GraphQLClient(
+            link: HttpLink(
+              config.endpoint.getEndpoint(),
+              defaultHeaders: {
+                "digitransit-subscription-key":
+                    config.digitransitSubscriptionKey!,
+              },
+              httpResponseDecoder: _handleGraphQLResponse,
+            ),
+            cache: GraphQLCache(),
+          ),
+        ),
+        child: app,
+      );
+    }
+
+    return app;
   }
 }
 
@@ -113,7 +120,9 @@ class AppServices extends StatelessWidget {
   Widget build(BuildContext context) {
     return Layout(
       info: LayoutData(mediaQueryData: MediaQuery.of(context)),
-      child: const AppCanvas(),
+      child: const StopInfo(
+        child: AppCanvas(),
+      ),
     );
   }
 }
