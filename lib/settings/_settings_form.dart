@@ -1,7 +1,10 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
+import 'package:nysse_asemanaytto/settings/_embeds_form_field.dart';
 import 'package:nysse_asemanaytto/settings/settings.dart';
 
 class MainSettings extends SettingsForm {
@@ -64,7 +67,28 @@ class MainSettings extends SettingsForm {
           },
         ),
         const SizedBox(height: 16),
-        Text("Stoptime count: ${config.stoptimesCount}"),
+        Text(
+          "Stoptime count: ${config.stoptimesCount}",
+          style: const TextStyle(
+            color: Colors.grey,
+            fontStyle: FontStyle.italic,
+          ),
+        ),
+        const SizedBox(height: 4),
+        EmbedsFormField(
+          initialValue: UnmodifiableListView(
+            config.embeds.map((e) => e.embed).toList(),
+          ),
+          onSaved: (newValue) {
+            if (newValue?.isNotEmpty == true) {
+              config.setEmbeds(newValue!);
+              config.stoptimesCount = 6;
+            } else {
+              config.setEmbeds(List.empty());
+              config.stoptimesCount = 10;
+            }
+          },
+        ),
       ],
     );
   }

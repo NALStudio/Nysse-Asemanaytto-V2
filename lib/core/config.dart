@@ -28,9 +28,8 @@ abstract class Config {
   set stoptimesCount(int? count);
 
   UnmodifiableListView<EmbedRecord> get embeds;
-  void addEmbed(Embed embed, EmbedSettings settings);
-  void removeEmbed(Embed embed);
-  void moveEmbed(Embed embed, int index);
+  void setEmbeds(List<Embed> embeds);
+
   EmbedSettings? getEmbedSettings(Embed embed);
 
   static Config? maybeOf(BuildContext context) {
@@ -65,7 +64,7 @@ class _DefaultConfig implements Config {
   set stopId(StopId? id) => _throw();
 
   @override
-  final int stoptimesCount = 6;
+  final int stoptimesCount = 10;
   @override
   set stoptimesCount(int? count) => _throw();
 
@@ -73,13 +72,10 @@ class _DefaultConfig implements Config {
   UnmodifiableListView<EmbedRecord> get embeds =>
       UnmodifiableListView(const Iterable.empty());
   @override
+  void setEmbeds(List<Embed> embeds) => _throw();
+
+  @override
   EmbedSettings? getEmbedSettings(Embed embed) => null;
-  @override
-  void addEmbed(Embed embed, EmbedSettings<Embed> settings) => _throw();
-  @override
-  void removeEmbed(Embed embed) => _throw();
-  @override
-  void moveEmbed(Embed embed, int index) => _throw();
 }
 
 class ConfigWidget extends StatefulWidget {
@@ -211,53 +207,37 @@ class _SharedPrefsConfig extends State<ConfigWidget> implements Config {
       });
 
   @override
-  void addEmbed(Embed embed, EmbedSettings<Embed> settings) {
-    final String embedName = embed.name;
+  UnmodifiableListView<EmbedRecord> get embeds => UnmodifiableListView(_embeds);
+  @override
+  void setEmbeds(List<Embed> values) {
+    _embeds.clear();
+    _embedByName.clear();
 
-    if (_embedByName.containsKey(embedName)) {
-      throw ArgumentError("Embed with name '$embedName' exists already.");
+    for (final embed in values) {
+      if (_embedByName.containsKey(embed.name)) {
+        throw ArgumentError("Duplicate embeds provided.", "values");
+      }
+
+      final EmbedSettings settings = embed.deserializeSettings(
+        _prefs.getString(_getEmbedPrefName(embed)),
+      );
+
+      _embedByName[embed.name] = _InternalEmbedRecord(
+        index: _embeds.length,
+        settings: settings,
+      );
+      _embeds.add(EmbedRecord(embed: embed, settings: settings));
     }
 
-    setState(() {
-      _embedByName[embedName] =
-          _InternalEmbedRecord(index: _embeds.length, settings: settings);
-      _embeds.add(EmbedRecord(embed: embed, settings: settings));
-    });
+    _prefs.setStringList(
+      _getEmbedPrefName(null),
+      _embeds.map((e) => e.embed.name).toList(),
+    );
   }
-
-  @override
-  UnmodifiableListView<EmbedRecord> get embeds => UnmodifiableListView(_embeds);
 
   @override
   EmbedSettings<Embed>? getEmbedSettings(Embed embed) =>
       _embedByName[embed.name]?.settings;
-
-  @override
-  void moveEmbed(Embed embed, int index) {
-    final _InternalEmbedRecord? record = _embedByName[embed.name];
-    if (record == null) {
-      throw ArgumentError("Embed with name '${embed.name}' does not exist.");
-    }
-
-    setState(() {
-      final EmbedRecord toMove = _embeds.removeAt(record.index);
-      _embeds.insert(index, toMove);
-      record.index = index;
-    });
-  }
-
-  @override
-  void removeEmbed(Embed embed) {
-    final String embedName = embed.name;
-    if (!_embedByName.containsKey(embedName)) {
-      throw ArgumentError("Embed with name '${embed.name}' does not exist.");
-    }
-
-    setState(() {
-      int rmvIndex = _embedByName.remove(embedName)!.index;
-      _embeds.removeAt(rmvIndex);
-    });
-  }
 }
 
 class _ConfigInherited extends InheritedWidget {

@@ -194,8 +194,15 @@ class MainCanvas extends StatelessWidget {
   }
 }
 
-class EmbedCanvas extends StatelessWidget {
+class EmbedCanvas extends StatefulWidget {
   const EmbedCanvas({super.key});
+
+  @override
+  State<EmbedCanvas> createState() => _EmbedCanvasState();
+}
+
+class _EmbedCanvasState extends State<EmbedCanvas> {
+// TODO: Implement embed logic
 
   @override
   Widget build(BuildContext context) {
