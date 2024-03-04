@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'embeds.dart';
 
 class ClockEmbed extends Embed {
-  ClockEmbed({required super.name});
+  const ClockEmbed({required super.name});
 
   @override
   EmbedWidget<Embed> createEmbed(covariant ClockEmbedSettings settings) =>

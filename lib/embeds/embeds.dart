@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:nysse_asemanaytto/embeds/clock_embed.dart';
 import 'package:nysse_asemanaytto/settings/settings.dart';
 
 abstract class Embed {
   final String name;
 
-  Embed({required this.name});
+  const Embed({required this.name});
 
   @factory
   EmbedWidget createEmbed(covariant EmbedSettings settings);
@@ -20,7 +21,9 @@ abstract class Embed {
   @override
   int get hashCode => name.hashCode;
 
-  static const List<Embed> allEmbeds = [];
+  static const List<Embed> allEmbeds = [
+    ClockEmbed(name: "clock"),
+  ];
 }
 
 abstract class EmbedWidget<T extends Embed> {
