@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:nysse_asemanaytto/embeds/clock_embed.dart';
+import 'package:nysse_asemanaytto/embeds/_map_embed.dart';
+import 'package:nysse_asemanaytto/embeds/_test2_embed.dart';
+import 'package:nysse_asemanaytto/embeds/_test_embed.dart';
 import 'package:nysse_asemanaytto/settings/settings.dart';
 
+/// DO NOT INSTANTIATE OUTSIDE OF [Embed.allEmbeds]
 abstract class Embed {
   final String name;
 
   const Embed({required this.name});
 
   @factory
-  EmbedWidget createEmbed(covariant EmbedSettings settings);
+  EmbedWidgetMixin createEmbed(covariant EmbedSettings settings);
 
   @factory
   EmbedSettings deserializeSettings(String? serialized);
@@ -22,16 +25,17 @@ abstract class Embed {
   int get hashCode => name.hashCode;
 
   static const List<Embed> allEmbeds = [
-    ClockEmbed(name: "clock"),
+    MapEmbed(name: "map"),
+    TestEmbed(name: "test"),
+    Test2Embed(name: "test2"),
   ];
 }
 
-abstract class EmbedWidget<T extends Embed> {
-  final EmbedSettings<Embed> settings;
+mixin EmbedWidgetMixin<T extends Embed> on Widget {
+  Duration? getDuration();
 
-  EmbedWidget({required this.settings});
-
-  Widget build(BuildContext context);
+  void onEnable();
+  void onDisable();
 }
 
 abstract class EmbedSettings<T extends Embed> {
@@ -44,7 +48,7 @@ abstract class EmbedSettings<T extends Embed> {
 }
 
 abstract class EmbedSettingsForm<T extends EmbedSettings> extends SettingsForm {
-  final T settings;
+  final T settingsParent;
 
-  EmbedSettingsForm({required this.settings});
+  EmbedSettingsForm({required this.settingsParent});
 }

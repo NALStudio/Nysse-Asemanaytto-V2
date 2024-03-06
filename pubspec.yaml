@@ -10,8 +10,11 @@ dependencies:
   auto_size_text: ^3.0.0
   flutter:
     sdk: flutter
+  flutter_map: ^6.1.0
+  flutter_map_cancellable_tile_provider: ^2.0.0
   flutter_svg: ^2.0.9
   graphql_flutter: ^5.2.0-beta.6
+  latlong2: ^0.9.0
   shared_preferences: ^2.2.2
 
 dev_dependencies:

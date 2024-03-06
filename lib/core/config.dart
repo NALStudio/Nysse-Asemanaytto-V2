@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:developer' as developer;
 
 class EmbedRecord {
   final Embed embed;
@@ -31,6 +32,7 @@ abstract class Config {
   void setEmbeds(List<Embed> embeds);
 
   EmbedSettings? getEmbedSettings(Embed embed);
+  void saveEmbedSettings(Embed embed);
 
   static Config? maybeOf(BuildContext context) {
     return context
@@ -76,6 +78,8 @@ class _DefaultConfig implements Config {
 
   @override
   EmbedSettings? getEmbedSettings(Embed embed) => null;
+  @override
+  void saveEmbedSettings(Embed embed) => _throw();
 }
 
 class ConfigWidget extends StatefulWidget {
@@ -114,22 +118,29 @@ class _SharedPrefsConfig extends State<ConfigWidget> implements Config {
 
     _embeds = [];
     _embedByName = {};
-    for (int i = 0; i < embeds.length; i++) {
-      final String embedName = embeds[i];
+    // setEmbeds clears all failed loads from the embed list.
+    setEmbeds(
+      embeds.map<Embed?>((eName) => _resolveEmbed(eName)).nonNulls.toList(),
+    );
+  }
 
-      List<Embed> matching =
-          Embed.allEmbeds.where((e) => e.name == embedName).toList();
-      if (matching.length > 1) {
-        throw StateError("Multiple embed definitions for: $embedName");
-      }
-
-      final Embed embed = matching.first;
-      final EmbedSettings settings =
-          embed.deserializeSettings(_prefs.getString(_getEmbedPrefName(embed)));
-      _embeds.add(EmbedRecord(embed: embed, settings: settings));
-      _embedByName[embedName] =
-          _InternalEmbedRecord(index: i, settings: settings);
+  Embed? _resolveEmbed(String embedName) {
+    List<Embed> matching =
+        Embed.allEmbeds.where((e) => e.name == embedName).toList();
+    if (matching.isEmpty) {
+      developer.log(
+        "No embed definitions for: $embedName. "
+        "Skipping embed config loading...",
+      );
+      return null;
     }
+    if (matching.length > 1) {
+      throw StateError("Multiple embed definitions for: $embedName");
+    }
+
+    final Embed embed = matching.first;
+
+    return embed;
   }
 
   @override
@@ -210,34 +221,47 @@ class _SharedPrefsConfig extends State<ConfigWidget> implements Config {
   UnmodifiableListView<EmbedRecord> get embeds => UnmodifiableListView(_embeds);
   @override
   void setEmbeds(List<Embed> values) {
-    _embeds.clear();
-    _embedByName.clear();
+    setState(() {
+      _embeds.clear();
+      _embedByName.clear();
 
-    for (final embed in values) {
-      if (_embedByName.containsKey(embed.name)) {
-        throw ArgumentError("Duplicate embeds provided.", "values");
+      for (final embed in values) {
+        if (_embedByName.containsKey(embed.name)) {
+          throw ArgumentError("Duplicate embeds provided.", "values");
+        }
+
+        final EmbedSettings settings = embed.deserializeSettings(
+          _prefs.getString(_getEmbedPrefName(embed)),
+        );
+
+        _embedByName[embed.name] = _InternalEmbedRecord(
+          index: _embeds.length,
+          settings: settings,
+        );
+        _embeds.add(EmbedRecord(embed: embed, settings: settings));
       }
 
-      final EmbedSettings settings = embed.deserializeSettings(
-        _prefs.getString(_getEmbedPrefName(embed)),
+      _prefs.setStringList(
+        _getEmbedPrefName(null),
+        _embeds.map((e) => e.embed.name).toList(),
       );
-
-      _embedByName[embed.name] = _InternalEmbedRecord(
-        index: _embeds.length,
-        settings: settings,
-      );
-      _embeds.add(EmbedRecord(embed: embed, settings: settings));
-    }
-
-    _prefs.setStringList(
-      _getEmbedPrefName(null),
-      _embeds.map((e) => e.embed.name).toList(),
-    );
+    });
   }
 
   @override
   EmbedSettings<Embed>? getEmbedSettings(Embed embed) =>
       _embedByName[embed.name]?.settings;
+
+  @override
+  void saveEmbedSettings(Embed embed) {
+    setState(() {
+      final _InternalEmbedRecord? rec = _embedByName[embed.name];
+      if (rec == null) {
+        throw ArgumentError("Embed does not exist: ${embed.name}");
+      }
+      _prefs.setString(_getEmbedPrefName(embed), rec.settings.serialize());
+    });
+  }
 }
 
 class _ConfigInherited extends InheritedWidget {

@@ -68,8 +68,9 @@ class _SettingsWidgetState extends State<SettingsWidget> {
 
   @override
   Widget build(BuildContext context) {
-    List<EmbedSettingsForm> embedForms = Config.of(context)
-        .embeds
+    final Config config = Config.of(context);
+
+    List<EmbedSettingsForm> embedForms = config.embeds
         .map((e) => e.settings.createForm())
         .toList(growable: false);
 
@@ -93,6 +94,11 @@ class _SettingsWidgetState extends State<SettingsWidget> {
             icon: const Icon(Icons.save),
             onPressed: () {
               _formKey.currentState!.save();
+
+              for (final EmbedRecord embed in config.embeds) {
+                config.saveEmbedSettings(embed.embed);
+              }
+
               setState(() {
                 _isDirty = false;
               });
@@ -142,31 +148,28 @@ class _SettingsWidgetState extends State<SettingsWidget> {
     assert(constructedForm is! Form,
         "Settings form constructed widget cannot be a Form");
 
-    return ColoredBox(
-      color: formColor,
-      child: ExpansionTile(
-        title: Text(
-          formIndex == null
-              ? form.displayName
-              : "($formIndex) ${form.displayName}",
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: Colors.white.withAlpha(196),
-        textColor: Colors.black,
-        collapsedBackgroundColor: Colors.transparent,
-        collapsedTextColor:
-            formColor.computeLuminance() >= 0.5 ? Colors.black : Colors.white,
-        children: [
-          Container(
-            padding: const EdgeInsets.only(
-              left: 8.0,
-              right: 8.0,
-              bottom: 16.0,
-            ),
-            child: constructedForm,
-          )
-        ],
+    return ExpansionTile(
+      title: Text(
+        formIndex == null
+            ? form.displayName
+            : "($formIndex) ${form.displayName}",
+        style: const TextStyle(fontWeight: FontWeight.bold),
       ),
+      backgroundColor: Color.alphaBlend(Colors.white.withAlpha(196), formColor),
+      textColor: Colors.black,
+      collapsedBackgroundColor: formColor,
+      collapsedTextColor:
+          formColor.computeLuminance() >= 0.5 ? Colors.black : Colors.white,
+      children: [
+        Container(
+          padding: const EdgeInsets.only(
+            left: 8.0,
+            right: 8.0,
+            bottom: 16.0,
+          ),
+          child: constructedForm,
+        )
+      ],
     );
   }
 }

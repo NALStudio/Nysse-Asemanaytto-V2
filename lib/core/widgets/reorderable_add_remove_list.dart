@@ -40,6 +40,25 @@ class _ReorderableAddRemoveListState<T>
     extends State<ReorderableAddRemoveList<T>> {
   ReorderableItemRecord<T>? selected;
 
+  late TextEditingController _dropdownMenuTextController;
+
+  @override
+  void initState() {
+    super.initState();
+    _dropdownMenuTextController = TextEditingController();
+  }
+
+  @override
+  void dispose() {
+    _dropdownMenuTextController.dispose();
+    super.dispose();
+  }
+
+  void _unselect() {
+    selected = null;
+    _dropdownMenuTextController.text = "";
+  }
+
   @override
   Widget build(BuildContext context) {
     List<DropdownMenuEntry<ReorderableItemRecord<T>?>> entries = [
@@ -51,10 +70,19 @@ class _ReorderableAddRemoveListState<T>
       ),
     );
 
+    if (selected != null &&
+        !widget.itemOptions.any((e) => e.value == selected!.value)) {
+      _unselect();
+    }
+
     Widget addEmbedButton = IconButton(
       icon: const Icon(Icons.add_circle_outline),
-      onPressed:
-          selected != null ? () => widget.addItem(selected!.value) : null,
+      onPressed: selected != null
+          ? () {
+              widget.addItem(selected!.value);
+              _unselect();
+            }
+          : null,
     );
     if (selected != null) {
       addEmbedButton = Tooltip(
@@ -68,6 +96,7 @@ class _ReorderableAddRemoveListState<T>
         Row(
           children: [
             DropdownMenu<ReorderableItemRecord<T>?>(
+              controller: _dropdownMenuTextController,
               width: MediaQuery.sizeOf(context).width / 2,
               dropdownMenuEntries: entries,
               hintText: "Choose embed",

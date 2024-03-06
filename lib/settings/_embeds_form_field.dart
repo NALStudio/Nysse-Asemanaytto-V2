@@ -3,6 +3,7 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/core/widgets/reorderable_add_remove_list.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
+import 'dart:math' as math;
 
 class EmbedsFormField extends FormField<UnmodifiableListView<Embed>> {
   final void Function(List<Embed>? list)? onChanged;
@@ -36,8 +37,14 @@ class _EmbedsFormFieldState
 }
 
 Widget _buildFormField(FormFieldState<UnmodifiableListView<Embed>> state) {
+  Set<String>? enabledEmbedNames;
+  if (state.value != null) {
+    enabledEmbedNames = state.value!.map((e) => e.name).toSet();
+  }
+
   return ReorderableAddRemoveList<Embed>(
     itemOptions: Embed.allEmbeds
+        .where((e) => enabledEmbedNames?.contains(e.name) != true)
         .map((e) => ReorderableItemRecord(value: e, label: e.name))
         .toList(),
     addItem: (val) {
@@ -48,6 +55,10 @@ Widget _buildFormField(FormFieldState<UnmodifiableListView<Embed>> state) {
     moveItem: (oldIndex, newIndex) {
       final List<Embed> list = List.from(state.value ?? const Iterable.empty());
       final Embed removed = list.removeAt(oldIndex);
+
+      // Apparently when dragging a certain way, newIndex can be list.length which is a no-no
+      newIndex = math.min(newIndex, list.length - 1);
+
       list.insert(newIndex, removed);
       state.didChange(UnmodifiableListView(list));
     },

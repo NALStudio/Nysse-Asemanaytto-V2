@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -8,6 +9,7 @@ import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/painters/nysse_wave_painter.dart';
 import 'package:nysse_asemanaytto/core/routes.dart';
+import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/main/error_layout.dart';
 import 'package:nysse_asemanaytto/main/main_layout.dart';
 import 'package:nysse_asemanaytto/main/stopinfo.dart';
@@ -202,13 +204,84 @@ class EmbedCanvas extends StatefulWidget {
 }
 
 class _EmbedCanvasState extends State<EmbedCanvas> {
-// TODO: Implement embed logic
+  int? _childIndex;
+
+  /// Holds a reference to the most recent timer.
+  /// Timer can be an old outdated timer if no new timers have been scheduled.
+  Timer? _indexTimer;
+
+  final List<EmbedWidgetMixin> _embedWidgets = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _startIndexSwitching();
+  }
+
+  void _startIndexSwitching() {
+    assert(_indexTimer?.isActive != true);
+
+    if (_childIndex != null) _embedWidgets[_childIndex!].onDisable();
+
+    Duration? embedDuration;
+    int? childIndex;
+    if (_embedWidgets.isEmpty) {
+      childIndex = null;
+    } else if (_embedWidgets.length == 1) {
+      childIndex = 0;
+    } else {
+      childIndex = _childIndex ?? -1;
+      do {
+        // increment index, default to 0 if null.
+        //Will wrap around at after final element.
+        childIndex = (childIndex! + 1) % _embedWidgets.length;
+        embedDuration =
+            _embedWidgets[childIndex].getDuration() ?? Duration.zero;
+      } while (embedDuration == Duration.zero);
+    }
+    setState(() {
+      _childIndex = childIndex;
+    });
+
+    if (_childIndex != null) _embedWidgets[_childIndex!].onEnable();
+
+    if (embedDuration != null) {
+      _indexTimer = Timer(embedDuration, _startIndexSwitching);
+    }
+  }
+
+  @override
+  void dispose() {
+    _indexTimer?.cancel();
+    super.dispose();
+  }
+
+  void _resetIndexSwitchTimer(List<EmbedRecord> embeds) {
+    _childIndex = null;
+
+    // startIndexSwitching will start a new timer if needed.
+    _indexTimer?.cancel();
+    _startIndexSwitching();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Expanded(
-      child: ColoredBox(
-        color: Colors.orange,
+    final embeds = Config.of(context).embeds;
+
+    bool resetIndex = embeds.length != _embedWidgets.length;
+
+    _embedWidgets.clear();
+    _embedWidgets.addAll(embeds.map((e) => e.embed.createEmbed(e.settings)));
+
+    if (resetIndex) {
+      _resetIndexSwitchTimer(embeds);
+    }
+
+    return Expanded(
+      child: IndexedStack(
+        sizing: StackFit.passthrough,
+        index: _childIndex,
+        children: _embedWidgets,
       ),
     );
   }
