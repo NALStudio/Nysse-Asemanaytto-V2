@@ -3,7 +3,7 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
-import 'package:nysse_asemanaytto/core/widgets/query_error.dart';
+import 'package:nysse_asemanaytto/core/widgets/error_widgets.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/main/components/stoptime.dart';
 import 'package:nysse_asemanaytto/main/components/stoptime_dismiss_animation.dart';
@@ -33,7 +33,7 @@ class _MainLayoutStoptimeListState extends State<MainLayoutStoptimeList> {
       ),
       builder: (result, {fetchMore, refetch}) {
         if (result.hasException) {
-          return QueryError(errorMsg: result.exception.toString());
+          return QueryErrorWidget(result.exception!);
         }
 
         final Map<String, dynamic>? data = result.data;

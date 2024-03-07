@@ -31,6 +31,9 @@ abstract class Config {
   int get stoptimesCount;
   set stoptimesCount(int? count);
 
+  bool get digitransitMqttProviderEnabled;
+  set digitransitMqttProviderEnabled(bool enabled);
+
   UnmodifiableListView<EmbedRecord> get embeds;
   void setEmbeds(List<Embed> embeds);
 
@@ -88,6 +91,11 @@ class _DefaultConfig implements Config {
   EmbedSettings? getEmbedSettings(Embed embed) => null;
   @override
   void saveEmbedSettings(Embed embed) => _throw();
+
+  @override
+  final bool digitransitMqttProviderEnabled = false;
+  @override
+  set digitransitMqttProviderEnabled(bool enabled) => _throw();
 }
 
 class ConfigWidget extends StatefulWidget {
@@ -235,6 +243,15 @@ class _SharedPrefsConfig extends State<ConfigWidget> implements Config {
   set stoptimesCount(int? count) => setState(() {
         _prefs.setInt(
             "stoptimeCount", count ?? Config.defaultConfig.stoptimesCount);
+      });
+
+  @override
+  bool get digitransitMqttProviderEnabled =>
+      _prefs.getBool("digitransitMqtt") ??
+      Config.defaultConfig.digitransitMqttProviderEnabled;
+  @override
+  set digitransitMqttProviderEnabled(bool enabled) => setState(() {
+        _prefs.setBool("digitransitMqtt", enabled);
       });
 
   @override

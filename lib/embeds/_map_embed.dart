@@ -4,9 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:mqtt5_client/mqtt5_client.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
-import 'package:nysse_asemanaytto/digitransit/positioning/positioning.dart';
+import 'package:nysse_asemanaytto/core/widgets/error_widgets.dart';
+import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
+import 'package:nysse_asemanaytto/digitransit/mqtt/mqtt.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/gtfs/realtime.dart';
 import 'package:nysse_asemanaytto/main/stopinfo.dart';
@@ -36,10 +39,13 @@ class MapEmbedWidget extends StatefulWidget
   Duration? getDuration() => const Duration(seconds: 15);
 
   @override
-  void onDisable() {}
+  void onDisable() {
+    _mapKey.currentState?.unsubscribeMqttIfNeeded();
+  }
 
   @override
   void onEnable() {
+    _mapKey.currentState?.subscribeMqttIfNeeded();
     _mapKey.currentState?.animateMap();
   }
 }
@@ -61,8 +67,9 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
 
   bool _mapReady = false;
 
-  PositioningSubscription? _positioningSub;
-  List<VehiclePosition> _mapVehicles = List.empty();
+  DigitransitMqttSubscription? _positioningSub;
+  Widget? _positioningSubError;
+  final Map<String, VehiclePosition> _vehiclePositions = {};
 
   @override
   void initState() {
@@ -77,18 +84,12 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
     );
   }
 
-  void _onMapReady() {
-    _mapReady = true;
-  }
-
   @override
   void dispose() {
     _mapController.dispose();
     _mapAnimationController.dispose();
 
-    if (_positioningSub != null) {
-      PositioningProvider.of(context).unsubscribe(_positioningSub!);
-    }
+    unsubscribeMqttIfNeeded();
 
     super.dispose();
   }
@@ -103,25 +104,48 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
     }
   }
 
-  void _connectPositioning() {
-    final Config config = Config.of(context);
-    _positioningSub = PositioningProvider.of(context).subscribe(
-      PositioningTopic(
-        feedId: config.stopId.stopFeedId,
-        nextStop: config.stopId.stopGtfsId,
-      ),
+  void subscribeMqttIfNeeded() {
+    final DigitransitMqttState? mqtt = DigitransitMqtt.maybeOf(context);
+    if (mqtt?.isConnected != true) {
+      _positioningSubError = const MqttOfflineErrorWidget();
+      return;
+    }
+
+    final StopId stopId = Config.of(context).stopId;
+
+    _positioningSubError = null;
+    _positioningSub = mqtt!.subscribe(
+      DigitransitPositioningTopic(
+        feedId: stopId.stopFeedId,
+        nextStop: stopId.stopGtfsId,
+      ).buildTopicString(),
+      MqttQos.atMostOnce,
     );
-    _positioningSub!.addListener(
-      () => _mapVehicles = _positioningSub!.vehiclePositions.toList(),
-    );
+    _positioningSub!.onMessageReceived = _onVehiclePositionUpdate;
+  }
+
+  void _onVehiclePositionUpdate(DigitransitMqttMessage msg) {
+    final FeedEntity ent = FeedEntity.fromBuffer(msg.bytes);
+    setState(() {
+      // BUG: After vehicle stops being updated
+      // (doesn't fit to our topic, too far for example)
+      // The vehicle isn't removed from the map before the next disconnect.
+      // This is fine for now, but I would like to make a timeout system in the future.
+      _vehiclePositions[ent.id] = ent.vehicle;
+    });
+  }
+
+  void unsubscribeMqttIfNeeded() {
+    if (_positioningSub == null) {
+      return;
+    }
+
+    DigitransitMqtt.of(context).unsubscribe(_positioningSub!);
+    _vehiclePositions.clear();
   }
 
   void animateMap() {
     if (!_mapReady) return;
-
-    if (_positioningSub == null) {
-      _connectPositioning();
-    }
 
     _sourcePos = _getStopPositionOrDefault();
     _sourceZoom = 13;
@@ -159,6 +183,34 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
       stopMarkers.add(_buildStopMarker(LatLng(stopinfo.lat, stopinfo.lon)));
     }
 
+    final List<Widget> mapChildren = [
+      TileLayer(
+        urlTemplate:
+            "https://cdn.digitransit.fi/map/v2/hsl-map-256/{z}/{x}/{y}{r}.png?digitransit-subscription-key=${Config.of(context).digitransitSubscriptionKey!}",
+        retinaMode: true,
+        tileProvider: CancellableNetworkTileProvider(silenceExceptions: true),
+        userAgentPackageName: RequestInfo.packageName,
+      ),
+      MarkerLayer(
+        markers: _vehiclePositions.values
+            .map((e) => _buildVehicleMarker(e))
+            .toList(growable: false),
+      ),
+      MarkerLayer(markers: stopMarkers),
+    ];
+
+    if (_positioningSubError != null) {
+      mapChildren.add(
+        Positioned(
+          left: _mapController.camera.nonRotatedSize.x / 1.5,
+          bottom: _mapController.camera.nonRotatedSize.y / 1.5,
+          right: 0,
+          top: 0,
+          child: _positioningSubError!,
+        ),
+      );
+    }
+
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
@@ -166,23 +218,9 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
           flags: InteractiveFlag.none,
         ),
         initialCenter: const LatLng(61.497742570, 23.761290078),
-        onMapReady: _onMapReady,
+        onMapReady: () => _mapReady = true,
       ),
-      children: [
-        TileLayer(
-          urlTemplate:
-              "https://cdn.digitransit.fi/map/v2/hsl-map-256/{z}/{x}/{y}{r}.png?digitransit-subscription-key=${Config.of(context).digitransitSubscriptionKey!}",
-          retinaMode: true,
-          tileProvider: CancellableNetworkTileProvider(),
-          userAgentPackageName: RequestInfo.packageName,
-        ),
-        MarkerLayer(
-          markers: _mapVehicles
-              .map((e) => _buildVehicleMarker(e))
-              .toList(growable: false),
-        ),
-        MarkerLayer(markers: stopMarkers),
-      ],
+      children: mapChildren,
     );
   }
 

@@ -6,6 +6,7 @@ import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
 import 'package:nysse_asemanaytto/settings/_embeds_form_field.dart';
 import 'package:nysse_asemanaytto/settings/settings.dart';
+import 'package:nysse_asemanaytto/settings/settings_switch_form_field.dart';
 
 class MainSettings extends SettingsForm {
   @override
@@ -65,6 +66,14 @@ class MainSettings extends SettingsForm {
               config.stopId = newValue != null ? StopId(newValue) : null;
             }
           },
+        ),
+        SettingsSwitchFormField(
+          initialValue: config.digitransitMqttProviderEnabled,
+          titleText: "MQTT Provider",
+          subtitleText:
+              "Enable MQTT Provider for enhanced embed functionality.",
+          onSaved: (newValue) =>
+              config.digitransitMqttProviderEnabled = newValue!,
         ),
         const SizedBox(height: 16),
         Text(

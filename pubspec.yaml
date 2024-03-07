@@ -16,7 +16,7 @@ dependencies:
   flutter_svg: ^2.0.9
   graphql_flutter: ^5.2.0-beta.6
   latlong2: ^0.9.0
-  mqtt_client: ^10.2.0
+  mqtt5_client: ^4.2.2
   protobuf: ^3.1.0
   shared_preferences: ^2.2.2
 

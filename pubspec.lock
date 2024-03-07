@@ -425,14 +425,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
-  mqtt_client:
+  mqtt5_client:
     dependency: "direct main"
     description:
-      name: mqtt_client
-      sha256: aa2bed04e239b9199ce95ae2553cb16a2c39110a5f56b21ce8c09be3261ea3d2
+      name: mqtt5_client
+      sha256: "46288f9ec0eba51d6cda3b7b937d35d372e89d3a5073f35b5b2b51a32a1aa433"
       url: "https://pub.dev"
     source: hosted
-    version: "10.2.0"
+    version: "4.2.2"
   nm:
     dependency: transitive
     description:

@@ -1,8 +1,6 @@
 import 'package:nysse_asemanaytto/digitransit/_enums.dart';
 
-/// TODO: Subscribe to topics in mqtt.digitransit.fi
-
-class PositioningTopic {
+class DigitransitPositioningTopic {
   final String feedId;
 
   /// Not implemented yet but will be any string or empty
@@ -30,7 +28,7 @@ class PositioningTopic {
 
   final String? vehicleId;
 
-  PositioningTopic({
+  DigitransitPositioningTopic({
     required this.feedId,
     this.agencyId,
     this.agencyName,

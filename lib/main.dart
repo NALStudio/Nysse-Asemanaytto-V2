@@ -10,7 +10,7 @@ import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/painters/nysse_wave_painter.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
 import 'package:nysse_asemanaytto/core/routes.dart';
-import 'package:nysse_asemanaytto/digitransit/positioning/positioning.dart';
+import 'package:nysse_asemanaytto/digitransit/mqtt/mqtt.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/main/error_layout.dart';
 import 'package:nysse_asemanaytto/main/main_layout.dart';
@@ -24,6 +24,8 @@ import 'dart:developer' as developer;
 import 'dart:math' as math;
 
 Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
   final SharedPreferences prefs = await SharedPreferences.getInstance();
 
   runApp(MainApp(prefs: prefs));
@@ -60,8 +62,11 @@ class _Asemanaytto extends StatelessWidget {
       },
     );
 
+    if (config.digitransitMqttProviderEnabled) {
+      app = DigitransitMqtt(child: app);
+    }
+
     if (config.digitransitSubscriptionKey != null) {
-      app = PositioningProvider(child: app);
       app = GraphQLProvider(
         client: ValueNotifier<GraphQLClient>(
           GraphQLClient(
