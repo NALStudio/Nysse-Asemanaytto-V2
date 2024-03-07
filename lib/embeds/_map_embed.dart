@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/main/stopinfo.dart';
@@ -44,9 +43,11 @@ class MapEmbedWidget extends StatefulWidget
 
 class _MapEmbedWidgetState extends State<MapEmbedWidget>
     with SingleTickerProviderStateMixin {
-  bool? correctMapInitialPosition;
   late MapController _mapController;
   late AnimationController _mapAnimationController;
+
+  bool _mapReady = false;
+  double _mapZoomT = 0.0;
 
   @override
   void initState() {
@@ -80,6 +81,8 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
   }
 
   void animateMap() {
+    if (!_mapReady) return;
+
     _updateMapAnim(0);
     _mapAnimationController.reset();
     _mapAnimationController.forward();
@@ -93,9 +96,13 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
     // const double kRotMin = -45;
     // const double kRotMax = 0;
 
+    setState(() {
+      _mapZoomT = Curves.easeInOut.transform(t);
+    });
+
     _mapController.move(
       target,
-      lerpDouble(kZoomMin, kZoomMax, Curves.easeInOut.transform(t))!,
+      lerpDouble(kZoomMin, kZoomMax, _mapZoomT)!,
       // lerpDouble(kRotMin, kRotMax, Curves.easeOut.transform(t))!,
     );
   }
@@ -104,40 +111,49 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
   Widget build(BuildContext context) {
     return FlutterMap(
       mapController: _mapController,
-      options: const MapOptions(
-        interactionOptions: InteractionOptions(
+      options: MapOptions(
+        interactionOptions: const InteractionOptions(
             // flags: InteractiveFlag.none,
             ),
+        initialCenter: const LatLng(61.497742570, 23.761290078),
+        onMapReady: () => _mapReady = true,
       ),
       children: [
         TileLayer(
           urlTemplate:
               "https://cdn.digitransit.fi/map/v2/hsl-map-256/{z}/{x}/{y}{r}.png?digitransit-subscription-key=${Config.of(context).digitransitSubscriptionKey!}",
+          retinaMode: true,
           tileProvider: CancellableNetworkTileProvider(),
           userAgentPackageName: "com.nalstudio.nysse_asemanaytto",
         ),
+        const MarkerLayer(markers: [
+          // TODO: Vehicle positions
+        ]),
         MarkerLayer(
           markers: [_buildStopMarker(_getStopPositionOrDefault())],
         ),
       ],
     );
   }
-}
 
-Marker _buildStopMarker(LatLng point) {
-  return Marker(
-    point: point,
-    child: DecoratedBox(
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white,
-        border: Border.all(
-          color: Colors.black,
-          width: 3,
+  Marker _buildStopMarker(LatLng point) {
+    double size = lerpDouble(10, 30, _mapZoomT)!;
+    return Marker(
+      point: point,
+      width: size,
+      height: size,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.white,
+          border: Border.all(
+            color: Colors.black,
+            width: 3,
+          ),
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 class MapEmbedSettings extends EmbedSettings<MapEmbed> {

@@ -16,6 +16,9 @@ class EmbedRecord {
 abstract class Config {
   static final defaultConfig = _DefaultConfig();
 
+  bool get debugPerformanceOverlay;
+  set debugPerformanceOverlay(bool? enabled);
+
   String? get digitransitSubscriptionKey;
   set digitransitSubscriptionKey(String? key);
 
@@ -49,6 +52,11 @@ abstract class Config {
 
 class _DefaultConfig implements Config {
   void _throw() => throw StateError("Cannot modify default config.");
+
+  @override
+  final bool debugPerformanceOverlay = false;
+  @override
+  set debugPerformanceOverlay(bool? enabled) => _throw();
 
   @override
   final String? digitransitSubscriptionKey = null;
@@ -159,6 +167,18 @@ class _SharedPrefsConfig extends State<ConfigWidget> implements Config {
     }
     return name;
   }
+
+  @override
+  bool get debugPerformanceOverlay =>
+      _prefs.getBool("debug.performanceOverlay") ??
+      Config.defaultConfig.debugPerformanceOverlay;
+  @override
+  set debugPerformanceOverlay(bool? enabled) => setState(() {
+        _prefs.setBool(
+          "debug.performanceOverlay",
+          enabled ?? Config.defaultConfig.debugPerformanceOverlay,
+        );
+      });
 
   @override
   String? get digitransitSubscriptionKey =>

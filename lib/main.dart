@@ -42,6 +42,7 @@ class MainApp extends StatelessWidget {
     Widget app = MaterialApp(
       title: "Nysse Asemanäyttö",
       initialRoute: Routes.home,
+      showPerformanceOverlay: config.debugPerformanceOverlay,
       routes: {
         Routes.home: (context) => const _HomeRouter(child: AppServices()),
         Routes.settings: (context) => const SettingsWidget(),
@@ -94,8 +95,13 @@ class _HomeRouterState extends State<_HomeRouter> {
   }
 
   bool _onKey(KeyEvent event) {
-    if (event is KeyDownEvent && event.physicalKey == PhysicalKeyboardKey.f1) {
-      Navigator.pushNamed(context, Routes.settings);
+    if (event is KeyDownEvent) {
+      if (event.physicalKey == PhysicalKeyboardKey.f1) {
+        Navigator.pushNamed(context, Routes.settings);
+      } else if (event.physicalKey == PhysicalKeyboardKey.f3) {
+        final config = Config.of(context);
+        config.debugPerformanceOverlay = !config.debugPerformanceOverlay;
+      }
     }
 
     return false;
