@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
-import 'package:nysse_asemanaytto/core/ratelimits.dart';
+import 'package:nysse_asemanaytto/core/request_info.dart';
 import 'package:nysse_asemanaytto/core/widgets/query_error.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/main/components/stoptime.dart';
@@ -29,7 +29,7 @@ class _MainLayoutStoptimeListState extends State<MainLayoutStoptimeList> {
           "stopId": config.stopId.value,
           "numberOfDepartures": config.stoptimesCount,
         },
-        pollInterval: Ratelimits.stoptimesRequest,
+        pollInterval: RequestInfo.ratelimits.stoptimesRequest,
       ),
       builder: (result, {fetchMore, refetch}) {
         if (result.hasException) {
@@ -111,15 +111,19 @@ class _StoptimesListState extends State<_StoptimesList> {
 
     return SizedBox(
       height: childCount * childTotalSize,
-      child: AnimatedList(
-        key: _listKey,
-        itemBuilder: (context, index, ___) => _buildAnimatedListStoptime(
-          context,
-          stoptime: _internalList[index],
-          height: childTotalSize,
+      child: ScrollConfiguration(
+        // disable scroll bar from AnimatedList
+        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+        child: AnimatedList(
+          key: _listKey,
+          itemBuilder: (context, index, ___) => _buildAnimatedListStoptime(
+            context,
+            stoptime: _internalList[index],
+            height: childTotalSize,
+          ),
+          shrinkWrap: widget.shrinkWrap,
+          physics: const NeverScrollableScrollPhysics(),
         ),
-        shrinkWrap: widget.shrinkWrap,
-        physics: const NeverScrollableScrollPhysics(),
       ),
     );
   }

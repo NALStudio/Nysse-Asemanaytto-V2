@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
-import 'package:nysse_asemanaytto/core/ratelimits.dart';
+import 'package:nysse_asemanaytto/core/request_info.dart';
 import 'package:nysse_asemanaytto/core/widgets/query_error.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 
@@ -32,7 +32,7 @@ class _StopInfoState extends State<StopInfo> {
         variables: {
           "stopId": config.stopId.value,
         },
-        pollInterval: Ratelimits.stopInfoRequest,
+        pollInterval: RequestInfo.ratelimits.stopInfoRequest,
       ),
       builder: (result, {fetchMore, refetch}) {
         if (result.hasException) {

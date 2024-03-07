@@ -44,7 +44,7 @@ class PositioningTopic {
     this.vehicleId,
   });
 
-  String _buildTopic() {
+  String buildTopicString() {
     List<String?> data = [
       "gtfsrt",
       "vp",
@@ -53,7 +53,7 @@ class PositioningTopic {
       agencyName,
       mode?.value,
       routeId,
-      directionId.toString(),
+      directionId?.toString(),
       tripHeadsign,
       tripId,
       nextStop,

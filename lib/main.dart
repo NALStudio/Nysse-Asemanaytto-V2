@@ -8,7 +8,9 @@ import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/painters/nysse_wave_painter.dart';
+import 'package:nysse_asemanaytto/core/request_info.dart';
 import 'package:nysse_asemanaytto/core/routes.dart';
+import 'package:nysse_asemanaytto/digitransit/positioning/positioning.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/main/error_layout.dart';
 import 'package:nysse_asemanaytto/main/main_layout.dart';
@@ -24,16 +26,25 @@ import 'dart:math' as math;
 Future<void> main() async {
   final SharedPreferences prefs = await SharedPreferences.getInstance();
 
-  runApp(
-    ConfigWidget(
-      prefs: prefs,
-      child: const MainApp(),
-    ),
-  );
+  runApp(MainApp(prefs: prefs));
 }
 
 class MainApp extends StatelessWidget {
-  const MainApp({super.key});
+  final SharedPreferences prefs;
+
+  const MainApp({super.key, required this.prefs});
+
+  @override
+  Widget build(BuildContext context) {
+    return ConfigWidget(
+      prefs: prefs,
+      child: const _Asemanaytto(),
+    );
+  }
+}
+
+class _Asemanaytto extends StatelessWidget {
+  const _Asemanaytto();
 
   @override
   Widget build(BuildContext context) {
@@ -50,6 +61,7 @@ class MainApp extends StatelessWidget {
     );
 
     if (config.digitransitSubscriptionKey != null) {
+      app = PositioningProvider(child: app);
       app = GraphQLProvider(
         client: ValueNotifier<GraphQLClient>(
           GraphQLClient(
@@ -58,6 +70,7 @@ class MainApp extends StatelessWidget {
               defaultHeaders: {
                 "digitransit-subscription-key":
                     config.digitransitSubscriptionKey!,
+                "User-Agent": RequestInfo.userAgent,
               },
               httpResponseDecoder: _handleGraphQLResponse,
             ),
