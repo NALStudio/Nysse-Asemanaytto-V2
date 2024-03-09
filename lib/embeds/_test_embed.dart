@@ -11,8 +11,7 @@ class TestEmbed extends Embed {
       TestEmbedWidget();
 
   @override
-  EmbedSettings<TestEmbed> deserializeSettings(String? serialized) =>
-      TestEmbedSettings.deserialize(serialized);
+  EmbedSettings<Embed> createDefaultSettings() => const TestEmbedSettings();
 }
 
 class TestEmbedWidget extends StatelessWidget with EmbedWidgetMixin<TestEmbed> {
@@ -42,20 +41,29 @@ class TestEmbedWidget extends StatelessWidget with EmbedWidgetMixin<TestEmbed> {
 }
 
 class TestEmbedSettings extends EmbedSettings<TestEmbed> {
-  TestEmbedSettings.deserialize(super.serialized) : super.deserialize();
+  const TestEmbedSettings();
 
   @override
-  EmbedSettingsForm<EmbedSettings<Embed>> createForm() =>
-      TestEmbedSettingsForm(settingsParent: this);
+  EmbedSettingsForm<EmbedSettings<Embed>> createForm(
+    covariant TestEmbedSettings defaultSettings,
+  ) =>
+      TestEmbedSettingsForm(
+          parentSettings: this, defaultSettings: defaultSettings);
 
   @override
   String serialize() {
     return "";
   }
+
+  @override
+  void deserialize(String serialized) {}
 }
 
 class TestEmbedSettingsForm extends EmbedSettingsForm {
-  TestEmbedSettingsForm({required super.settingsParent});
+  TestEmbedSettingsForm({
+    required super.parentSettings,
+    required super.defaultSettings,
+  });
 
   @override
   Widget build(BuildContext context) {

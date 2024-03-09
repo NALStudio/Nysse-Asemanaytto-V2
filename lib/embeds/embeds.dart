@@ -14,7 +14,7 @@ abstract class Embed {
   EmbedWidgetMixin createEmbed(covariant EmbedSettings settings);
 
   @factory
-  EmbedSettings deserializeSettings(String? serialized);
+  EmbedSettings createDefaultSettings();
 
   @override
   operator ==(Object other) {
@@ -39,16 +39,22 @@ mixin EmbedWidgetMixin<T extends Embed> on Widget {
 }
 
 abstract class EmbedSettings<T extends Embed> {
-  String serialize();
+  const EmbedSettings();
 
-  EmbedSettings.deserialize(String? serialized);
+  String serialize();
+  // Deserialize string into this instance of EmbedSettings.
+  void deserialize(String serialized);
 
   @factory
-  EmbedSettingsForm createForm();
+  EmbedSettingsForm createForm(covariant EmbedSettings defaultSettings);
 }
 
 abstract class EmbedSettingsForm<T extends EmbedSettings> extends SettingsForm {
-  final T settingsParent;
+  final T defaultSettings;
+  final T parentSettings;
 
-  EmbedSettingsForm({required this.settingsParent});
+  EmbedSettingsForm({
+    required this.parentSettings,
+    required this.defaultSettings,
+  });
 }

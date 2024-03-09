@@ -10,8 +10,8 @@ class Test2Embed extends Embed {
       Test2EmbedWidget(settings: settings);
 
   @override
-  EmbedSettings<Test2Embed> deserializeSettings(String? serialized) =>
-      Test2EmbedSettings.deserialize(serialized);
+  EmbedSettings<Embed> createDefaultSettings() =>
+      Test2EmbedSettings(text: "testiteksti");
 }
 
 class Test2EmbedWidget extends StatelessWidget
@@ -44,26 +44,39 @@ class Test2EmbedWidget extends StatelessWidget
 class Test2EmbedSettings extends EmbedSettings<Test2Embed> {
   String text;
 
-  Test2EmbedSettings.deserialize(super.serialized)
-      : text = serialized ?? "test",
-        super.deserialize();
+  Test2EmbedSettings({required this.text});
 
   @override
-  EmbedSettingsForm<Test2EmbedSettings> createForm() =>
-      Test2EmbedForm(settingsParent: this);
+  EmbedSettingsForm<Test2EmbedSettings> createForm(
+    covariant Test2EmbedSettings defaultSettings,
+  ) =>
+      Test2EmbedForm(parentSettings: this, defaultSettings: defaultSettings);
 
   @override
   String serialize() => text;
+
+  @override
+  void deserialize(String serialized) => text = serialized;
 }
 
 class Test2EmbedForm extends EmbedSettingsForm<Test2EmbedSettings> {
-  Test2EmbedForm({required super.settingsParent});
+  Test2EmbedForm({
+    required super.parentSettings,
+    required super.defaultSettings,
+  });
 
   @override
   Widget build(BuildContext context) {
     return TextFormField(
-      initialValue: settingsParent.text,
-      onSaved: (newValue) => settingsParent.text = newValue!,
+      initialValue: parentSettings.text,
+      decoration: InputDecoration(hintText: defaultSettings.text),
+      onSaved: (newValue) {
+        if (newValue?.isNotEmpty == true) {
+          parentSettings.text = newValue!;
+        } else {
+          parentSettings.text = defaultSettings.text;
+        }
+      },
     );
   }
 

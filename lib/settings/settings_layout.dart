@@ -18,6 +18,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
   late List<SettingsForm> _staticForms;
 
   late GlobalKey<FormState> _formKey;
+  final List<bool?> _formExpanded = [];
 
   bool _isDirty = false;
 
@@ -71,8 +72,16 @@ class _SettingsWidgetState extends State<SettingsWidget> {
     final Config config = Config.of(context);
 
     List<EmbedSettingsForm> embedForms = config.embeds
-        .map((e) => e.settings.createForm())
+        .map((e) => e.settings.createForm(e.embed.createDefaultSettings()))
         .toList(growable: false);
+
+    final formCount = _staticForms.length + embedForms.length;
+    while (_formExpanded.length > formCount) {
+      _formExpanded.removeLast();
+    }
+    while (_formExpanded.length < formCount) {
+      _formExpanded.add(null);
+    }
 
     return Scaffold(
       backgroundColor: NysseColors.white,
@@ -93,6 +102,10 @@ class _SettingsWidgetState extends State<SettingsWidget> {
           IconButton(
             icon: const Icon(Icons.save),
             onPressed: () {
+              if (!_formKey.currentState!.validate()) {
+                return;
+              }
+
               _formKey.currentState!.save();
 
               for (final EmbedRecord embed in config.embeds) {
@@ -100,6 +113,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
               }
 
               setState(() {
+                _formKey = GlobalKey();
                 _isDirty = false;
               });
             },
@@ -118,7 +132,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
           }
         },
         child: ListView.builder(
-          itemCount: _staticForms.length + embedForms.length,
+          itemCount: formCount,
           itemBuilder: (context, index) => _buildListItem(
             context,
             index,
@@ -135,12 +149,15 @@ class _SettingsWidgetState extends State<SettingsWidget> {
     required List<EmbedSettingsForm> embedForms,
   }) {
     final SettingsForm form;
+    final bool isEmbedForm;
     int? formIndex;
     if (index < _staticForms.length) {
       form = _staticForms[index];
+      isEmbedForm = false;
     } else {
       formIndex = index - _staticForms.length;
       form = embedForms[formIndex];
+      isEmbedForm = true;
     }
 
     final Color formColor = form.displayColor;
@@ -149,6 +166,9 @@ class _SettingsWidgetState extends State<SettingsWidget> {
         "Settings form constructed widget cannot be a Form");
 
     return ExpansionTile(
+      initiallyExpanded: _formExpanded[index] ?? !isEmbedForm,
+      onExpansionChanged: (value) => _formExpanded[index] = value,
+      maintainState: true,
       title: Text(
         formIndex == null
             ? form.displayName

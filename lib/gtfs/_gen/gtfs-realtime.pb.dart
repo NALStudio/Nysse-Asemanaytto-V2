@@ -141,7 +141,7 @@ class FeedHeader extends $pb.GeneratedMessage {
   static FeedHeader? _defaultInstance;
 
   /// Version of the feed specification.
-  /// The current version is 2.0.
+  /// The current version is 2.0.  Valid versions are "2.0", "1.0".
   @$pb.TagNumber(1)
   $core.String get gtfsRealtimeVersion => $_getSZ(0);
   @$pb.TagNumber(1)
@@ -181,6 +181,7 @@ class FeedEntity extends $pb.GeneratedMessage {
     TripUpdate? tripUpdate,
     VehiclePosition? vehicle,
     Alert? alert,
+    Shape? shape,
   }) {
     final $result = create();
     if (id != null) {
@@ -198,6 +199,9 @@ class FeedEntity extends $pb.GeneratedMessage {
     if (alert != null) {
       $result.alert = alert;
     }
+    if (shape != null) {
+      $result.shape = shape;
+    }
     return $result;
   }
   FeedEntity._() : super();
@@ -210,6 +214,7 @@ class FeedEntity extends $pb.GeneratedMessage {
     ..aOM<TripUpdate>(3, _omitFieldNames ? '' : 'tripUpdate', subBuilder: TripUpdate.create)
     ..aOM<VehiclePosition>(4, _omitFieldNames ? '' : 'vehicle', subBuilder: VehiclePosition.create)
     ..aOM<Alert>(5, _omitFieldNames ? '' : 'alert', subBuilder: Alert.create)
+    ..aOM<Shape>(6, _omitFieldNames ? '' : 'shape', subBuilder: Shape.create)
     ..hasExtensions = true
   ;
 
@@ -296,6 +301,18 @@ class FeedEntity extends $pb.GeneratedMessage {
   void clearAlert() => clearField(5);
   @$pb.TagNumber(5)
   Alert ensureAlert() => $_ensure(4);
+
+  /// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(6)
+  Shape get shape => $_getN(5);
+  @$pb.TagNumber(6)
+  set shape(Shape v) { setField(6, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasShape() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearShape() => clearField(6);
+  @$pb.TagNumber(6)
+  Shape ensureShape() => $_ensure(5);
 }
 
 ///  Timing information for a single predicted event (either arrival or
@@ -401,6 +418,71 @@ class TripUpdate_StopTimeEvent extends $pb.GeneratedMessage {
   void clearUncertainty() => clearField(3);
 }
 
+/// Provides the updated values for the stop time.
+/// NOTE: This message is still experimental, and subject to change. It may be formally adopted in the future.
+class TripUpdate_StopTimeUpdate_StopTimeProperties extends $pb.GeneratedMessage {
+  factory TripUpdate_StopTimeUpdate_StopTimeProperties({
+    $core.String? assignedStopId,
+  }) {
+    final $result = create();
+    if (assignedStopId != null) {
+      $result.assignedStopId = assignedStopId;
+    }
+    return $result;
+  }
+  TripUpdate_StopTimeUpdate_StopTimeProperties._() : super();
+  factory TripUpdate_StopTimeUpdate_StopTimeProperties.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory TripUpdate_StopTimeUpdate_StopTimeProperties.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'TripUpdate.StopTimeUpdate.StopTimeProperties', package: const $pb.PackageName(_omitMessageNames ? '' : 'transit_realtime'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'assignedStopId')
+    ..hasExtensions = true
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  TripUpdate_StopTimeUpdate_StopTimeProperties clone() => TripUpdate_StopTimeUpdate_StopTimeProperties()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  TripUpdate_StopTimeUpdate_StopTimeProperties copyWith(void Function(TripUpdate_StopTimeUpdate_StopTimeProperties) updates) => super.copyWith((message) => updates(message as TripUpdate_StopTimeUpdate_StopTimeProperties)) as TripUpdate_StopTimeUpdate_StopTimeProperties;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static TripUpdate_StopTimeUpdate_StopTimeProperties create() => TripUpdate_StopTimeUpdate_StopTimeProperties._();
+  TripUpdate_StopTimeUpdate_StopTimeProperties createEmptyInstance() => create();
+  static $pb.PbList<TripUpdate_StopTimeUpdate_StopTimeProperties> createRepeated() => $pb.PbList<TripUpdate_StopTimeUpdate_StopTimeProperties>();
+  @$core.pragma('dart2js:noInline')
+  static TripUpdate_StopTimeUpdate_StopTimeProperties getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TripUpdate_StopTimeUpdate_StopTimeProperties>(create);
+  static TripUpdate_StopTimeUpdate_StopTimeProperties? _defaultInstance;
+
+  /// Supports real-time stop assignments. Refers to a stop_id defined in the GTFS stops.txt.
+  /// The new assigned_stop_id should not result in a significantly different trip experience for the end user than
+  /// the stop_id defined in GTFS stop_times.txt. In other words, the end user should not view this new stop_id as an
+  /// "unusual change" if the new stop was presented within an app without any additional context.
+  /// For example, this field is intended to be used for platform assignments by using a stop_id that belongs to the
+  /// same station as the stop originally defined in GTFS stop_times.txt.
+  /// To assign a stop without providing any real-time arrival or departure predictions, populate this field and set
+  /// StopTimeUpdate.schedule_relationship = NO_DATA.
+  /// If this field is populated, it is preferred to omit `StopTimeUpdate.stop_id` and use only `StopTimeUpdate.stop_sequence`. If
+  /// `StopTimeProperties.assigned_stop_id` and `StopTimeUpdate.stop_id` are populated, `StopTimeUpdate.stop_id` must match `assigned_stop_id`.
+  /// Platform assignments should be reflected in other GTFS-realtime fields as well
+  /// (e.g., `VehiclePosition.stop_id`).
+  /// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(1)
+  $core.String get assignedStopId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set assignedStopId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasAssignedStopId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearAssignedStopId() => clearField(1);
+}
+
 /// Realtime update for arrival and/or departure events for a given stop on a
 /// trip. Updates can be supplied for both past and future events.
 /// The producer is allowed, although not required, to drop past events.
@@ -411,6 +493,8 @@ class TripUpdate_StopTimeUpdate extends $pb.GeneratedMessage {
     TripUpdate_StopTimeEvent? departure,
     $core.String? stopId,
     TripUpdate_StopTimeUpdate_ScheduleRelationship? scheduleRelationship,
+    TripUpdate_StopTimeUpdate_StopTimeProperties? stopTimeProperties,
+    VehiclePosition_OccupancyStatus? departureOccupancyStatus,
   }) {
     final $result = create();
     if (stopSequence != null) {
@@ -428,6 +512,12 @@ class TripUpdate_StopTimeUpdate extends $pb.GeneratedMessage {
     if (scheduleRelationship != null) {
       $result.scheduleRelationship = scheduleRelationship;
     }
+    if (stopTimeProperties != null) {
+      $result.stopTimeProperties = stopTimeProperties;
+    }
+    if (departureOccupancyStatus != null) {
+      $result.departureOccupancyStatus = departureOccupancyStatus;
+    }
     return $result;
   }
   TripUpdate_StopTimeUpdate._() : super();
@@ -440,6 +530,8 @@ class TripUpdate_StopTimeUpdate extends $pb.GeneratedMessage {
     ..aOM<TripUpdate_StopTimeEvent>(3, _omitFieldNames ? '' : 'departure', subBuilder: TripUpdate_StopTimeEvent.create)
     ..aOS(4, _omitFieldNames ? '' : 'stopId')
     ..e<TripUpdate_StopTimeUpdate_ScheduleRelationship>(5, _omitFieldNames ? '' : 'scheduleRelationship', $pb.PbFieldType.OE, defaultOrMaker: TripUpdate_StopTimeUpdate_ScheduleRelationship.SCHEDULED, valueOf: TripUpdate_StopTimeUpdate_ScheduleRelationship.valueOf, enumValues: TripUpdate_StopTimeUpdate_ScheduleRelationship.values)
+    ..aOM<TripUpdate_StopTimeUpdate_StopTimeProperties>(6, _omitFieldNames ? '' : 'stopTimeProperties', subBuilder: TripUpdate_StopTimeUpdate_StopTimeProperties.create)
+    ..e<VehiclePosition_OccupancyStatus>(7, _omitFieldNames ? '' : 'departureOccupancyStatus', $pb.PbFieldType.OE, defaultOrMaker: VehiclePosition_OccupancyStatus.EMPTY, valueOf: VehiclePosition_OccupancyStatus.valueOf, enumValues: VehiclePosition_OccupancyStatus.values)
     ..hasExtensions = true
   ;
 
@@ -514,6 +606,156 @@ class TripUpdate_StopTimeUpdate extends $pb.GeneratedMessage {
   $core.bool hasScheduleRelationship() => $_has(4);
   @$pb.TagNumber(5)
   void clearScheduleRelationship() => clearField(5);
+
+  /// Realtime updates for certain properties defined within GTFS stop_times.txt
+  /// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(6)
+  TripUpdate_StopTimeUpdate_StopTimeProperties get stopTimeProperties => $_getN(5);
+  @$pb.TagNumber(6)
+  set stopTimeProperties(TripUpdate_StopTimeUpdate_StopTimeProperties v) { setField(6, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasStopTimeProperties() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearStopTimeProperties() => clearField(6);
+  @$pb.TagNumber(6)
+  TripUpdate_StopTimeUpdate_StopTimeProperties ensureStopTimeProperties() => $_ensure(5);
+
+  /// Expected occupancy after departure from the given stop.
+  /// Should be provided only for future stops.
+  /// In order to provide departure_occupancy_status without either arrival or
+  /// departure StopTimeEvents, ScheduleRelationship should be set to NO_DATA.
+  @$pb.TagNumber(7)
+  VehiclePosition_OccupancyStatus get departureOccupancyStatus => $_getN(6);
+  @$pb.TagNumber(7)
+  set departureOccupancyStatus(VehiclePosition_OccupancyStatus v) { setField(7, v); }
+  @$pb.TagNumber(7)
+  $core.bool hasDepartureOccupancyStatus() => $_has(6);
+  @$pb.TagNumber(7)
+  void clearDepartureOccupancyStatus() => clearField(7);
+}
+
+/// Defines updated properties of the trip, such as a new shape_id when there is a detour. Or defines the
+/// trip_id, start_date, and start_time of a DUPLICATED trip.
+/// NOTE: This message is still experimental, and subject to change. It may be formally adopted in the future.
+class TripUpdate_TripProperties extends $pb.GeneratedMessage {
+  factory TripUpdate_TripProperties({
+    $core.String? tripId,
+    $core.String? startDate,
+    $core.String? startTime,
+    $core.String? shapeId,
+  }) {
+    final $result = create();
+    if (tripId != null) {
+      $result.tripId = tripId;
+    }
+    if (startDate != null) {
+      $result.startDate = startDate;
+    }
+    if (startTime != null) {
+      $result.startTime = startTime;
+    }
+    if (shapeId != null) {
+      $result.shapeId = shapeId;
+    }
+    return $result;
+  }
+  TripUpdate_TripProperties._() : super();
+  factory TripUpdate_TripProperties.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory TripUpdate_TripProperties.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'TripUpdate.TripProperties', package: const $pb.PackageName(_omitMessageNames ? '' : 'transit_realtime'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'tripId')
+    ..aOS(2, _omitFieldNames ? '' : 'startDate')
+    ..aOS(3, _omitFieldNames ? '' : 'startTime')
+    ..aOS(4, _omitFieldNames ? '' : 'shapeId')
+    ..hasExtensions = true
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  TripUpdate_TripProperties clone() => TripUpdate_TripProperties()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  TripUpdate_TripProperties copyWith(void Function(TripUpdate_TripProperties) updates) => super.copyWith((message) => updates(message as TripUpdate_TripProperties)) as TripUpdate_TripProperties;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static TripUpdate_TripProperties create() => TripUpdate_TripProperties._();
+  TripUpdate_TripProperties createEmptyInstance() => create();
+  static $pb.PbList<TripUpdate_TripProperties> createRepeated() => $pb.PbList<TripUpdate_TripProperties>();
+  @$core.pragma('dart2js:noInline')
+  static TripUpdate_TripProperties getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TripUpdate_TripProperties>(create);
+  static TripUpdate_TripProperties? _defaultInstance;
+
+  /// Defines the identifier of a new trip that is a duplicate of an existing trip defined in (CSV) GTFS trips.txt
+  /// but will start at a different service date and/or time (defined using the TripProperties.start_date and
+  /// TripProperties.start_time fields). See definition of trips.trip_id in (CSV) GTFS. Its value must be different
+  /// than the ones used in the (CSV) GTFS. Required if schedule_relationship=DUPLICATED, otherwise this field must not
+  /// be populated and will be ignored by consumers.
+  /// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(1)
+  $core.String get tripId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set tripId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasTripId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearTripId() => clearField(1);
+
+  /// Service date on which the DUPLICATED trip will be run, in YYYYMMDD format. Required if
+  /// schedule_relationship=DUPLICATED, otherwise this field must not be populated and will be ignored by consumers.
+  /// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(2)
+  $core.String get startDate => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set startDate($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasStartDate() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearStartDate() => clearField(2);
+
+  /// Defines the departure start time of the trip when it’s duplicated. See definition of stop_times.departure_time
+  /// in (CSV) GTFS. Scheduled arrival and departure times for the duplicated trip are calculated based on the offset
+  /// between the original trip departure_time and this field. For example, if a GTFS trip has stop A with a
+  /// departure_time of 10:00:00 and stop B with departure_time of 10:01:00, and this field is populated with the value
+  /// of 10:30:00, stop B on the duplicated trip will have a scheduled departure_time of 10:31:00. Real-time prediction
+  /// delay values are applied to this calculated schedule time to determine the predicted time. For example, if a
+  /// departure delay of 30 is provided for stop B, then the predicted departure time is 10:31:30. Real-time
+  /// prediction time values do not have any offset applied to them and indicate the predicted time as provided.
+  /// For example, if a departure time representing 10:31:30 is provided for stop B, then the predicted departure time
+  /// is 10:31:30. This field is required if schedule_relationship is DUPLICATED, otherwise this field must not be
+  /// populated and will be ignored by consumers.
+  /// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(3)
+  $core.String get startTime => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set startTime($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasStartTime() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearStartTime() => clearField(3);
+
+  /// Specifies the shape of the vehicle travel path when the trip shape differs from the shape specified in
+  /// (CSV) GTFS or to specify it in real-time when it's not provided by (CSV) GTFS, such as a vehicle that takes differing
+  /// paths based on rider demand. See definition of trips.shape_id in (CSV) GTFS. If a shape is neither defined in (CSV) GTFS
+  /// nor in real-time, the shape is considered unknown. This field can refer to a shape defined in the (CSV) GTFS in shapes.txt
+  /// or a Shape in the (protobuf) real-time feed. The order of stops (stop sequences) for this trip must remain the same as
+  /// (CSV) GTFS. Stops that are a part of the original trip but will no longer be made, such as when a detour occurs, should
+  /// be marked as schedule_relationship=SKIPPED.
+  /// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(4)
+  $core.String get shapeId => $_getSZ(3);
+  @$pb.TagNumber(4)
+  set shapeId($core.String v) { $_setString(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasShapeId() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearShapeId() => clearField(4);
 }
 
 ///  Realtime update of the progress of a vehicle along a trip.
@@ -549,6 +791,7 @@ class TripUpdate extends $pb.GeneratedMessage {
     VehicleDescriptor? vehicle,
     $fixnum.Int64? timestamp,
     $core.int? delay,
+    TripUpdate_TripProperties? tripProperties,
   }) {
     final $result = create();
     if (trip != null) {
@@ -566,6 +809,9 @@ class TripUpdate extends $pb.GeneratedMessage {
     if (delay != null) {
       $result.delay = delay;
     }
+    if (tripProperties != null) {
+      $result.tripProperties = tripProperties;
+    }
     return $result;
   }
   TripUpdate._() : super();
@@ -578,6 +824,7 @@ class TripUpdate extends $pb.GeneratedMessage {
     ..aOM<VehicleDescriptor>(3, _omitFieldNames ? '' : 'vehicle', subBuilder: VehicleDescriptor.create)
     ..a<$fixnum.Int64>(4, _omitFieldNames ? '' : 'timestamp', $pb.PbFieldType.OU6, defaultOrMaker: $fixnum.Int64.ZERO)
     ..a<$core.int>(5, _omitFieldNames ? '' : 'delay', $pb.PbFieldType.O3)
+    ..aOM<TripUpdate_TripProperties>(6, _omitFieldNames ? '' : 'tripProperties', subBuilder: TripUpdate_TripProperties.create)
     ..hasExtensions = true
   ;
 
@@ -651,7 +898,9 @@ class TripUpdate extends $pb.GeneratedMessage {
   @$pb.TagNumber(3)
   VehicleDescriptor ensureVehicle() => $_ensure(2);
 
-  /// Moment at which the vehicle's real-time progress was measured. In POSIX
+  /// The most recent moment at which the vehicle's real-time progress was measured
+  /// to estimate StopTimes in the future. When StopTimes in the past are provided,
+  /// arrival/departure times may be earlier than this value. In POSIX
   /// time (i.e., the number of seconds since January 1st 1970 00:00:00 UTC).
   @$pb.TagNumber(4)
   $fixnum.Int64 get timestamp => $_getI64(3);
@@ -688,6 +937,146 @@ class TripUpdate extends $pb.GeneratedMessage {
   $core.bool hasDelay() => $_has(4);
   @$pb.TagNumber(5)
   void clearDelay() => clearField(5);
+
+  @$pb.TagNumber(6)
+  TripUpdate_TripProperties get tripProperties => $_getN(5);
+  @$pb.TagNumber(6)
+  set tripProperties(TripUpdate_TripProperties v) { setField(6, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasTripProperties() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearTripProperties() => clearField(6);
+  @$pb.TagNumber(6)
+  TripUpdate_TripProperties ensureTripProperties() => $_ensure(5);
+}
+
+/// Carriage specific details, used for vehicles composed of several carriages
+/// This message/field is still experimental, and subject to change. It may be formally adopted in the future.
+class VehiclePosition_CarriageDetails extends $pb.GeneratedMessage {
+  factory VehiclePosition_CarriageDetails({
+    $core.String? id,
+    $core.String? label,
+    VehiclePosition_OccupancyStatus? occupancyStatus,
+    $core.int? occupancyPercentage,
+    $core.int? carriageSequence,
+  }) {
+    final $result = create();
+    if (id != null) {
+      $result.id = id;
+    }
+    if (label != null) {
+      $result.label = label;
+    }
+    if (occupancyStatus != null) {
+      $result.occupancyStatus = occupancyStatus;
+    }
+    if (occupancyPercentage != null) {
+      $result.occupancyPercentage = occupancyPercentage;
+    }
+    if (carriageSequence != null) {
+      $result.carriageSequence = carriageSequence;
+    }
+    return $result;
+  }
+  VehiclePosition_CarriageDetails._() : super();
+  factory VehiclePosition_CarriageDetails.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory VehiclePosition_CarriageDetails.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'VehiclePosition.CarriageDetails', package: const $pb.PackageName(_omitMessageNames ? '' : 'transit_realtime'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'id')
+    ..aOS(2, _omitFieldNames ? '' : 'label')
+    ..e<VehiclePosition_OccupancyStatus>(3, _omitFieldNames ? '' : 'occupancyStatus', $pb.PbFieldType.OE, defaultOrMaker: VehiclePosition_OccupancyStatus.NO_DATA_AVAILABLE, valueOf: VehiclePosition_OccupancyStatus.valueOf, enumValues: VehiclePosition_OccupancyStatus.values)
+    ..a<$core.int>(4, _omitFieldNames ? '' : 'occupancyPercentage', $pb.PbFieldType.O3, defaultOrMaker: -1)
+    ..a<$core.int>(5, _omitFieldNames ? '' : 'carriageSequence', $pb.PbFieldType.OU3)
+    ..hasExtensions = true
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  VehiclePosition_CarriageDetails clone() => VehiclePosition_CarriageDetails()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  VehiclePosition_CarriageDetails copyWith(void Function(VehiclePosition_CarriageDetails) updates) => super.copyWith((message) => updates(message as VehiclePosition_CarriageDetails)) as VehiclePosition_CarriageDetails;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static VehiclePosition_CarriageDetails create() => VehiclePosition_CarriageDetails._();
+  VehiclePosition_CarriageDetails createEmptyInstance() => create();
+  static $pb.PbList<VehiclePosition_CarriageDetails> createRepeated() => $pb.PbList<VehiclePosition_CarriageDetails>();
+  @$core.pragma('dart2js:noInline')
+  static VehiclePosition_CarriageDetails getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<VehiclePosition_CarriageDetails>(create);
+  static VehiclePosition_CarriageDetails? _defaultInstance;
+
+  /// Identification of the carriage. Should be unique per vehicle.
+  @$pb.TagNumber(1)
+  $core.String get id => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set id($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearId() => clearField(1);
+
+  /// User visible label that may be shown to the passenger to help identify
+  /// the carriage. Example: "7712", "Car ABC-32", etc...
+  /// This message/field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(2)
+  $core.String get label => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set label($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasLabel() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearLabel() => clearField(2);
+
+  /// Occupancy status for this given carriage, in this vehicle
+  /// This message/field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(3)
+  VehiclePosition_OccupancyStatus get occupancyStatus => $_getN(2);
+  @$pb.TagNumber(3)
+  set occupancyStatus(VehiclePosition_OccupancyStatus v) { setField(3, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasOccupancyStatus() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearOccupancyStatus() => clearField(3);
+
+  /// Occupancy percentage for this given carriage, in this vehicle.
+  /// Follows the same rules as "VehiclePosition.occupancy_percentage"
+  /// -1 in case data is not available for this given carriage (as protobuf defaults to 0 otherwise)
+  /// This message/field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(4)
+  $core.int get occupancyPercentage => $_getI(3, -1);
+  @$pb.TagNumber(4)
+  set occupancyPercentage($core.int v) { $_setSignedInt32(3, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasOccupancyPercentage() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearOccupancyPercentage() => clearField(4);
+
+  /// Identifies the order of this carriage with respect to the other
+  /// carriages in the vehicle's list of CarriageDetails.
+  /// The first carriage in the direction of travel must have a value of 1.
+  /// The second value corresponds to the second carriage in the direction
+  /// of travel and must have a value of 2, and so forth.
+  /// For example, the first carriage in the direction of travel has a value of 1.
+  /// If the second carriage in the direction of travel has a value of 3,
+  /// consumers will discard data for all carriages (i.e., the multi_carriage_details field).
+  /// Carriages without data must be represented with a valid carriage_sequence number and the fields
+  /// without data should be omitted (alternately, those fields could also be included and set to the "no data" values).
+  /// This message/field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(5)
+  $core.int get carriageSequence => $_getIZ(4);
+  @$pb.TagNumber(5)
+  set carriageSequence($core.int v) { $_setUnsignedInt32(4, v); }
+  @$pb.TagNumber(5)
+  $core.bool hasCarriageSequence() => $_has(4);
+  @$pb.TagNumber(5)
+  void clearCarriageSequence() => clearField(5);
 }
 
 /// Realtime positioning information for a given vehicle.
@@ -702,6 +1091,8 @@ class VehiclePosition extends $pb.GeneratedMessage {
     $core.String? stopId,
     VehicleDescriptor? vehicle,
     VehiclePosition_OccupancyStatus? occupancyStatus,
+    $core.int? occupancyPercentage,
+    $core.Iterable<VehiclePosition_CarriageDetails>? multiCarriageDetails,
   }) {
     final $result = create();
     if (trip != null) {
@@ -731,6 +1122,12 @@ class VehiclePosition extends $pb.GeneratedMessage {
     if (occupancyStatus != null) {
       $result.occupancyStatus = occupancyStatus;
     }
+    if (occupancyPercentage != null) {
+      $result.occupancyPercentage = occupancyPercentage;
+    }
+    if (multiCarriageDetails != null) {
+      $result.multiCarriageDetails.addAll(multiCarriageDetails);
+    }
     return $result;
   }
   VehiclePosition._() : super();
@@ -747,6 +1144,8 @@ class VehiclePosition extends $pb.GeneratedMessage {
     ..aOS(7, _omitFieldNames ? '' : 'stopId')
     ..aOM<VehicleDescriptor>(8, _omitFieldNames ? '' : 'vehicle', subBuilder: VehicleDescriptor.create)
     ..e<VehiclePosition_OccupancyStatus>(9, _omitFieldNames ? '' : 'occupancyStatus', $pb.PbFieldType.OE, defaultOrMaker: VehiclePosition_OccupancyStatus.EMPTY, valueOf: VehiclePosition_OccupancyStatus.valueOf, enumValues: VehiclePosition_OccupancyStatus.values)
+    ..a<$core.int>(10, _omitFieldNames ? '' : 'occupancyPercentage', $pb.PbFieldType.OU3)
+    ..pc<VehiclePosition_CarriageDetails>(11, _omitFieldNames ? '' : 'multiCarriageDetails', $pb.PbFieldType.PM, subBuilder: VehiclePosition_CarriageDetails.create)
     ..hasExtensions = true
   ;
 
@@ -864,6 +1263,8 @@ class VehiclePosition extends $pb.GeneratedMessage {
   @$pb.TagNumber(8)
   VehicleDescriptor ensureVehicle() => $_ensure(7);
 
+  /// If multi_carriage_status is populated with per-carriage OccupancyStatus,
+  /// then this field should describe the entire vehicle with all carriages accepting passengers considered.
   @$pb.TagNumber(9)
   VehiclePosition_OccupancyStatus get occupancyStatus => $_getN(8);
   @$pb.TagNumber(9)
@@ -872,6 +1273,36 @@ class VehiclePosition extends $pb.GeneratedMessage {
   $core.bool hasOccupancyStatus() => $_has(8);
   @$pb.TagNumber(9)
   void clearOccupancyStatus() => clearField(9);
+
+  /// A percentage value indicating the degree of passenger occupancy in the vehicle.
+  /// The values are represented as an integer without decimals. 0 means 0% and 100 means 100%.
+  /// The value 100 should represent the total maximum occupancy the vehicle was designed for,
+  /// including both seated and standing capacity, and current operating regulations allow.
+  /// The value may exceed 100 if there are more passengers than the maximum designed capacity.
+  /// The precision of occupancy_percentage should be low enough that individual passengers cannot be tracked boarding or alighting the vehicle.
+  /// If multi_carriage_status is populated with per-carriage occupancy_percentage,
+  /// then this field should describe the entire vehicle with all carriages accepting passengers considered.
+  /// This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(10)
+  $core.int get occupancyPercentage => $_getIZ(9);
+  @$pb.TagNumber(10)
+  set occupancyPercentage($core.int v) { $_setUnsignedInt32(9, v); }
+  @$pb.TagNumber(10)
+  $core.bool hasOccupancyPercentage() => $_has(9);
+  @$pb.TagNumber(10)
+  void clearOccupancyPercentage() => clearField(10);
+
+  /// Details of the multiple carriages of this given vehicle.
+  /// The first occurrence represents the first carriage of the vehicle,
+  /// given the current direction of travel.
+  /// The number of occurrences of the multi_carriage_details
+  /// field represents the number of carriages of the vehicle.
+  /// It also includes non boardable carriages,
+  /// like engines, maintenance carriages, etc… as they provide valuable
+  /// information to passengers about where to stand on a platform.
+  /// This message/field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(11)
+  $core.List<VehiclePosition_CarriageDetails> get multiCarriageDetails => $_getList(10);
 }
 
 /// An alert, indicating some sort of incident in the public transit network.
@@ -884,6 +1315,13 @@ class Alert extends $pb.GeneratedMessage {
     TranslatedString? url,
     TranslatedString? headerText,
     TranslatedString? descriptionText,
+    TranslatedString? ttsHeaderText,
+    TranslatedString? ttsDescriptionText,
+    Alert_SeverityLevel? severityLevel,
+    TranslatedImage? image,
+    TranslatedString? imageAlternativeText,
+    TranslatedString? causeDetail,
+    TranslatedString? effectDetail,
   }) {
     final $result = create();
     if (activePeriod != null) {
@@ -907,6 +1345,27 @@ class Alert extends $pb.GeneratedMessage {
     if (descriptionText != null) {
       $result.descriptionText = descriptionText;
     }
+    if (ttsHeaderText != null) {
+      $result.ttsHeaderText = ttsHeaderText;
+    }
+    if (ttsDescriptionText != null) {
+      $result.ttsDescriptionText = ttsDescriptionText;
+    }
+    if (severityLevel != null) {
+      $result.severityLevel = severityLevel;
+    }
+    if (image != null) {
+      $result.image = image;
+    }
+    if (imageAlternativeText != null) {
+      $result.imageAlternativeText = imageAlternativeText;
+    }
+    if (causeDetail != null) {
+      $result.causeDetail = causeDetail;
+    }
+    if (effectDetail != null) {
+      $result.effectDetail = effectDetail;
+    }
     return $result;
   }
   Alert._() : super();
@@ -921,6 +1380,13 @@ class Alert extends $pb.GeneratedMessage {
     ..aOM<TranslatedString>(8, _omitFieldNames ? '' : 'url', subBuilder: TranslatedString.create)
     ..aOM<TranslatedString>(10, _omitFieldNames ? '' : 'headerText', subBuilder: TranslatedString.create)
     ..aOM<TranslatedString>(11, _omitFieldNames ? '' : 'descriptionText', subBuilder: TranslatedString.create)
+    ..aOM<TranslatedString>(12, _omitFieldNames ? '' : 'ttsHeaderText', subBuilder: TranslatedString.create)
+    ..aOM<TranslatedString>(13, _omitFieldNames ? '' : 'ttsDescriptionText', subBuilder: TranslatedString.create)
+    ..e<Alert_SeverityLevel>(14, _omitFieldNames ? '' : 'severityLevel', $pb.PbFieldType.OE, defaultOrMaker: Alert_SeverityLevel.UNKNOWN_SEVERITY, valueOf: Alert_SeverityLevel.valueOf, enumValues: Alert_SeverityLevel.values)
+    ..aOM<TranslatedImage>(15, _omitFieldNames ? '' : 'image', subBuilder: TranslatedImage.create)
+    ..aOM<TranslatedString>(16, _omitFieldNames ? '' : 'imageAlternativeText', subBuilder: TranslatedString.create)
+    ..aOM<TranslatedString>(17, _omitFieldNames ? '' : 'causeDetail', subBuilder: TranslatedString.create)
+    ..aOM<TranslatedString>(18, _omitFieldNames ? '' : 'effectDetail', subBuilder: TranslatedString.create)
     ..hasExtensions = true
   ;
 
@@ -1009,6 +1475,93 @@ class Alert extends $pb.GeneratedMessage {
   void clearDescriptionText() => clearField(11);
   @$pb.TagNumber(11)
   TranslatedString ensureDescriptionText() => $_ensure(6);
+
+  /// Text for alert header to be used in text-to-speech implementations. This field is the text-to-speech version of header_text.
+  @$pb.TagNumber(12)
+  TranslatedString get ttsHeaderText => $_getN(7);
+  @$pb.TagNumber(12)
+  set ttsHeaderText(TranslatedString v) { setField(12, v); }
+  @$pb.TagNumber(12)
+  $core.bool hasTtsHeaderText() => $_has(7);
+  @$pb.TagNumber(12)
+  void clearTtsHeaderText() => clearField(12);
+  @$pb.TagNumber(12)
+  TranslatedString ensureTtsHeaderText() => $_ensure(7);
+
+  /// Text for full description for the alert to be used in text-to-speech implementations. This field is the text-to-speech version of description_text.
+  @$pb.TagNumber(13)
+  TranslatedString get ttsDescriptionText => $_getN(8);
+  @$pb.TagNumber(13)
+  set ttsDescriptionText(TranslatedString v) { setField(13, v); }
+  @$pb.TagNumber(13)
+  $core.bool hasTtsDescriptionText() => $_has(8);
+  @$pb.TagNumber(13)
+  void clearTtsDescriptionText() => clearField(13);
+  @$pb.TagNumber(13)
+  TranslatedString ensureTtsDescriptionText() => $_ensure(8);
+
+  @$pb.TagNumber(14)
+  Alert_SeverityLevel get severityLevel => $_getN(9);
+  @$pb.TagNumber(14)
+  set severityLevel(Alert_SeverityLevel v) { setField(14, v); }
+  @$pb.TagNumber(14)
+  $core.bool hasSeverityLevel() => $_has(9);
+  @$pb.TagNumber(14)
+  void clearSeverityLevel() => clearField(14);
+
+  /// TranslatedImage to be displayed along the alert text. Used to explain visually the alert effect of a detour, station closure, etc. The image must enhance the understanding of the alert. Any essential information communicated within the image must also be contained in the alert text.
+  /// The following types of images are discouraged : image containing mainly text, marketing or branded images that add no additional information.
+  /// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(15)
+  TranslatedImage get image => $_getN(10);
+  @$pb.TagNumber(15)
+  set image(TranslatedImage v) { setField(15, v); }
+  @$pb.TagNumber(15)
+  $core.bool hasImage() => $_has(10);
+  @$pb.TagNumber(15)
+  void clearImage() => clearField(15);
+  @$pb.TagNumber(15)
+  TranslatedImage ensureImage() => $_ensure(10);
+
+  /// Text describing the appearance of the linked image in the `image` field (e.g., in case the image can't be displayed
+  /// or the user can't see the image for accessibility reasons). See the HTML spec for alt image text - https://html.spec.whatwg.org/#alt.
+  /// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(16)
+  TranslatedString get imageAlternativeText => $_getN(11);
+  @$pb.TagNumber(16)
+  set imageAlternativeText(TranslatedString v) { setField(16, v); }
+  @$pb.TagNumber(16)
+  $core.bool hasImageAlternativeText() => $_has(11);
+  @$pb.TagNumber(16)
+  void clearImageAlternativeText() => clearField(16);
+  @$pb.TagNumber(16)
+  TranslatedString ensureImageAlternativeText() => $_ensure(11);
+
+  /// Description of the cause of the alert that allows for agency-specific language; more specific than the Cause. If cause_detail is included, then Cause must also be included.
+  /// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(17)
+  TranslatedString get causeDetail => $_getN(12);
+  @$pb.TagNumber(17)
+  set causeDetail(TranslatedString v) { setField(17, v); }
+  @$pb.TagNumber(17)
+  $core.bool hasCauseDetail() => $_has(12);
+  @$pb.TagNumber(17)
+  void clearCauseDetail() => clearField(17);
+  @$pb.TagNumber(17)
+  TranslatedString ensureCauseDetail() => $_ensure(12);
+
+  /// Description of the effect of the alert that allows for agency-specific language; more specific than the Effect. If effect_detail is included, then Effect must also be included.
+  /// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(18)
+  TranslatedString get effectDetail => $_getN(13);
+  @$pb.TagNumber(18)
+  set effectDetail(TranslatedString v) { setField(18, v); }
+  @$pb.TagNumber(18)
+  $core.bool hasEffectDetail() => $_has(13);
+  @$pb.TagNumber(18)
+  void clearEffectDetail() => clearField(18);
+  @$pb.TagNumber(18)
+  TranslatedString ensureEffectDetail() => $_ensure(13);
 }
 
 /// A time interval. The interval is considered active at time 't' if 't' is
@@ -1276,7 +1829,9 @@ class TripDescriptor extends $pb.GeneratedMessage {
   /// The trip_id from the GTFS feed that this selector refers to.
   /// For non frequency-based trips, this field is enough to uniquely identify
   /// the trip. For frequency-based trip, start_time and start_date might also be
-  /// necessary.
+  /// necessary. When schedule_relationship is DUPLICATED within a TripUpdate, the trip_id identifies the trip from
+  /// static GTFS to be duplicated. When schedule_relationship is DUPLICATED within a VehiclePosition, the trip_id
+  /// identifies the new duplicate trip and must contain the value for the corresponding TripUpdate.TripProperties.trip_id.
   @$pb.TagNumber(1)
   $core.String get tripId => $_getSZ(0);
   @$pb.TagNumber(1)
@@ -1289,7 +1844,7 @@ class TripDescriptor extends $pb.GeneratedMessage {
   /// The initially scheduled start time of this trip instance.
   /// When the trip_id corresponds to a non-frequency-based trip, this field
   /// should either be omitted or be equal to the value in the GTFS feed. When
-  /// the trip_id corresponds to a frequency-based trip, the start_time must be
+  /// the trip_id correponds to a frequency-based trip, the start_time must be
   /// specified for trip updates and vehicle positions. If the trip corresponds
   /// to exact_times=1 GTFS record, then start_time must be some multiple
   /// (including zero) of headway_secs later than frequencies.txt start_time for
@@ -1349,9 +1904,7 @@ class TripDescriptor extends $pb.GeneratedMessage {
   void clearRouteId() => clearField(5);
 
   /// The direction_id from the GTFS feed trips.txt file, indicating the
-  /// direction of travel for trips this selector refers to. This field is
-  /// still experimental, and subject to change. It may be formally adopted in
-  /// the future.
+  /// direction of travel for trips this selector refers to.
   @$pb.TagNumber(6)
   $core.int get directionId => $_getIZ(5);
   @$pb.TagNumber(6)
@@ -1368,6 +1921,7 @@ class VehicleDescriptor extends $pb.GeneratedMessage {
     $core.String? id,
     $core.String? label,
     $core.String? licensePlate,
+    VehicleDescriptor_WheelchairAccessible? wheelchairAccessible,
   }) {
     final $result = create();
     if (id != null) {
@@ -1379,6 +1933,9 @@ class VehicleDescriptor extends $pb.GeneratedMessage {
     if (licensePlate != null) {
       $result.licensePlate = licensePlate;
     }
+    if (wheelchairAccessible != null) {
+      $result.wheelchairAccessible = wheelchairAccessible;
+    }
     return $result;
   }
   VehicleDescriptor._() : super();
@@ -1389,6 +1946,7 @@ class VehicleDescriptor extends $pb.GeneratedMessage {
     ..aOS(1, _omitFieldNames ? '' : 'id')
     ..aOS(2, _omitFieldNames ? '' : 'label')
     ..aOS(3, _omitFieldNames ? '' : 'licensePlate')
+    ..e<VehicleDescriptor_WheelchairAccessible>(4, _omitFieldNames ? '' : 'wheelchairAccessible', $pb.PbFieldType.OE, defaultOrMaker: VehicleDescriptor_WheelchairAccessible.NO_VALUE, valueOf: VehicleDescriptor_WheelchairAccessible.valueOf, enumValues: VehicleDescriptor_WheelchairAccessible.values)
     ..hasExtensions = true
   ;
 
@@ -1445,6 +2003,15 @@ class VehicleDescriptor extends $pb.GeneratedMessage {
   $core.bool hasLicensePlate() => $_has(2);
   @$pb.TagNumber(3)
   void clearLicensePlate() => clearField(3);
+
+  @$pb.TagNumber(4)
+  VehicleDescriptor_WheelchairAccessible get wheelchairAccessible => $_getN(3);
+  @$pb.TagNumber(4)
+  set wheelchairAccessible(VehicleDescriptor_WheelchairAccessible v) { setField(4, v); }
+  @$pb.TagNumber(4)
+  $core.bool hasWheelchairAccessible() => $_has(3);
+  @$pb.TagNumber(4)
+  void clearWheelchairAccessible() => clearField(4);
 }
 
 /// A selector for an entity in a GTFS feed.
@@ -1455,6 +2022,7 @@ class EntitySelector extends $pb.GeneratedMessage {
     $core.int? routeType,
     TripDescriptor? trip,
     $core.String? stopId,
+    $core.int? directionId,
   }) {
     final $result = create();
     if (agencyId != null) {
@@ -1472,6 +2040,9 @@ class EntitySelector extends $pb.GeneratedMessage {
     if (stopId != null) {
       $result.stopId = stopId;
     }
+    if (directionId != null) {
+      $result.directionId = directionId;
+    }
     return $result;
   }
   EntitySelector._() : super();
@@ -1484,6 +2055,7 @@ class EntitySelector extends $pb.GeneratedMessage {
     ..a<$core.int>(3, _omitFieldNames ? '' : 'routeType', $pb.PbFieldType.O3)
     ..aOM<TripDescriptor>(4, _omitFieldNames ? '' : 'trip', subBuilder: TripDescriptor.create)
     ..aOS(5, _omitFieldNames ? '' : 'stopId')
+    ..a<$core.int>(6, _omitFieldNames ? '' : 'directionId', $pb.PbFieldType.OU3)
     ..hasExtensions = true
   ;
 
@@ -1559,6 +2131,17 @@ class EntitySelector extends $pb.GeneratedMessage {
   $core.bool hasStopId() => $_has(4);
   @$pb.TagNumber(5)
   void clearStopId() => clearField(5);
+
+  /// Corresponds to trip direction_id in GTFS trips.txt. If provided the
+  /// route_id must also be provided.
+  @$pb.TagNumber(6)
+  $core.int get directionId => $_getIZ(5);
+  @$pb.TagNumber(6)
+  set directionId($core.int v) { $_setUnsignedInt32(5, v); }
+  @$pb.TagNumber(6)
+  $core.bool hasDirectionId() => $_has(5);
+  @$pb.TagNumber(6)
+  void clearDirectionId() => clearField(6);
 }
 
 class TranslatedString_Translation extends $pb.GeneratedMessage {
@@ -1682,6 +2265,228 @@ class TranslatedString extends $pb.GeneratedMessage {
   /// At least one translation must be provided.
   @$pb.TagNumber(1)
   $core.List<TranslatedString_Translation> get translation => $_getList(0);
+}
+
+class TranslatedImage_LocalizedImage extends $pb.GeneratedMessage {
+  factory TranslatedImage_LocalizedImage({
+    $core.String? url,
+    $core.String? mediaType,
+    $core.String? language,
+  }) {
+    final $result = create();
+    if (url != null) {
+      $result.url = url;
+    }
+    if (mediaType != null) {
+      $result.mediaType = mediaType;
+    }
+    if (language != null) {
+      $result.language = language;
+    }
+    return $result;
+  }
+  TranslatedImage_LocalizedImage._() : super();
+  factory TranslatedImage_LocalizedImage.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory TranslatedImage_LocalizedImage.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'TranslatedImage.LocalizedImage', package: const $pb.PackageName(_omitMessageNames ? '' : 'transit_realtime'), createEmptyInstance: create)
+    ..aQS(1, _omitFieldNames ? '' : 'url')
+    ..aQS(2, _omitFieldNames ? '' : 'mediaType')
+    ..aOS(3, _omitFieldNames ? '' : 'language')
+    ..hasExtensions = true
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  TranslatedImage_LocalizedImage clone() => TranslatedImage_LocalizedImage()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  TranslatedImage_LocalizedImage copyWith(void Function(TranslatedImage_LocalizedImage) updates) => super.copyWith((message) => updates(message as TranslatedImage_LocalizedImage)) as TranslatedImage_LocalizedImage;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static TranslatedImage_LocalizedImage create() => TranslatedImage_LocalizedImage._();
+  TranslatedImage_LocalizedImage createEmptyInstance() => create();
+  static $pb.PbList<TranslatedImage_LocalizedImage> createRepeated() => $pb.PbList<TranslatedImage_LocalizedImage>();
+  @$core.pragma('dart2js:noInline')
+  static TranslatedImage_LocalizedImage getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TranslatedImage_LocalizedImage>(create);
+  static TranslatedImage_LocalizedImage? _defaultInstance;
+
+  /// String containing an URL linking to an image
+  /// The image linked must be less than 2MB.
+  /// If an image changes in a significant enough way that an update is required on the consumer side, the producer must update the URL to a new one.
+  /// The URL should be a fully qualified URL that includes http:// or https://, and any special characters in the URL must be correctly escaped. See the following http://www.w3.org/Addressing/URL/4_URI_Recommentations.html for a description of how to create fully qualified URL values.
+  @$pb.TagNumber(1)
+  $core.String get url => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set url($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasUrl() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearUrl() => clearField(1);
+
+  /// IANA media type as to specify the type of image to be displayed.
+  /// The type must start with "image/"
+  @$pb.TagNumber(2)
+  $core.String get mediaType => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set mediaType($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasMediaType() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearMediaType() => clearField(2);
+
+  /// BCP-47 language code. Can be omitted if the language is unknown or if
+  /// no i18n is done at all for the feed. At most one translation is
+  /// allowed to have an unspecified language tag.
+  @$pb.TagNumber(3)
+  $core.String get language => $_getSZ(2);
+  @$pb.TagNumber(3)
+  set language($core.String v) { $_setString(2, v); }
+  @$pb.TagNumber(3)
+  $core.bool hasLanguage() => $_has(2);
+  @$pb.TagNumber(3)
+  void clearLanguage() => clearField(3);
+}
+
+/// An internationalized image containing per-language versions of a URL linking to an image
+/// along with meta information
+/// Only one of the images from a message will be retained by consumers. The resolution proceeds
+/// as follows:
+/// 1. If the UI language matches the language code of a translation,
+///    the first matching translation is picked.
+/// 2. If a default UI language (e.g., English) matches the language code of a
+///    translation, the first matching translation is picked.
+/// 3. If some translation has an unspecified language code, that translation is
+///    picked.
+/// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+class TranslatedImage extends $pb.GeneratedMessage {
+  factory TranslatedImage({
+    $core.Iterable<TranslatedImage_LocalizedImage>? localizedImage,
+  }) {
+    final $result = create();
+    if (localizedImage != null) {
+      $result.localizedImage.addAll(localizedImage);
+    }
+    return $result;
+  }
+  TranslatedImage._() : super();
+  factory TranslatedImage.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory TranslatedImage.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'TranslatedImage', package: const $pb.PackageName(_omitMessageNames ? '' : 'transit_realtime'), createEmptyInstance: create)
+    ..pc<TranslatedImage_LocalizedImage>(1, _omitFieldNames ? '' : 'localizedImage', $pb.PbFieldType.PM, subBuilder: TranslatedImage_LocalizedImage.create)
+    ..hasExtensions = true
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  TranslatedImage clone() => TranslatedImage()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  TranslatedImage copyWith(void Function(TranslatedImage) updates) => super.copyWith((message) => updates(message as TranslatedImage)) as TranslatedImage;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static TranslatedImage create() => TranslatedImage._();
+  TranslatedImage createEmptyInstance() => create();
+  static $pb.PbList<TranslatedImage> createRepeated() => $pb.PbList<TranslatedImage>();
+  @$core.pragma('dart2js:noInline')
+  static TranslatedImage getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<TranslatedImage>(create);
+  static TranslatedImage? _defaultInstance;
+
+  /// At least one localized image must be provided.
+  @$pb.TagNumber(1)
+  $core.List<TranslatedImage_LocalizedImage> get localizedImage => $_getList(0);
+}
+
+/// Describes the physical path that a vehicle takes when it's not part of the (CSV) GTFS,
+/// such as for a detour. Shapes belong to Trips, and consist of a sequence of shape points.
+/// Tracing the points in order provides the path of the vehicle.  Shapes do not need to intercept
+/// the location of Stops exactly, but all Stops on a trip should lie within a small distance of
+/// the shape for that trip, i.e. close to straight line segments connecting the shape points
+/// NOTE: This message is still experimental, and subject to change. It may be formally adopted in the future.
+class Shape extends $pb.GeneratedMessage {
+  factory Shape({
+    $core.String? shapeId,
+    $core.String? encodedPolyline,
+  }) {
+    final $result = create();
+    if (shapeId != null) {
+      $result.shapeId = shapeId;
+    }
+    if (encodedPolyline != null) {
+      $result.encodedPolyline = encodedPolyline;
+    }
+    return $result;
+  }
+  Shape._() : super();
+  factory Shape.fromBuffer($core.List<$core.int> i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromBuffer(i, r);
+  factory Shape.fromJson($core.String i, [$pb.ExtensionRegistry r = $pb.ExtensionRegistry.EMPTY]) => create()..mergeFromJson(i, r);
+
+  static final $pb.BuilderInfo _i = $pb.BuilderInfo(_omitMessageNames ? '' : 'Shape', package: const $pb.PackageName(_omitMessageNames ? '' : 'transit_realtime'), createEmptyInstance: create)
+    ..aOS(1, _omitFieldNames ? '' : 'shapeId')
+    ..aOS(2, _omitFieldNames ? '' : 'encodedPolyline')
+    ..hasExtensions = true
+  ;
+
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.deepCopy] instead. '
+  'Will be removed in next major version')
+  Shape clone() => Shape()..mergeFromMessage(this);
+  @$core.Deprecated(
+  'Using this can add significant overhead to your binary. '
+  'Use [GeneratedMessageGenericExtensions.rebuild] instead. '
+  'Will be removed in next major version')
+  Shape copyWith(void Function(Shape) updates) => super.copyWith((message) => updates(message as Shape)) as Shape;
+
+  $pb.BuilderInfo get info_ => _i;
+
+  @$core.pragma('dart2js:noInline')
+  static Shape create() => Shape._();
+  Shape createEmptyInstance() => create();
+  static $pb.PbList<Shape> createRepeated() => $pb.PbList<Shape>();
+  @$core.pragma('dart2js:noInline')
+  static Shape getDefault() => _defaultInstance ??= $pb.GeneratedMessage.$_defaultFor<Shape>(create);
+  static Shape? _defaultInstance;
+
+  /// Identifier of the shape. Must be different than any shape_id defined in the (CSV) GTFS.
+  /// This field is required as per reference.md, but needs to be specified here optional because "Required is Forever"
+  /// See https://developers.google.com/protocol-buffers/docs/proto#specifying_field_rules
+  /// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(1)
+  $core.String get shapeId => $_getSZ(0);
+  @$pb.TagNumber(1)
+  set shapeId($core.String v) { $_setString(0, v); }
+  @$pb.TagNumber(1)
+  $core.bool hasShapeId() => $_has(0);
+  @$pb.TagNumber(1)
+  void clearShapeId() => clearField(1);
+
+  /// Encoded polyline representation of the shape. This polyline must contain at least two points.
+  /// For more information about encoded polylines, see https://developers.google.com/maps/documentation/utilities/polylinealgorithm
+  /// This field is required as per reference.md, but needs to be specified here optional because "Required is Forever"
+  /// See https://developers.google.com/protocol-buffers/docs/proto#specifying_field_rules
+  /// NOTE: This field is still experimental, and subject to change. It may be formally adopted in the future.
+  @$pb.TagNumber(2)
+  $core.String get encodedPolyline => $_getSZ(1);
+  @$pb.TagNumber(2)
+  set encodedPolyline($core.String v) { $_setString(1, v); }
+  @$pb.TagNumber(2)
+  $core.bool hasEncodedPolyline() => $_has(1);
+  @$pb.TagNumber(2)
+  void clearEncodedPolyline() => clearField(2);
 }
 
 

@@ -16,8 +16,8 @@ class EmbedRecord {
 abstract class Config {
   static final defaultConfig = _DefaultConfig();
 
-  bool get debugPerformanceOverlay;
-  set debugPerformanceOverlay(bool? enabled);
+  bool get debugEnabled;
+  set debugEnabled(bool? enabled);
 
   String? get digitransitSubscriptionKey;
   set digitransitSubscriptionKey(String? key);
@@ -25,8 +25,8 @@ abstract class Config {
   DigitransitRoutingEndpoint get endpoint;
   set endpoint(DigitransitRoutingEndpoint? endpoint);
 
-  StopId get stopId;
-  set stopId(StopId? id);
+  GtfsId get stopId;
+  set stopId(GtfsId? id);
 
   int get stoptimesCount;
   set stoptimesCount(int? count);
@@ -57,9 +57,9 @@ class _DefaultConfig implements Config {
   void _throw() => throw StateError("Cannot modify default config.");
 
   @override
-  final bool debugPerformanceOverlay = false;
+  final bool debugEnabled = false;
   @override
-  set debugPerformanceOverlay(bool? enabled) => _throw();
+  set debugEnabled(bool? enabled) => _throw();
 
   @override
   final String? digitransitSubscriptionKey = null;
@@ -72,9 +72,9 @@ class _DefaultConfig implements Config {
   set endpoint(DigitransitRoutingEndpoint? endpoint) => _throw();
 
   @override
-  final StopId stopId = StopId("tampere:3522");
+  final GtfsId stopId = GtfsId("tampere:3522");
   @override
-  set stopId(StopId? id) => _throw();
+  set stopId(GtfsId? id) => _throw();
 
   @override
   final int stoptimesCount = 10;
@@ -177,14 +177,14 @@ class _SharedPrefsConfig extends State<ConfigWidget> implements Config {
   }
 
   @override
-  bool get debugPerformanceOverlay =>
+  bool get debugEnabled =>
       _prefs.getBool("debug.performanceOverlay") ??
-      Config.defaultConfig.debugPerformanceOverlay;
+      Config.defaultConfig.debugEnabled;
   @override
-  set debugPerformanceOverlay(bool? enabled) => setState(() {
+  set debugEnabled(bool? enabled) => setState(() {
         _prefs.setBool(
           "debug.performanceOverlay",
-          enabled ?? Config.defaultConfig.debugPerformanceOverlay,
+          enabled ?? Config.defaultConfig.debugEnabled,
         );
       });
 
@@ -222,17 +222,17 @@ class _SharedPrefsConfig extends State<ConfigWidget> implements Config {
   }
 
   @override
-  StopId get stopId {
+  GtfsId get stopId {
     final String? value = _prefs.getString("stopId");
     if (value == null) return Config.defaultConfig.stopId;
-    return StopId(value);
+    return GtfsId(value);
   }
 
   @override
-  set stopId(StopId? id) => setState(() {
+  set stopId(GtfsId? id) => setState(() {
         _prefs.setString(
           "stopId",
-          (id ?? Config.defaultConfig.stopId).value,
+          (id ?? Config.defaultConfig.stopId).id,
         );
       });
 
@@ -259,17 +259,29 @@ class _SharedPrefsConfig extends State<ConfigWidget> implements Config {
   @override
   void setEmbeds(List<Embed> values) {
     setState(() {
-      _embeds.clear();
+      final Map<String, _InternalEmbedRecord> oldEmbeds =
+          Map.from(_embedByName);
+
       _embedByName.clear();
+      _embeds.clear();
 
       for (final embed in values) {
         if (_embedByName.containsKey(embed.name)) {
           throw ArgumentError("Duplicate embeds provided.", "values");
         }
 
-        final EmbedSettings settings = embed.deserializeSettings(
-          _prefs.getString(_getEmbedPrefName(embed)),
-        );
+        // Try to use previous settings if possible
+        // Settings have modified this instance so if we overwrite it, shit will hit the fan
+        EmbedSettings? settings = oldEmbeds[embed.name]?.settings;
+        if (settings == null) {
+          settings = embed.createDefaultSettings();
+
+          final String? serializedSettings =
+              _prefs.getString(_getEmbedPrefName(embed));
+          if (serializedSettings != null) {
+            settings.deserialize(serializedSettings);
+          }
+        }
 
         _embedByName[embed.name] = _InternalEmbedRecord(
           index: _embeds.length,

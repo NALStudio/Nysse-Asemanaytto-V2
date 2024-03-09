@@ -56,14 +56,14 @@ class MainSettings extends SettingsForm {
         TextFormField(
           decoration: InputDecoration(
             labelText: "Stop ID",
-            hintText: Config.defaultConfig.stopId.value,
+            hintText: Config.defaultConfig.stopId.id,
           ),
-          initialValue: config.stopId.value,
+          initialValue: config.stopId.id,
           onSaved: (newValue) {
             if (newValue?.isEmpty == true) {
               config.stopId = null; // empty = null
             } else {
-              config.stopId = newValue != null ? StopId(newValue) : null;
+              config.stopId = newValue != null ? GtfsId(newValue) : null;
             }
           },
         ),

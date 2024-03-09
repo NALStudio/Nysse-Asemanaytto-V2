@@ -187,7 +187,7 @@ packages:
     description:
       path: "."
       ref: HEAD
-      resolved-ref: c2b0d915ad2afd7335e24979f203746fd4dea240
+      resolved-ref: b0590fbf37a2a2624b449387b1a356f4c7475332
       url: "https://github.com/fleaflet/flutter_map.git"
     source: git
     version: "6.1.0"
@@ -221,18 +221,18 @@ packages:
     dependency: transitive
     description:
       name: gql
-      sha256: dfbfb94b43caf21e9c1ca2c58c26dccec6dc3934906ad719d24f1181bcda8f8e
+      sha256: afe032332ddfa69b79f1dea2ad7d95923d4993c1b269b224fc7bb3d17e32d33c
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.1-alpha+1709670733548"
+    version: "1.0.1-alpha+1709845491443"
   gql_dedupe_link:
     dependency: transitive
     description:
       name: gql_dedupe_link
-      sha256: "3f61ffd9b69e680bb434851312a3da594042c9409590913c051833359c62afb8"
+      sha256: "2971173c68623d5c43f5327ea899bd2ee64ce3461c1263f240b4bb6211f667be"
       url: "https://pub.dev"
     source: hosted
-    version: "2.0.4-alpha+1709670733626"
+    version: "2.0.4-alpha+1709845491527"
   gql_error_link:
     dependency: transitive
     description:
@@ -261,10 +261,10 @@ packages:
     dependency: transitive
     description:
       name: gql_link
-      sha256: c19a3321d460ac1d9c16cf76b250962dfe3851a50668a582f2cfeabfdbb96788
+      sha256: "177500e250b3742d6d2673d57961e8413b6593dc6bd6a512c51865b6cf096f7e"
       url: "https://pub.dev"
     source: hosted
-    version: "1.0.1-alpha+1709670733561"
+    version: "1.0.1-alpha+1709845491457"
   gql_transform_link:
     dependency: transitive
     description:
@@ -786,10 +786,10 @@ packages:
     dependency: transitive
     description:
       name: win32
-      sha256: "464f5674532865248444b4c3daca12bd9bf2d7c47f759ce2617986e7229494a8"
+      sha256: "8cb58b45c47dcb42ab3651533626161d6b67a2921917d8d429791f76972b3480"
       url: "https://pub.dev"
     source: hosted
-    version: "5.2.0"
+    version: "5.3.0"
   wkt_parser:
     dependency: transitive
     description:

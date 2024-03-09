@@ -55,7 +55,7 @@ class _Asemanaytto extends StatelessWidget {
     Widget app = MaterialApp(
       title: "Nysse Asemanäyttö",
       initialRoute: Routes.home,
-      showPerformanceOverlay: config.debugPerformanceOverlay,
+      showPerformanceOverlay: config.debugEnabled,
       routes: {
         Routes.home: (context) => const _HomeRouter(child: AppServices()),
         Routes.settings: (context) => const SettingsWidget(),
@@ -118,7 +118,7 @@ class _HomeRouterState extends State<_HomeRouter> {
         Navigator.pushNamed(context, Routes.settings);
       } else if (event.physicalKey == PhysicalKeyboardKey.f3) {
         final config = Config.of(context);
-        config.debugPerformanceOverlay = !config.debugPerformanceOverlay;
+        config.debugEnabled = !config.debugEnabled;
       }
     }
 

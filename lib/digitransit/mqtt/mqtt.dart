@@ -1,6 +1,7 @@
 export '_topics/positioning.dart';
 
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -59,7 +60,6 @@ class DigitransitMqttState extends State<DigitransitMqtt> {
 
     _client = MqttServerClient(digitransitMqttEndpoint, RequestInfo.userAgent);
     _client.keepAlivePeriod = 30;
-    _client.logging(on: true);
 
     _client.onDisconnected = _onDisconnected;
 
@@ -79,7 +79,7 @@ class DigitransitMqttState extends State<DigitransitMqtt> {
       );
 
       for (final DigitransitMqttSubscription sub in _subscriptions) {
-        if (sub._subscription.topic.matches(messageTopic)) {
+        if (sub._anyTopicHasMatch(messageTopic)) {
           sub._newData(digitransitMessage);
         }
       }
@@ -130,12 +130,33 @@ class DigitransitMqttState extends State<DigitransitMqtt> {
 
     final digitransitSub = DigitransitMqttSubscription._create(sub);
     _subscriptions.add(digitransitSub);
+
+    return digitransitSub;
+  }
+
+  DigitransitMqttSubscription? subscribeAll(
+    Iterable<String> topics,
+    MqttQos qosLevel,
+  ) {
+    final List<MqttSubscription> topicSubs =
+        topics.map((t) => MqttSubscription(MqttSubscriptionTopic(t))).toList();
+
+    final List<MqttSubscription>? subs =
+        _client.subscribeWithSubscriptionList(topicSubs);
+    if (subs == null) {
+      return null;
+    }
+
+    final DigitransitMqttSubscription digitransitSub =
+        DigitransitMqttSubscription._createCombined(subs);
+    _subscriptions.add(digitransitSub);
+
     return digitransitSub;
   }
 
   void unsubscribe(DigitransitMqttSubscription subscription) {
     _subscriptions.remove(subscription);
-    _client.unsubscribeSubscription(subscription._subscription);
+    _client.unsubscribeSubscriptionList(subscription.__subscriptions);
   }
 }
 
@@ -158,12 +179,18 @@ class DigitransitMqttMessage {
 }
 
 class DigitransitMqttSubscription {
-  final MqttSubscription _subscription;
+  final List<MqttSubscription> __subscriptions;
 
   void Function(DigitransitMqttMessage msg)? onMessageReceived;
 
+  bool _anyTopicHasMatch(MqttPublicationTopic topic) =>
+      __subscriptions.any((e) => e.topic.matches(topic));
+
   DigitransitMqttSubscription._create(MqttSubscription subscription)
-      : _subscription = subscription;
+      : __subscriptions = [subscription];
+  DigitransitMqttSubscription._createCombined(
+      List<MqttSubscription> subsciptions)
+      : __subscriptions = subsciptions;
 
   void _newData(DigitransitMqttMessage msg) {
     if (onMessageReceived != null) {

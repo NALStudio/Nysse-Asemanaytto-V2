@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
-import 'package:nysse_asemanaytto/core/widgets/error_widgets.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 
 class StopInfo extends StatefulWidget {
@@ -30,13 +29,13 @@ class _StopInfoState extends State<StopInfo> {
       options: QueryOptions(
         document: gql(DigitransitStopInfoQuery.query),
         variables: {
-          "stopId": config.stopId.value,
+          "stopId": config.stopId.id,
         },
         pollInterval: RequestInfo.ratelimits.stopInfoRequest,
       ),
       builder: (result, {fetchMore, refetch}) {
         if (result.hasException) {
-          return QueryErrorWidget(result.exception!);
+          return ErrorWidget(result.exception!);
         }
 
         final Map<String, dynamic>? data = result.data;

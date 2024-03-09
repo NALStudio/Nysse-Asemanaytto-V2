@@ -33,16 +33,18 @@ class FeedHeader_Incrementality extends $pb.ProtobufEnum {
   const FeedHeader_Incrementality._($core.int v, $core.String n) : super(v, n);
 }
 
-/// The relation between this StopTime and the static schedule.
+/// The relation between the StopTimeEvents and the static schedule.
 class TripUpdate_StopTimeUpdate_ScheduleRelationship extends $pb.ProtobufEnum {
   static const TripUpdate_StopTimeUpdate_ScheduleRelationship SCHEDULED = TripUpdate_StopTimeUpdate_ScheduleRelationship._(0, _omitEnumNames ? '' : 'SCHEDULED');
   static const TripUpdate_StopTimeUpdate_ScheduleRelationship SKIPPED = TripUpdate_StopTimeUpdate_ScheduleRelationship._(1, _omitEnumNames ? '' : 'SKIPPED');
   static const TripUpdate_StopTimeUpdate_ScheduleRelationship NO_DATA = TripUpdate_StopTimeUpdate_ScheduleRelationship._(2, _omitEnumNames ? '' : 'NO_DATA');
+  static const TripUpdate_StopTimeUpdate_ScheduleRelationship UNSCHEDULED = TripUpdate_StopTimeUpdate_ScheduleRelationship._(3, _omitEnumNames ? '' : 'UNSCHEDULED');
 
   static const $core.List<TripUpdate_StopTimeUpdate_ScheduleRelationship> values = <TripUpdate_StopTimeUpdate_ScheduleRelationship> [
     SCHEDULED,
     SKIPPED,
     NO_DATA,
+    UNSCHEDULED,
   ];
 
   static final $core.Map<$core.int, TripUpdate_StopTimeUpdate_ScheduleRelationship> _byValue = $pb.ProtobufEnum.initByValue(values);
@@ -90,9 +92,14 @@ class VehiclePosition_CongestionLevel extends $pb.ProtobufEnum {
   const VehiclePosition_CongestionLevel._($core.int v, $core.String n) : super(v, n);
 }
 
-/// The degree of passenger occupancy of the vehicle. This field is still
-/// experimental, and subject to change. It may be formally adopted in the
-/// future.
+/// The state of passenger occupancy for the vehicle or carriage.
+/// Individual producers may not publish all OccupancyStatus values. Therefore, consumers
+/// must not assume that the OccupancyStatus values follow a linear scale.
+/// Consumers should represent OccupancyStatus values as the state indicated
+/// and intended by the producer. Likewise, producers must use OccupancyStatus values that
+/// correspond to actual vehicle occupancy states.
+/// For describing passenger occupancy levels on a linear scale, see `occupancy_percentage`.
+/// This field is still experimental, and subject to change. It may be formally adopted in the future.
 class VehiclePosition_OccupancyStatus extends $pb.ProtobufEnum {
   static const VehiclePosition_OccupancyStatus EMPTY = VehiclePosition_OccupancyStatus._(0, _omitEnumNames ? '' : 'EMPTY');
   static const VehiclePosition_OccupancyStatus MANY_SEATS_AVAILABLE = VehiclePosition_OccupancyStatus._(1, _omitEnumNames ? '' : 'MANY_SEATS_AVAILABLE');
@@ -101,6 +108,8 @@ class VehiclePosition_OccupancyStatus extends $pb.ProtobufEnum {
   static const VehiclePosition_OccupancyStatus CRUSHED_STANDING_ROOM_ONLY = VehiclePosition_OccupancyStatus._(4, _omitEnumNames ? '' : 'CRUSHED_STANDING_ROOM_ONLY');
   static const VehiclePosition_OccupancyStatus FULL = VehiclePosition_OccupancyStatus._(5, _omitEnumNames ? '' : 'FULL');
   static const VehiclePosition_OccupancyStatus NOT_ACCEPTING_PASSENGERS = VehiclePosition_OccupancyStatus._(6, _omitEnumNames ? '' : 'NOT_ACCEPTING_PASSENGERS');
+  static const VehiclePosition_OccupancyStatus NO_DATA_AVAILABLE = VehiclePosition_OccupancyStatus._(7, _omitEnumNames ? '' : 'NO_DATA_AVAILABLE');
+  static const VehiclePosition_OccupancyStatus NOT_BOARDABLE = VehiclePosition_OccupancyStatus._(8, _omitEnumNames ? '' : 'NOT_BOARDABLE');
 
   static const $core.List<VehiclePosition_OccupancyStatus> values = <VehiclePosition_OccupancyStatus> [
     EMPTY,
@@ -110,6 +119,8 @@ class VehiclePosition_OccupancyStatus extends $pb.ProtobufEnum {
     CRUSHED_STANDING_ROOM_ONLY,
     FULL,
     NOT_ACCEPTING_PASSENGERS,
+    NO_DATA_AVAILABLE,
+    NOT_BOARDABLE,
   ];
 
   static final $core.Map<$core.int, VehiclePosition_OccupancyStatus> _byValue = $pb.ProtobufEnum.initByValue(values);
@@ -118,7 +129,7 @@ class VehiclePosition_OccupancyStatus extends $pb.ProtobufEnum {
   const VehiclePosition_OccupancyStatus._($core.int v, $core.String n) : super(v, n);
 }
 
-/// Cause of this alert.
+/// Cause of this alert. If cause_detail is included, then Cause must also be included.
 class Alert_Cause extends $pb.ProtobufEnum {
   static const Alert_Cause UNKNOWN_CAUSE = Alert_Cause._(1, _omitEnumNames ? '' : 'UNKNOWN_CAUSE');
   static const Alert_Cause OTHER_CAUSE = Alert_Cause._(2, _omitEnumNames ? '' : 'OTHER_CAUSE');
@@ -154,7 +165,7 @@ class Alert_Cause extends $pb.ProtobufEnum {
   const Alert_Cause._($core.int v, $core.String n) : super(v, n);
 }
 
-/// What is the effect of this problem on the affected entity.
+/// What is the effect of this problem on the affected entity. If effect_detail is included, then Effect must also be included.
 class Alert_Effect extends $pb.ProtobufEnum {
   static const Alert_Effect NO_SERVICE = Alert_Effect._(1, _omitEnumNames ? '' : 'NO_SERVICE');
   static const Alert_Effect REDUCED_SERVICE = Alert_Effect._(2, _omitEnumNames ? '' : 'REDUCED_SERVICE');
@@ -165,6 +176,8 @@ class Alert_Effect extends $pb.ProtobufEnum {
   static const Alert_Effect OTHER_EFFECT = Alert_Effect._(7, _omitEnumNames ? '' : 'OTHER_EFFECT');
   static const Alert_Effect UNKNOWN_EFFECT = Alert_Effect._(8, _omitEnumNames ? '' : 'UNKNOWN_EFFECT');
   static const Alert_Effect STOP_MOVED = Alert_Effect._(9, _omitEnumNames ? '' : 'STOP_MOVED');
+  static const Alert_Effect NO_EFFECT = Alert_Effect._(10, _omitEnumNames ? '' : 'NO_EFFECT');
+  static const Alert_Effect ACCESSIBILITY_ISSUE = Alert_Effect._(11, _omitEnumNames ? '' : 'ACCESSIBILITY_ISSUE');
 
   static const $core.List<Alert_Effect> values = <Alert_Effect> [
     NO_SERVICE,
@@ -176,12 +189,34 @@ class Alert_Effect extends $pb.ProtobufEnum {
     OTHER_EFFECT,
     UNKNOWN_EFFECT,
     STOP_MOVED,
+    NO_EFFECT,
+    ACCESSIBILITY_ISSUE,
   ];
 
   static final $core.Map<$core.int, Alert_Effect> _byValue = $pb.ProtobufEnum.initByValue(values);
   static Alert_Effect? valueOf($core.int value) => _byValue[value];
 
   const Alert_Effect._($core.int v, $core.String n) : super(v, n);
+}
+
+/// Severity of this alert.
+class Alert_SeverityLevel extends $pb.ProtobufEnum {
+  static const Alert_SeverityLevel UNKNOWN_SEVERITY = Alert_SeverityLevel._(1, _omitEnumNames ? '' : 'UNKNOWN_SEVERITY');
+  static const Alert_SeverityLevel INFO = Alert_SeverityLevel._(2, _omitEnumNames ? '' : 'INFO');
+  static const Alert_SeverityLevel WARNING = Alert_SeverityLevel._(3, _omitEnumNames ? '' : 'WARNING');
+  static const Alert_SeverityLevel SEVERE = Alert_SeverityLevel._(4, _omitEnumNames ? '' : 'SEVERE');
+
+  static const $core.List<Alert_SeverityLevel> values = <Alert_SeverityLevel> [
+    UNKNOWN_SEVERITY,
+    INFO,
+    WARNING,
+    SEVERE,
+  ];
+
+  static final $core.Map<$core.int, Alert_SeverityLevel> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static Alert_SeverityLevel? valueOf($core.int value) => _byValue[value];
+
+  const Alert_SeverityLevel._($core.int v, $core.String n) : super(v, n);
 }
 
 /// The relation between this trip and the static schedule. If a trip is done
@@ -192,18 +227,43 @@ class TripDescriptor_ScheduleRelationship extends $pb.ProtobufEnum {
   static const TripDescriptor_ScheduleRelationship ADDED = TripDescriptor_ScheduleRelationship._(1, _omitEnumNames ? '' : 'ADDED');
   static const TripDescriptor_ScheduleRelationship UNSCHEDULED = TripDescriptor_ScheduleRelationship._(2, _omitEnumNames ? '' : 'UNSCHEDULED');
   static const TripDescriptor_ScheduleRelationship CANCELED = TripDescriptor_ScheduleRelationship._(3, _omitEnumNames ? '' : 'CANCELED');
+  static const TripDescriptor_ScheduleRelationship REPLACEMENT = TripDescriptor_ScheduleRelationship._(5, _omitEnumNames ? '' : 'REPLACEMENT');
+  static const TripDescriptor_ScheduleRelationship DUPLICATED = TripDescriptor_ScheduleRelationship._(6, _omitEnumNames ? '' : 'DUPLICATED');
+  static const TripDescriptor_ScheduleRelationship DELETED = TripDescriptor_ScheduleRelationship._(7, _omitEnumNames ? '' : 'DELETED');
 
   static const $core.List<TripDescriptor_ScheduleRelationship> values = <TripDescriptor_ScheduleRelationship> [
     SCHEDULED,
     ADDED,
     UNSCHEDULED,
     CANCELED,
+    REPLACEMENT,
+    DUPLICATED,
+    DELETED,
   ];
 
   static final $core.Map<$core.int, TripDescriptor_ScheduleRelationship> _byValue = $pb.ProtobufEnum.initByValue(values);
   static TripDescriptor_ScheduleRelationship? valueOf($core.int value) => _byValue[value];
 
   const TripDescriptor_ScheduleRelationship._($core.int v, $core.String n) : super(v, n);
+}
+
+class VehicleDescriptor_WheelchairAccessible extends $pb.ProtobufEnum {
+  static const VehicleDescriptor_WheelchairAccessible NO_VALUE = VehicleDescriptor_WheelchairAccessible._(0, _omitEnumNames ? '' : 'NO_VALUE');
+  static const VehicleDescriptor_WheelchairAccessible UNKNOWN = VehicleDescriptor_WheelchairAccessible._(1, _omitEnumNames ? '' : 'UNKNOWN');
+  static const VehicleDescriptor_WheelchairAccessible WHEELCHAIR_ACCESSIBLE = VehicleDescriptor_WheelchairAccessible._(2, _omitEnumNames ? '' : 'WHEELCHAIR_ACCESSIBLE');
+  static const VehicleDescriptor_WheelchairAccessible WHEELCHAIR_INACCESSIBLE = VehicleDescriptor_WheelchairAccessible._(3, _omitEnumNames ? '' : 'WHEELCHAIR_INACCESSIBLE');
+
+  static const $core.List<VehicleDescriptor_WheelchairAccessible> values = <VehicleDescriptor_WheelchairAccessible> [
+    NO_VALUE,
+    UNKNOWN,
+    WHEELCHAIR_ACCESSIBLE,
+    WHEELCHAIR_INACCESSIBLE,
+  ];
+
+  static final $core.Map<$core.int, VehicleDescriptor_WheelchairAccessible> _byValue = $pb.ProtobufEnum.initByValue(values);
+  static VehicleDescriptor_WheelchairAccessible? valueOf($core.int value) => _byValue[value];
+
+  const VehicleDescriptor_WheelchairAccessible._($core.int v, $core.String n) : super(v, n);
 }
 
 
