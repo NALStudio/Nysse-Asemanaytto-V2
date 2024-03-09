@@ -330,9 +330,10 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
     );
   }
 
-  double _calculateMarkerSize(double minSize, double maxSize) {
+  double _calculateMarkerSize(double minSize, double maxSize,
+      {required double zoom}) {
     return remapDouble(
-      _mapController.camera.zoom,
+      zoom,
       _mapController.camera.minZoom!,
       _mapController.camera.maxZoom!,
       minSize,
@@ -341,7 +342,8 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
   }
 
   Marker _buildStopMarker(LatLng point) {
-    double size = _calculateMarkerSize(10, 30);
+    double size =
+        _calculateMarkerSize(10, 30, zoom: _mapController.camera.zoom);
     return Marker(
       point: point,
       width: size,
@@ -363,7 +365,17 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
     final Config config = Config.of(context);
     final stopInfo = StopInfo.of(context);
 
-    double size = _calculateMarkerSize(10, 30);
+    double size = _calculateMarkerSize(
+      10,
+      30,
+      zoom: _mapController.camera.zoom,
+    );
+    double maxSize = _calculateMarkerSize(
+      10,
+      30,
+      zoom: _mapController.camera.maxZoom!,
+    );
+
     LatLng point = LatLng(pos.position.latitude, pos.position.longitude);
 
     // example: 6921_91
@@ -384,11 +396,12 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
 
     final DigitransitStopInfoRoute? route = stopInfo?.routes[routeGtfsId];
 
-    TextStyle textStyle = TextStyle(
-      fontSize: 16 * Layout.of(context).logicalPixelSize,
-      height: 1,
-      fontWeight: FontWeight.bold,
-    );
+    const double borderWidth = 3;
+    const double textBorderPadding = 1;
+
+    const double fontSizePadding = (2 * borderWidth) - (2 * textBorderPadding);
+    final double fontSize = size - fontSizePadding;
+    final double maxFontSize = maxSize - fontSizePadding;
 
     return Marker(
       point: point,
@@ -399,16 +412,12 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
           // deg2rad = math.pi / 180
           bearing: pos.position.bearing * (math.pi / 180),
           borderColor: route?.color ?? Colors.grey,
-          borderWidth: 3,
+          borderWidth: borderWidth,
+          lineNumber: route?.shortName ?? "??",
+          lineNumberSize: fontSize,
+          lineNumberMinSize: 12 * Layout.of(context).logicalPixelSize,
+          lineNumberMaxSize: maxFontSize,
         ),
-        child: size > (textStyle.fontSize! + 2)
-            ? Center(
-                child: Text(
-                  route?.shortName ?? '?',
-                  style: textStyle,
-                ),
-              )
-            : null,
       ),
     );
   }

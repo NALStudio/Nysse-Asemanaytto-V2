@@ -1,3 +1,5 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
 
@@ -8,11 +10,20 @@ class BusMarkerPainter extends CustomPainter {
   /// radians
   final double bearing;
 
+  final String lineNumber;
+  final double lineNumberSize;
+  final double? lineNumberMinSize;
+  final double lineNumberMaxSize;
+
   BusMarkerPainter({
     super.repaint,
     required this.borderColor,
     required this.borderWidth,
     required this.bearing,
+    required this.lineNumber,
+    required this.lineNumberSize,
+    this.lineNumberMinSize,
+    required this.lineNumberMaxSize,
   });
 
   @override
@@ -89,12 +100,45 @@ class BusMarkerPainter extends CustomPainter {
       radius - borderWidth,
       paint,
     );
+
+    if (lineNumberMinSize == null || lineNumberSize > lineNumberMinSize!) {
+      final Picture textPicture = _textPicture();
+      canvas.drawPicture(textPicture);
+    }
+  }
+
+  Picture _textPicture() {
+    final recorder = PictureRecorder();
+    final textCanvas = Canvas(recorder);
+
+    final textSpan = TextSpan(
+      text: lineNumber,
+      style: TextStyle(
+        color: Colors.black,
+        fontSize: lineNumberMaxSize,
+        height: 1,
+        fontWeight: FontWeight.bold,
+      ),
+    );
+    final textPainter = TextPainter(
+      text: textSpan,
+      textDirection: TextDirection.ltr,
+    );
+    textPainter.layout();
+    textPainter.paint(textCanvas, Offset.zero);
+
+    textCanvas.scale(lineNumberSize / lineNumberMaxSize);
+
+    return recorder.endRecording();
   }
 
   @override
   bool shouldRepaint(covariant BusMarkerPainter oldDelegate) {
     return borderColor != oldDelegate.borderColor ||
         borderWidth != oldDelegate.borderWidth ||
-        bearing != oldDelegate.bearing;
+        bearing != oldDelegate.bearing ||
+        lineNumber != oldDelegate.lineNumber ||
+        lineNumberMinSize != oldDelegate.lineNumberMinSize ||
+        lineNumberMaxSize != oldDelegate.lineNumberMaxSize;
   }
 }
