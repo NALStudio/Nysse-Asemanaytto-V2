@@ -13,21 +13,6 @@ query getStopInfo(\$stopId: String!)
     vehicleMode
     lat
     lon
-    patterns {
-      code
-      stops {
-        gtfsId
-        lat
-        lon
-      }
-      patternGeometry {
-        length
-        points
-      }
-      route {
-        gtfsId
-      }
-    }
     routes {
       gtfsId
       shortName
@@ -41,7 +26,6 @@ query getStopInfo(\$stopId: String!)
   final DigitransitMode? vehicleMode;
   final double lat;
   final double lon;
-  final Map<String, DigitransitStopInfoPattern> patterns;
   final Map<GtfsId, DigitransitStopInfoRoute> routes;
 
   const DigitransitStopInfoQuery({
@@ -49,7 +33,6 @@ query getStopInfo(\$stopId: String!)
     required this.vehicleMode,
     required this.lat,
     required this.lon,
-    required this.patterns,
     required this.routes,
   });
 
@@ -63,18 +46,8 @@ query getStopInfo(\$stopId: String!)
       vehicleMode: vehicleMode != null ? DigitransitMode(vehicleMode) : null,
       lat: stop["lat"],
       lon: stop["lon"],
-      patterns: UnmodifiableMapView(parsePatterns(stop["patterns"])),
       routes: UnmodifiableMapView(parseRoutes(stop["routes"])),
     );
-  }
-
-  static Map<String, DigitransitStopInfoPattern> parsePatterns(
-      List<dynamic> patterns) {
-    return Map.fromEntries(patterns.map((e) {
-      final Map<String, dynamic> map = e;
-      String code = map["code"];
-      return MapEntry(code, DigitransitStopInfoPattern._parse(map));
-    }));
   }
 
   static Map<GtfsId, DigitransitStopInfoRoute> parseRoutes(
@@ -123,70 +96,6 @@ class DigitransitStopInfoRoute {
       shortName: map["shortName"] as String,
       longName: map["longName"] as String,
       color: Color(color),
-    );
-  }
-}
-
-class DigitransitStopInfoPattern {
-  final List<DigitransitStopInfoPatternStop> stops;
-  final DigitransitPatternGeometry patternGeometry;
-  final GtfsId routeGtfsId;
-
-  DigitransitStopInfoPattern({
-    required this.stops,
-    required this.patternGeometry,
-    required this.routeGtfsId,
-  });
-
-  static DigitransitStopInfoPattern _parse(Map<String, dynamic> map) {
-    final List<dynamic> stops = map["stops"];
-    final Map<String, dynamic> route = map["route"];
-    return DigitransitStopInfoPattern(
-      stops: UnmodifiableListView(
-        stops
-            .map((e) => DigitransitStopInfoPatternStop._parse(e))
-            .toList(growable: false),
-      ),
-      patternGeometry: DigitransitPatternGeometry._parse(
-        map["patternGeometry"],
-      ),
-      routeGtfsId: GtfsId(route["gtfsId"] as String),
-    );
-  }
-}
-
-/// pattern encoded in Google polyline format
-class DigitransitPatternGeometry {
-  final int length;
-  final String points;
-
-  DigitransitPatternGeometry({required this.length, required this.points});
-
-  static DigitransitPatternGeometry _parse(Map<String, dynamic> map) {
-    return DigitransitPatternGeometry(
-      length: map["length"],
-      points: map["points"],
-    );
-  }
-}
-
-class DigitransitStopInfoPatternStop {
-  final GtfsId gtfsId;
-  final double lat;
-  final double lon;
-
-  DigitransitStopInfoPatternStop({
-    required this.gtfsId,
-    required this.lat,
-    required this.lon,
-  });
-
-  static DigitransitStopInfoPatternStop _parse(Map<String, dynamic> map) {
-    final String gtfsId = map["gtfsId"];
-    return DigitransitStopInfoPatternStop(
-      gtfsId: GtfsId(gtfsId),
-      lat: map["lat"],
-      lon: map["lon"],
     );
   }
 }

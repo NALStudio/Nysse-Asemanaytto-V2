@@ -27,11 +27,12 @@ class MapVehiclesEmbed extends Embed {
 
   @override
   EmbedWidgetMixin<MapVehiclesEmbed> createEmbed(
-          covariant MapEmbedSettings settings) =>
+          covariant MapVehiclesEmbedSettings settings) =>
       MapVehiclesEmbedWidget(key: _mapKey, settings: settings);
 
   @override
-  EmbedSettings<MapVehiclesEmbed> createDefaultSettings() => MapEmbedSettings(
+  EmbedSettings<MapVehiclesEmbed> createDefaultSettings() =>
+      MapVehiclesEmbedSettings(
         beforeAnimationSeconds: 1.0,
         animationDurationSeconds: 10,
         afterAnimationSeconds: 5.0,
@@ -43,7 +44,7 @@ class MapVehiclesEmbed extends Embed {
 
 class MapVehiclesEmbedWidget extends StatefulWidget
     implements EmbedWidgetMixin<MapVehiclesEmbed> {
-  final MapEmbedSettings settings;
+  final MapVehiclesEmbedSettings settings;
 
   const MapVehiclesEmbedWidget({required this.settings, super.key});
 
@@ -61,12 +62,12 @@ class MapVehiclesEmbedWidget extends StatefulWidget
 
   @override
   void onDisable() {
-    _mapKey.currentState?.unsubscribeMqttIfNeeded();
+    _mapKey.currentState?.unsubscribeMqtt();
   }
 
   @override
   void onEnable() {
-    _mapKey.currentState?.subscribeMqttIfNeeded();
+    _mapKey.currentState?.subscribeMqtt();
     _mapKey.currentState?.scheduleMapAnimation(
       durationFromDouble(seconds: settings.beforeAnimationSeconds),
     );
@@ -117,7 +118,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
     _mapController.dispose();
     _mapAnimationController.dispose();
 
-    unsubscribeMqttIfNeeded();
+    unsubscribeMqtt();
 
     super.dispose();
   }
@@ -132,7 +133,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
     }
   }
 
-  void subscribeMqttIfNeeded() {
+  void subscribeMqtt() {
     final DigitransitMqttState? mqtt = DigitransitMqtt.maybeOf(context);
     if (mqtt?.isConnected != true) {
       _positioningSubError = MqttOfflineErrorWidget();
@@ -200,7 +201,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
     });
   }
 
-  void unsubscribeMqttIfNeeded() {
+  void unsubscribeMqtt() {
     if (_positioningSub == null) {
       return;
     }

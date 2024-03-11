@@ -30,7 +30,7 @@ const Map<MapEmbedVehicles, String> _mapEmbedVehiclesNotes = {
       "This setting may have performance issues on stops with multiple routes.",
 };
 
-class MapEmbedSettings extends EmbedSettings<MapVehiclesEmbed> {
+class MapVehiclesEmbedSettings extends EmbedSettings<MapVehiclesEmbed> {
   double beforeAnimationSeconds;
   double animationDurationSeconds;
   double afterAnimationSeconds;
@@ -39,7 +39,7 @@ class MapEmbedSettings extends EmbedSettings<MapVehiclesEmbed> {
   MapEmbedCameraFit cameraFit;
   MapEmbedVehicles vehicles;
 
-  MapEmbedSettings({
+  MapVehiclesEmbedSettings({
     required this.beforeAnimationSeconds,
     required this.animationDurationSeconds,
     required this.afterAnimationSeconds,
@@ -82,21 +82,22 @@ class MapEmbedSettings extends EmbedSettings<MapVehiclesEmbed> {
   }
 
   @override
-  EmbedSettingsForm<MapEmbedSettings> createForm(
-    covariant MapEmbedSettings defaultSettings,
+  EmbedSettingsForm<MapVehiclesEmbedSettings> createForm(
+    covariant MapVehiclesEmbedSettings defaultSettings,
   ) =>
-      MapEmbedSettingsForm(
+      MapVehiclesEmbedSettingsForm(
         parentSettings: this,
         defaultSettings: defaultSettings,
       );
 }
 
-class MapEmbedSettingsForm extends EmbedSettingsForm<MapEmbedSettings> {
+class MapVehiclesEmbedSettingsForm
+    extends EmbedSettingsForm<MapVehiclesEmbedSettings> {
   MapEmbedTileProvider? _tileProviderSetting;
   MapEmbedCameraFit? _cameraFitSetting;
   MapEmbedVehicles? _vehicleSetting;
 
-  MapEmbedSettingsForm({
+  MapVehiclesEmbedSettingsForm({
     required super.parentSettings,
     required super.defaultSettings,
   });

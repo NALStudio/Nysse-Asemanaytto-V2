@@ -18,9 +18,9 @@ query getStoptimes(\$stopId: String!, \$numberOfDepartures: Int)
       headsign
       trip {
         gtfsId
-        routeShortName
-        pattern {
-          code
+        route {
+          gtfsId
+          shortName
         }
       }
     }
@@ -60,7 +60,7 @@ class DigitransitStoptime {
   final String? routeShortName;
 
   final GtfsId? tripGtfsId;
-  final String? patternCode;
+  final GtfsId? routeGtfsId;
 
   DateTime? _mergeMixedDateTime(int? timeMix) {
     if (timeMix != null && serviceDay != null) {
@@ -83,13 +83,13 @@ class DigitransitStoptime {
     required this.headsign,
     required this.routeShortName,
     required this.tripGtfsId,
-    required this.patternCode,
+    required this.routeGtfsId,
   });
 
   static DigitransitStoptime parse(Map<String, dynamic> data) {
     final String? realtimeState = data["realtimeState"];
     final Map<String, dynamic>? trip = data["trip"];
-    final Map<String, dynamic>? pattern = trip?["pattern"];
+    final Map<String, dynamic>? route = trip?["route"];
 
     final String? gtfsId = trip?["gtfsId"];
 
@@ -104,7 +104,7 @@ class DigitransitStoptime {
       headsign: data["headsign"],
       routeShortName: trip?["routeShortName"],
       tripGtfsId: gtfsId != null ? GtfsId(gtfsId) : null,
-      patternCode: pattern?["code"],
+      routeGtfsId: route != null ? GtfsId(route["gtfsId"] as String) : null,
     );
   }
 }
