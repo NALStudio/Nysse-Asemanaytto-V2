@@ -5,12 +5,17 @@ import 'package:nysse_asemanaytto/core/helpers.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/base.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
+import 'package:nysse_asemanaytto/settings/settings_switch_form_field.dart';
 
 class MapLinesEmbedSettings extends EmbedSettings<MapLinesEmbed> {
   MapEmbedTileProvider tileProvider;
+  bool showStops;
+  bool showRouteInfo;
 
   MapLinesEmbedSettings({
     required this.tileProvider,
+    required this.showStops,
+    required this.showRouteInfo,
   });
 
   @override
@@ -20,12 +25,24 @@ class MapLinesEmbedSettings extends EmbedSettings<MapLinesEmbed> {
     final String tileProviderStr = map["tileProvider"];
     tileProvider = MapEmbedTileProvider.values
         .firstWhere((element) => element.name == tileProviderStr);
+
+    final bool? showStops = map["showStops"];
+    if (showStops != null) {
+      this.showStops = showStops;
+    }
+
+    final bool? showRouteInfo = map["showRouteInfo"];
+    if (showRouteInfo != null) {
+      this.showRouteInfo = showRouteInfo;
+    }
   }
 
   @override
   String serialize() {
     final Map<String, dynamic> map = {
       "tileProvider": tileProvider.name,
+      "showStops": showStops,
+      "showRouteInfo": showRouteInfo,
     };
     return json.encode(map);
   }
@@ -99,6 +116,16 @@ class MapLinesEmbedSettingsForm
           onChanged: (value) => _tileProviderSetting = value,
           onSaved: (newValue) => parentSettings.tileProvider =
               newValue ?? defaultSettings.tileProvider,
+        ),
+        SettingsSwitchFormField(
+          initialValue: parentSettings.showStops,
+          titleText: "Show Line Stops",
+          onSaved: (newValue) => parentSettings.showStops = newValue!,
+        ),
+        SettingsSwitchFormField(
+          initialValue: parentSettings.showRouteInfo,
+          titleText: "Show Route Info",
+          onSaved: (newValue) => parentSettings.showRouteInfo = newValue!,
         ),
       ],
     );

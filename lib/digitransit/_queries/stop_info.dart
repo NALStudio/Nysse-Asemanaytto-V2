@@ -18,6 +18,7 @@ query getStopInfo(\$stopId: String!)
       shortName
       longName
       color
+      mode
     }
   }
 }
@@ -77,25 +78,33 @@ query getStopInfo(\$stopId: String!)
 }
 
 class DigitransitStopInfoRoute {
-  final String shortName;
-  final String longName;
-  final Color color;
+  final String? shortName;
+  final String? longName;
+  final Color? color;
+  final DigitransitMode? mode;
 
   DigitransitStopInfoRoute({
     required this.shortName,
     required this.longName,
     required this.color,
+    required this.mode,
   });
 
   static DigitransitStopInfoRoute _parse(Map<String, dynamic> map) {
-    String colorHex = map["color"];
-    assert(colorHex.length == 6);
-    int color = int.parse("ff$colorHex", radix: 16);
+    String? colorHex = map["color"];
+    int? color;
+    if (colorHex != null) {
+      assert(colorHex.length == 6);
+      color = int.parse("ff$colorHex", radix: 16);
+    }
+
+    final String? mode = map["mode"];
 
     return DigitransitStopInfoRoute(
-      shortName: map["shortName"] as String,
-      longName: map["longName"] as String,
-      color: Color(color),
+      shortName: map["shortName"] as String?,
+      longName: map["longName"] as String?,
+      color: color != null ? Color(color) : null,
+      mode: mode != null ? DigitransitMode(mode) : null,
     );
   }
 }

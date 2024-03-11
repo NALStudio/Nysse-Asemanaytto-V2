@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:mqtt5_client/mqtt5_client.dart';
+import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
+import 'package:nysse_asemanaytto/core/request_info.dart';
 import 'package:nysse_asemanaytto/core/widgets/error_widgets.dart';
 import 'package:nysse_asemanaytto/digitransit/_queries/trip_route.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/digitransit/mqtt/mqtt.dart';
+import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/_decode_polyline.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/settings.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/base.dart';
@@ -15,6 +19,7 @@ import 'package:nysse_asemanaytto/gtfs/realtime.dart';
 import 'package:nysse_asemanaytto/main/stopinfo.dart';
 
 import 'package:nysse_asemanaytto/main/stoptimes.dart';
+import 'package:nysse_asemanaytto/nysse/nysse.dart';
 
 final GlobalKey<_MapLinesEmbedWidgetState> _mapKey = GlobalKey();
 
@@ -24,11 +29,13 @@ class MapLinesEmbed extends Embed {
   @override
   EmbedWidgetMixin<MapLinesEmbed> createEmbed(
           covariant MapLinesEmbedSettings settings) =>
-      MapLinesEmbedWidget(key: _mapKey, settings: settings);
+      MapLinesEmbedWidget(settings: settings);
 
   @override
   EmbedSettings<MapLinesEmbed> createDefaultSettings() => MapLinesEmbedSettings(
         tileProvider: MapEmbedTileProvider.digitransitRetina,
+        showStops: false,
+        showRouteInfo: true,
       );
 }
 
@@ -51,6 +58,7 @@ class MapLinesEmbedWidget extends StatelessWidget
   @override
   void onEnable() {
     _mapKey.currentState?.subscribeMqtt();
+    _mapKey.currentState?.computeGeometry();
   }
 
   @override
@@ -65,9 +73,9 @@ class MapLinesEmbedWidget extends StatelessWidget
       options: QueryOptions(
         document: gql(DigitransitTripRouteQuery.query),
         variables: {
-          "tripId": stoptime!.tripGtfsId!.id,
+          "tripId": stoptime.tripGtfsId!.id,
         },
-        pollInterval: RequestInfo.ratelimits.stoptimesRequest,
+        pollInterval: RequestInfo.ratelimits.tripRouteRequest,
       ),
       builder: (result, {fetchMore, refetch}) {
         if (result.hasException) {
@@ -75,12 +83,19 @@ class MapLinesEmbedWidget extends StatelessWidget
         }
 
         final Map<String, dynamic>? data = result.data;
-        final DigitransitStoptimeQuery? parsed =
-            data != null ? DigitransitStoptimeQuery.parse(data) : null;
 
-        return _StoptimesInherited(
-          stoptimes: parsed,
-          child: widget.child,
+        final DigitransitTripRouteQuery? parsed =
+            data != null ? DigitransitTripRouteQuery.parse(data) : null;
+
+        // TODO: Keep old stoptime after first vehicle has departed
+        // Probably set it in the state first
+        // and do not render the line or buses before the route has loaded
+        // I tried it before and without ^^^^^^ it flickered grey buses and I didn't like it
+        return _MapLinesEmbedWidget(
+          settings,
+          key: _mapKey,
+          stoptime: stoptime,
+          route: parsed,
         );
       },
     );
@@ -88,9 +103,16 @@ class MapLinesEmbedWidget extends StatelessWidget
 }
 
 class _MapLinesEmbedWidget extends StatefulWidget {
+  final MapLinesEmbedSettings settings;
   final DigitransitStoptime stoptime;
+  final DigitransitTripRouteQuery? route;
 
-  const _MapLinesEmbedWidget({required this.stoptime});
+  const _MapLinesEmbedWidget(
+    this.settings, {
+    super.key,
+    required this.stoptime,
+    required this.route,
+  });
 
   @override
   State<StatefulWidget> createState() => _MapLinesEmbedWidgetState();
@@ -100,13 +122,24 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
   late final MapController _mapController;
 
   DigitransitMqttSubscription? _positioningSub;
-  Widget? _positioningSubError;
+  ErrorWidget? _positioningSubError;
   final Map<String, VehiclePosition> _vehiclePositions = {};
+
+  List<LatLng>? _geometry;
+  List<DigitransitPatternStop>? _stops;
+
+  DigitransitMqttState? _mqtt;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
+  }
+
+  @override
+  void didChangeDependencies() {
+    _mqtt = DigitransitMqtt.maybeOf(context);
+    super.didChangeDependencies();
   }
 
   @override
@@ -118,8 +151,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
   }
 
   void subscribeMqtt() {
-    final DigitransitMqttState? mqtt = DigitransitMqtt.maybeOf(context);
-    if (mqtt?.isConnected != true) {
+    if (_mqtt?.isConnected != true) {
       _positioningSubError = MqttOfflineErrorWidget();
       return;
     }
@@ -127,11 +159,11 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     final GtfsId stopId = Config.of(context).stopId;
 
     _positioningSubError = null;
-    _positioningSub = mqtt!.subscribe(
+    _positioningSub = _mqtt!.subscribe(
       DigitransitPositioningTopic(
-              feedId: stopId.feedId,
-              routeId: _subscribedStoptime!.routeGtfsId!.rawId)
-          .buildTopicString(),
+        feedId: stopId.feedId,
+        routeId: widget.stoptime.routeGtfsId!.rawId,
+      ).buildTopicString(),
       MqttQos.atMostOnce,
     );
 
@@ -155,21 +187,87 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
       return;
     }
 
-    DigitransitMqtt.of(context).unsubscribe(_positioningSub!);
+    _mqtt?.unsubscribe(_positioningSub!);
     _vehiclePositions.clear();
+  }
+
+  /// Must be called before this widget's build will display the pattern route.
+  void computeGeometry() {
+    final String? patternGeometry = widget.route?.pattern.patternGeometry;
+    if (patternGeometry == null) {
+      _stops = null;
+      _geometry = null;
+      _mapController.move(kDefaultMapPosition, _mapController.camera.minZoom!);
+      return;
+    }
+
+    _stops = widget.route!.pattern.stops;
+    _geometry = decodePolyline(patternGeometry).toList();
+
+    final double cameraFitPadding = _RouteTitleHeader.getPadding(context);
+    final double cameraTopPadding;
+    if (widget.settings.showRouteInfo) {
+      cameraTopPadding =
+          _RouteTitleHeader.getHeight(context) + (2 * cameraFitPadding);
+    } else {
+      cameraTopPadding = cameraFitPadding;
+    }
+
+    final CameraFit cameraFit = CameraFit.bounds(
+      bounds: LatLngBounds.fromPoints(_geometry!),
+      padding: EdgeInsets.only(
+        left: cameraFitPadding,
+        right: cameraFitPadding,
+        bottom: cameraFitPadding,
+        top: cameraTopPadding,
+      ),
+    );
+    _mapController.fitCamera(cameraFit);
   }
 
   @override
   Widget build(BuildContext context) {
     final stopinfo = StopInfo.of(context);
 
-    List<Marker> stopMarkers = List.empty(growable: true);
-    if (stopinfo != null) {
-      stopMarkers.add(_buildStopMarker(LatLng(stopinfo.lat, stopinfo.lon)));
-    }
+    final DigitransitStopInfoRoute? route = widget.route != null
+        ? stopinfo?.routes[widget.route!.routeGtfsId]
+        : null;
 
     final List<Widget> mapChildren = [
       buildMapEmbedTileProvider(context, widget.settings.tileProvider),
+    ];
+
+    if (_geometry != null) {
+      mapChildren.add(
+        PolylineLayer(
+          polylines: [
+            Polyline(
+              points: _geometry!,
+              color: route?.color ?? Colors.grey,
+              strokeWidth: 4 * Layout.of(context).logicalPixelSize,
+            ),
+          ],
+        ),
+      );
+    }
+    if (widget.settings.showStops && _stops != null) {
+      mapChildren.add(
+        CircleLayer(
+          circles: _stops!
+              .map(
+                (e) => buildStopMarker(
+                  LatLng(e.lat, e.lon),
+                  camera: _mapController.camera,
+                  zoomOverride: 6 * Layout.of(context).logicalPixelSize,
+                ),
+              )
+              .toList(),
+        ),
+      );
+    }
+
+    // Draw stops and vehicles on top of line
+    mapChildren.add(
       MarkerLayer(
         markers: _vehiclePositions.values
             .map(
@@ -177,49 +275,94 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
                 context,
                 mapController: _mapController,
                 pos: e,
+                zoomOverride: _mapController.camera.minZoom!,
               ),
             )
             .toList(growable: false),
       ),
-    ];
+    );
+
+    if (widget.settings.showRouteInfo) {
+      mapChildren.add(_RouteTitleHeader(route: route));
+    }
 
     if (_positioningSubError != null) {
       mapChildren.add(
-        Positioned(
-          left: _mapController.camera.nonRotatedSize.x / 1.5,
-          bottom: _mapController.camera.nonRotatedSize.y / 1.5,
-          right: 0,
-          top: 0,
-          child: _positioningSubError!,
-        ),
+        MapErrorLayer(error: _positioningSubError!),
       );
     }
 
     return FlutterMap(
       mapController: _mapController,
       options: const MapOptions(
+        minZoom: 8,
+        maxZoom: 22,
         interactionOptions: InteractionOptions(
           flags: InteractiveFlag.none,
         ),
-        initialCenter: LatLng(61.497742570, 23.761290078),
+        initialCenter: kDefaultMapPosition,
       ),
       children: mapChildren,
     );
   }
+}
 
-  Marker _buildStopMarker(LatLng point) {
-    double size = calculateMarkerSize(10, 30, mapController: _mapController);
-    return Marker(
-      point: point,
-      width: size,
-      height: size,
+class _RouteTitleHeader extends StatelessWidget {
+  final DigitransitStopInfoRoute? route;
+
+  const _RouteTitleHeader({required this.route});
+
+  static double getHeight(BuildContext context) =>
+      Layout.of(context).tileHeight;
+  static double getPadding(BuildContext context) =>
+      Layout.of(context).shrinkedPadding;
+
+  @override
+  Widget build(BuildContext context) {
+    final layout = Layout.of(context);
+    final double padding = getPadding(context);
+    final double totalHeight = getHeight(context);
+    final double contentHeight = totalHeight - (2 * padding);
+
+    return Positioned(
+      left: padding,
+      top: padding,
+      height: totalHeight,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-          border: Border.all(
-            color: Colors.black,
-            width: 3,
+          color: route?.color ?? Colors.grey,
+          borderRadius: BorderRadius.circular(padding),
+        ),
+        child: Padding(
+          padding: EdgeInsets.all(padding),
+          child: Row(
+            children: [
+              SvgPicture(
+                height: contentHeight,
+                NyssePictograms.getModePictogram(
+                  StopInfo.of(context)?.vehicleMode ?? DigitransitMode.bus,
+                ),
+                colorFilter:
+                    const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                alignment: Alignment.centerLeft,
+              ),
+              SizedBox(width: padding),
+              Text(
+                "${route?.shortName ?? "??"} ",
+                style: layout.labelStyle.copyWith(
+                  fontSize: layout.labelStyle.fontSize! / 3,
+                ),
+              ),
+              Text(
+                route?.longName ?? "?????????? ?????????? ??????????",
+                style: layout.shrinkedLabelStyle.copyWith(
+                  fontSize: layout.shrinkedLabelStyle.fontSize! / 3,
+                  height: layout.labelStyle.fontSize! /
+                      layout.shrinkedLabelStyle.fontSize!,
+                  fontWeight: FontWeight.normal,
+                ),
+              ),
+            ],
           ),
         ),
       ),

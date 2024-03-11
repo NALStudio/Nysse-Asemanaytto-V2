@@ -1,13 +1,12 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:mqtt5_client/mqtt5_client.dart';
-import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/helpers.dart';
-import 'package:nysse_asemanaytto/core/painters/bus_marker_painter.dart';
 import 'package:nysse_asemanaytto/core/widgets/error_widgets.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/digitransit/mqtt/mqtt.dart';
@@ -16,7 +15,6 @@ import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/base.dart';
 import 'package:nysse_asemanaytto/gtfs/realtime.dart';
 import 'package:nysse_asemanaytto/main/stopinfo.dart';
-import 'dart:math' as math;
 
 import 'package:nysse_asemanaytto/main/stoptimes.dart';
 
@@ -94,8 +92,10 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
   final List<Timer> _scheduledMapAnimations = [];
 
   DigitransitMqttSubscription? _positioningSub;
-  Widget? _positioningSubError;
+  ErrorWidget? _positioningSubError;
   final Map<String, VehiclePosition> _vehiclePositions = {};
+
+  DigitransitMqttState? _mqtt;
 
   @override
   void initState() {
@@ -106,6 +106,12 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
     _mapAnimationController.addListener(
       () => _updateMapAnimation(_mapAnimationController.value),
     );
+  }
+
+  @override
+  void didChangeDependencies() {
+    _mqtt = DigitransitMqtt.maybeOf(context);
+    super.didChangeDependencies();
   }
 
   @override
@@ -129,13 +135,12 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
     if (stopinfo != null) {
       return LatLng(stopinfo.lat, stopinfo.lon);
     } else {
-      return const LatLng(61.497742570, 23.761290078);
+      return kDefaultMapPosition;
     }
   }
 
   void subscribeMqtt() {
-    final DigitransitMqttState? mqtt = DigitransitMqtt.maybeOf(context);
-    if (mqtt?.isConnected != true) {
+    if (_mqtt?.isConnected != true) {
       _positioningSubError = MqttOfflineErrorWidget();
       return;
     }
@@ -146,7 +151,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
 
     switch (widget.settings.vehicles) {
       case MapEmbedVehicles.arrivingOnly:
-        _positioningSub = mqtt!.subscribe(
+        _positioningSub = _mqtt!.subscribe(
           DigitransitPositioningTopic(
             feedId: stopId.feedId,
             nextStop: stopId.rawId,
@@ -161,7 +166,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
               ErrorWidget.withDetails(message: "No stoptimes");
           return;
         }
-        _positioningSub = mqtt!.subscribeAll(
+        _positioningSub = _mqtt!.subscribeAll(
           stoptimes.map(
             (e) => DigitransitPositioningTopic(
               feedId: e.tripGtfsId!.feedId,
@@ -177,7 +182,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
               ErrorWidget.withDetails(message: "No stop info.");
           return;
         }
-        _positioningSub = mqtt!.subscribeAll(
+        _positioningSub = _mqtt!.subscribeAll(
           stopInfo.routes.keys.map(
             (e) =>
                 DigitransitPositioningTopic(feedId: e.feedId, routeId: e.rawId)
@@ -206,7 +211,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
       return;
     }
 
-    DigitransitMqtt.of(context).unsubscribe(_positioningSub!);
+    _mqtt?.unsubscribe(_positioningSub!);
     _vehiclePositions.clear();
   }
 
@@ -314,31 +319,34 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
   Widget build(BuildContext context) {
     final stopinfo = StopInfo.of(context);
 
-    List<Marker> stopMarkers = List.empty(growable: true);
+    List<CircleMarker> stopMarkers = List.empty(growable: true);
     if (stopinfo != null) {
-      stopMarkers.add(_buildStopMarker(LatLng(stopinfo.lat, stopinfo.lon)));
+      stopMarkers.add(
+        buildStopMarker(
+          LatLng(stopinfo.lat, stopinfo.lon),
+          camera: _mapController.camera,
+        ),
+      );
     }
 
     final List<Widget> mapChildren = [
       buildMapEmbedTileProvider(context, widget.settings.tileProvider),
       MarkerLayer(
         markers: _vehiclePositions.values
-            .map((e) => _buildVehicleMarker(e))
+            .map(
+              (e) => buildVehicleMarker(
+                context,
+                mapController: _mapController,
+                pos: e,
+              ),
+            )
             .toList(growable: false),
       ),
-      MarkerLayer(markers: stopMarkers),
+      CircleLayer(circles: stopMarkers),
     ];
 
     if (_positioningSubError != null) {
-      mapChildren.add(
-        Positioned(
-          left: _mapController.camera.nonRotatedSize.x / 1.5,
-          bottom: _mapController.camera.nonRotatedSize.y / 1.5,
-          right: 0,
-          top: 0,
-          child: _positioningSubError!,
-        ),
-      );
+      mapChildren.add(MapErrorLayer(error: _positioningSubError!));
     }
 
     return FlutterMap(
@@ -350,96 +358,10 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
         interactionOptions: const InteractionOptions(
           flags: InteractiveFlag.none,
         ),
-        initialCenter: const LatLng(61.497742570, 23.761290078),
+        initialCenter: kDefaultMapPosition,
         onMapReady: () => _mapReady = true,
       ),
       children: mapChildren,
-    );
-  }
-
-  double _calculateMarkerSize(double minSize, double maxSize,
-      {required double zoom}) {
-    return remapDouble(
-      zoom,
-      _mapController.camera.minZoom!,
-      _mapController.camera.maxZoom!,
-      minSize,
-      maxSize,
-    );
-  }
-
-  Marker _buildStopMarker(LatLng point) {
-    double size =
-        _calculateMarkerSize(10, 30, zoom: _mapController.camera.zoom);
-    return Marker(
-      point: point,
-      width: size,
-      height: size,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.white,
-          border: Border.all(
-            color: Colors.black,
-            width: 3,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Marker _buildVehicleMarker(VehiclePosition pos) {
-    final Config config = Config.of(context);
-    final stopInfo = StopInfo.of(context);
-
-    double size = _calculateMarkerSize(
-      10,
-      30,
-      zoom: _mapController.camera.zoom,
-    );
-    double maxSize = _calculateMarkerSize(
-      10,
-      30,
-      zoom: _mapController.camera.maxZoom!,
-    );
-
-    LatLng point = LatLng(pos.position.latitude, pos.position.longitude);
-
-    // example: 6921_91
-    final String vehicleId = pos.vehicle.id;
-    // 6921_91 => 6921
-    final String vehicleIdHeader =
-        vehicleId.substring(0, vehicleId.indexOf('_'));
-
-    // example: 86921
-    final String routeIdFull = pos.trip.routeId;
-    assert(routeIdFull.endsWith(vehicleIdHeader));
-    // ^^ No idea why routeId has this weird ass suffix
-    // 86921 => 8
-    final String routeId =
-        routeIdFull.substring(0, routeIdFull.length - vehicleIdHeader.length);
-
-    final GtfsId routeGtfsId = GtfsId.combine(config.stopId.feedId, routeId);
-
-    final DigitransitStopInfoRoute? route = stopInfo?.routes[routeGtfsId];
-
-    const double borderWidth = 3;
-
-    return Marker(
-      point: point,
-      width: size,
-      height: size,
-      child: CustomPaint(
-        painter: BusMarkerPainter(
-          // deg2rad = math.pi / 180
-          bearing: pos.position.bearing * (math.pi / 180),
-          borderColor: route?.color ?? Colors.grey,
-          borderWidth: borderWidth,
-          lineNumber: route?.shortName ?? "??",
-          maxSize: Size(maxSize, maxSize),
-          lineNumberMinSize: 12 * Layout.of(context).logicalPixelSize,
-        ),
-      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
+import 'package:nysse_asemanaytto/core/helpers.dart';
 import 'package:nysse_asemanaytto/core/widgets/reorderable_add_remove_list.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'dart:math' as math;
@@ -45,7 +46,12 @@ Widget _buildFormField(FormFieldState<UnmodifiableListView<Embed>> state) {
   return ReorderableAddRemoveList<Embed>(
     itemOptions: Embed.allEmbeds
         .where((e) => enabledEmbedNames?.contains(e.name) != true)
-        .map((e) => ReorderableItemRecord(value: e, label: e.name))
+        .map(
+          (e) => ReorderableItemRecord(
+            value: e,
+            label: snakeCase2Sentence(e.name),
+          ),
+        )
         .toList(),
     addItem: (val) {
       final List<Embed> list = List.from(state.value ?? const Iterable.empty());

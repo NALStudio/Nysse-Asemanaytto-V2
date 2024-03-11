@@ -48,16 +48,35 @@ TileLayer _buildDigitransit(BuildContext context, {required bool retina}) {
   );
 }
 
-double calculateMarkerSize(
-  double minSize,
-  double maxSize, {
-  required MapController mapController,
+class MapErrorLayer extends StatelessWidget {
+  final ErrorWidget error;
+
+  const MapErrorLayer({super.key, required this.error});
+
+  @override
+  Widget build(BuildContext context) {
+    final MapController mapController = MapController.of(context);
+
+    return Positioned(
+      left: mapController.camera.nonRotatedSize.x / 1.5,
+      bottom: mapController.camera.nonRotatedSize.y / 1.5,
+      right: 0,
+      top: 0,
+      child: error,
+    );
+  }
+}
+
+double calculateScaledSize({
+  required double minSize,
+  required double maxSize,
+  required MapCamera camera,
   double? zoomOverride,
 }) {
   return remapDouble(
-    zoomOverride ?? mapController.camera.zoom,
-    mapController.camera.minZoom!,
-    mapController.camera.maxZoom!,
+    zoomOverride ?? camera.zoom,
+    camera.minZoom!,
+    camera.maxZoom!,
     minSize,
     maxSize,
   );
@@ -67,19 +86,24 @@ Marker buildVehicleMarker(
   BuildContext context, {
   required MapController mapController,
   required VehiclePosition pos,
+  double? zoomOverride,
 }) {
   final Config config = Config.of(context);
   final stopInfo = StopInfo.of(context);
 
-  double size = calculateMarkerSize(10, 30, mapController: mapController);
-  double maxSize = calculateMarkerSize(
-    10,
-    30,
-    mapController: mapController,
+  LatLng point = LatLng(pos.position.latitude, pos.position.longitude);
+
+  double size = calculateScaledSize(
+    minSize: 10,
+    maxSize: 30,
+    camera: mapController.camera,
+  );
+  double maxSize = calculateScaledSize(
+    minSize: 10,
+    maxSize: 30,
+    camera: mapController.camera,
     zoomOverride: mapController.camera.maxZoom!,
   );
-
-  LatLng point = LatLng(pos.position.latitude, pos.position.longitude);
 
   // example: 6921_91
   final String vehicleId = pos.vehicle.id;
@@ -117,3 +141,25 @@ Marker buildVehicleMarker(
     ),
   );
 }
+
+CircleMarker buildStopMarker(
+  LatLng point, {
+  required MapCamera camera,
+  double? zoomOverride,
+}) {
+  double size = calculateScaledSize(
+    minSize: 10,
+    maxSize: 30,
+    camera: camera,
+    zoomOverride: zoomOverride,
+  );
+  return CircleMarker(
+    point: point,
+    radius: size / 2,
+    color: Colors.white,
+    borderColor: Colors.black,
+    borderStrokeWidth: 3,
+  );
+}
+
+const LatLng kDefaultMapPosition = LatLng(61.497742570, 23.761290078);

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/_test2_embed.dart';
 import 'package:nysse_asemanaytto/embeds/_test_embed.dart';
@@ -25,13 +26,15 @@ abstract class Embed {
   int get hashCode => name.hashCode;
 
   static const List<Embed> allEmbeds = [
-    MapVehiclesEmbed(name: "map"),
+    MapVehiclesEmbed(name: "mapVehicles"),
+    MapLinesEmbed(name: "mapLines"),
     TestEmbed(name: "test"),
     Test2Embed(name: "test2"),
   ];
 }
 
 mixin EmbedWidgetMixin<T extends Embed> on Widget {
+  /// Return null or [Duration.zero] to skip displaying this embed.
   Duration? getDuration();
 
   void onEnable();

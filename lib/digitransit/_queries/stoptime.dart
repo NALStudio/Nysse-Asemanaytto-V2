@@ -102,7 +102,7 @@ class DigitransitStoptime {
           ? DigitransitRealtimeState(realtimeState)
           : null,
       headsign: data["headsign"],
-      routeShortName: trip?["routeShortName"],
+      routeShortName: route?["shortName"],
       tripGtfsId: gtfsId != null ? GtfsId(gtfsId) : null,
       routeGtfsId: route != null ? GtfsId(route["gtfsId"] as String) : null,
     );

@@ -260,12 +260,13 @@ class _EmbedCanvasState extends State<EmbedCanvas> {
       childIndex = _childIndex ?? -1;
       do {
         // increment index, default to 0 if null.
-        //Will wrap around at after final element.
+        // Will wrap around at after final element.
         childIndex = (childIndex! + 1) % _embedWidgets.length;
         embedDuration =
             _embedWidgets[childIndex].getDuration() ?? Duration.zero;
       } while (embedDuration == Duration.zero);
     }
+
     setState(() {
       _childIndex = childIndex;
     });

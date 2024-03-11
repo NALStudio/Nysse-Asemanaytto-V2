@@ -16,7 +16,6 @@ query getTripRoute(\$tripId: String!)
         lon
       }
       patternGeometry {
-        length
         points
       }
     }
@@ -33,18 +32,22 @@ query getTripRoute(\$tripId: String!)
   });
 
   static DigitransitTripRouteQuery parse(Map<String, dynamic> data) {
-    final String routeGtfsId = data["route"]["gtfsId"];
+    final Map<String, dynamic> map = data["trip"];
+
+    final String routeGtfsId = map["route"]["gtfsId"];
 
     return DigitransitTripRouteQuery(
       routeGtfsId: GtfsId(routeGtfsId),
-      pattern: DigitransitPattern._parse(data["pattern"]),
+      pattern: DigitransitPattern._parse(map["pattern"]),
     );
   }
 }
 
 class DigitransitPattern {
   final List<DigitransitPatternStop> stops;
-  final DigitransitPatternGeometry patternGeometry;
+
+  /// List of coordinates in a Google encoded polyline format
+  final String? patternGeometry;
 
   DigitransitPattern({
     required this.stops,
@@ -59,24 +62,7 @@ class DigitransitPattern {
             .map((e) => DigitransitPatternStop._parse(e))
             .toList(growable: false),
       ),
-      patternGeometry: DigitransitPatternGeometry._parse(
-        map["patternGeometry"],
-      ),
-    );
-  }
-}
-
-/// pattern encoded in Google polyline format
-class DigitransitPatternGeometry {
-  final int length;
-  final String points;
-
-  DigitransitPatternGeometry({required this.length, required this.points});
-
-  static DigitransitPatternGeometry _parse(Map<String, dynamic> map) {
-    return DigitransitPatternGeometry(
-      length: map["length"],
-      points: map["points"],
+      patternGeometry: map["patternGeometry"]?["points"] as String?,
     );
   }
 }
