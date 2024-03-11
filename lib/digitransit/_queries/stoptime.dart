@@ -1,11 +1,15 @@
-import 'package:nysse_asemanaytto/digitransit/_enums.dart';
+import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 
 class DigitransitStoptimeQuery {
   static const String query = """
 query getStoptimes(\$stopId: String!, \$numberOfDepartures: Int)
 {
   stop(id: \$stopId) {
-    stoptimesWithoutPatterns(numberOfDepartures: \$numberOfDepartures, omitNonPickups: true, omitCanceled: false) {
+    stoptimesWithoutPatterns(
+      numberOfDepartures: \$numberOfDepartures
+      omitNonPickups: true
+      omitCanceled: false
+    ) {
       scheduledDeparture
       realtimeDeparture
       serviceDay
@@ -15,6 +19,9 @@ query getStoptimes(\$stopId: String!, \$numberOfDepartures: Int)
       trip {
         gtfsId
         routeShortName
+        pattern {
+          code
+        }
       }
     }
   }
@@ -52,7 +59,8 @@ class DigitransitStoptime {
   final String? headsign;
   final String? routeShortName;
 
-  final String tripGtfsId;
+  final GtfsId? tripGtfsId;
+  final String? patternCode;
 
   DateTime? _mergeMixedDateTime(int? timeMix) {
     if (timeMix != null && serviceDay != null) {
@@ -75,11 +83,15 @@ class DigitransitStoptime {
     required this.headsign,
     required this.routeShortName,
     required this.tripGtfsId,
+    required this.patternCode,
   });
 
   static DigitransitStoptime parse(Map<String, dynamic> data) {
     final String? realtimeState = data["realtimeState"];
     final Map<String, dynamic>? trip = data["trip"];
+    final Map<String, dynamic>? pattern = trip?["pattern"];
+
+    final String? gtfsId = trip?["gtfsId"];
 
     return DigitransitStoptime(
       scheduledDeparture: data["scheduledDeparture"],
@@ -91,7 +103,8 @@ class DigitransitStoptime {
           : null,
       headsign: data["headsign"],
       routeShortName: trip?["routeShortName"],
-      tripGtfsId: trip?["gtfsId"],
+      tripGtfsId: gtfsId != null ? GtfsId(gtfsId) : null,
+      patternCode: pattern?["code"],
     );
   }
 }

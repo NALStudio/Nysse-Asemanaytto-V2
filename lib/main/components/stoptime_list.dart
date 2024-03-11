@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
-import 'package:nysse_asemanaytto/core/request_info.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/main/components/stoptime.dart';
 import 'package:nysse_asemanaytto/main/components/stoptime_dismiss_animation.dart';
+import 'package:nysse_asemanaytto/main/stoptimes.dart';
 
 class MainLayoutStoptimeList extends StatefulWidget {
   final bool shrinkWrap;
@@ -19,31 +18,10 @@ class MainLayoutStoptimeList extends StatefulWidget {
 class _MainLayoutStoptimeListState extends State<MainLayoutStoptimeList> {
   @override
   Widget build(BuildContext context) {
-    final Config config = Config.of(context);
-
-    return Query(
-      options: QueryOptions(
-        document: gql(DigitransitStoptimeQuery.query),
-        variables: {
-          "stopId": config.stopId.id,
-          "numberOfDepartures": config.stoptimesCount,
-        },
-        pollInterval: RequestInfo.ratelimits.stoptimesRequest,
-      ),
-      builder: (result, {fetchMore, refetch}) {
-        if (result.hasException) {
-          return ErrorWidget(result.exception!);
-        }
-
-        final Map<String, dynamic>? data = result.data;
-        final DigitransitStoptimeQuery? parsed =
-            data != null ? DigitransitStoptimeQuery.parse(data) : null;
-
-        return _StoptimesList(
-          shrinkWrap: widget.shrinkWrap,
-          stoptimes: parsed?.stoptimesWithoutPatterns ?? List.empty(),
-        );
-      },
+    return _StoptimesList(
+      shrinkWrap: widget.shrinkWrap,
+      stoptimes:
+          Stoptimes.of(context)?.stoptimesWithoutPatterns ?? List.empty(),
     );
   }
 }
@@ -78,7 +56,7 @@ class _StoptimesListState extends State<_StoptimesList> {
     // Only the first half of the trips can be removed with an animation
     // Otherwise if the last buses change order and one is missing from the response
     // Then the animation would play at the end of the list.
-    Set<String> tripIds = widget.stoptimes.map((e) => e.tripGtfsId).toSet();
+    Set<GtfsId> tripIds = widget.stoptimes.map((e) => e.tripGtfsId!).toSet();
     final int maxAnimatedRemoves = (childCount / 2).floor();
     for (int i = 0; i < maxAnimatedRemoves; i++) {
       if (i >= _internalList.length) break;

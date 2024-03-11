@@ -1,4 +1,4 @@
-import 'dart:ui';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
@@ -10,20 +10,20 @@ class BusMarkerPainter extends CustomPainter {
   /// radians
   final double bearing;
 
-  final String lineNumber;
-  final double lineNumberSize;
+  /// The minimum font size of lineNumber before it is displayed.
   final double? lineNumberMinSize;
-  final double lineNumberMaxSize;
+  final String? lineNumber;
+
+  final Size maxSize;
 
   BusMarkerPainter({
     super.repaint,
     required this.borderColor,
     required this.borderWidth,
     required this.bearing,
-    required this.lineNumber,
-    required this.lineNumberSize,
+    this.lineNumber,
     this.lineNumberMinSize,
-    required this.lineNumberMaxSize,
+    required this.maxSize,
   });
 
   @override
@@ -54,10 +54,11 @@ class BusMarkerPainter extends CustomPainter {
     // (r*cos(γ - 135°), r*sin(γ - 135°))
     // kautta (täytyy myös muistaa offsettaa pisteet ympyrän keskeltä)
 
-    double maxSize = math.min(size.width, size.height);
-    Offset center = Offset(maxSize / 2, maxSize / 2);
+    double cSize = math.min(size.width, size.height);
+    double cMaxSize = math.min(maxSize.width, maxSize.height);
+    Offset center = Offset(cSize / 2, cSize / 2);
 
-    double arrowDistanceFromCenter = maxSize;
+    double arrowDistanceFromCenter = cSize;
     // d = r * sqrt(2) => r = d / sqrt(2)
     double radius = arrowDistanceFromCenter / math.sqrt2;
 
@@ -101,21 +102,37 @@ class BusMarkerPainter extends CustomPainter {
       paint,
     );
 
-    if (lineNumberMinSize == null || lineNumberSize > lineNumberMinSize!) {
-      final Picture textPicture = _textPicture();
-      canvas.drawPicture(textPicture);
+    if (lineNumber != null) {
+      const double textBorderPadding = 1;
+      final double fontSizePadding =
+          (2 * borderWidth) - (2 * textBorderPadding);
+      final double fontSize = cSize - fontSizePadding;
+      final double maxFontSize = cMaxSize - fontSizePadding;
+
+      if (lineNumberMinSize == null || fontSize > lineNumberMinSize!) {
+        final ui.Image textImage = _textImage(renderSize: maxFontSize);
+        paintImage(
+          canvas: canvas,
+          rect: Rect.fromCenter(
+            center: center,
+            width: (textImage.width / textImage.height) * fontSize,
+            height: fontSize,
+          ),
+          image: textImage,
+        );
+      }
     }
   }
 
-  Picture _textPicture() {
-    final recorder = PictureRecorder();
+  ui.Image _textImage({required double renderSize}) {
+    final recorder = ui.PictureRecorder();
     final textCanvas = Canvas(recorder);
 
     final textSpan = TextSpan(
       text: lineNumber,
       style: TextStyle(
         color: Colors.black,
-        fontSize: lineNumberMaxSize,
+        fontSize: renderSize,
         height: 1,
         fontWeight: FontWeight.bold,
       ),
@@ -127,9 +144,13 @@ class BusMarkerPainter extends CustomPainter {
     textPainter.layout();
     textPainter.paint(textCanvas, Offset.zero);
 
-    textCanvas.scale(lineNumberSize / lineNumberMaxSize);
+    final ui.Picture pic = recorder.endRecording();
+    final ui.Image img = pic.toImageSync(
+      textPainter.width.round(),
+      textPainter.height.round(),
+    );
 
-    return recorder.endRecording();
+    return img;
   }
 
   @override
@@ -138,7 +159,6 @@ class BusMarkerPainter extends CustomPainter {
         borderWidth != oldDelegate.borderWidth ||
         bearing != oldDelegate.bearing ||
         lineNumber != oldDelegate.lineNumber ||
-        lineNumberMinSize != oldDelegate.lineNumberMinSize ||
-        lineNumberMaxSize != oldDelegate.lineNumberMaxSize;
+        maxSize != oldDelegate.maxSize;
   }
 }

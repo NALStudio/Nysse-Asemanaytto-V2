@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nysse_asemanaytto/embeds/_map_embed.dart';
+import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/_test2_embed.dart';
 import 'package:nysse_asemanaytto/embeds/_test_embed.dart';
 import 'package:nysse_asemanaytto/settings/settings.dart';
@@ -25,7 +25,7 @@ abstract class Embed {
   int get hashCode => name.hashCode;
 
   static const List<Embed> allEmbeds = [
-    MapEmbed(name: "map"),
+    MapVehiclesEmbed(name: "map"),
     TestEmbed(name: "test"),
     Test2Embed(name: "test2"),
   ];

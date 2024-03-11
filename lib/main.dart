@@ -15,6 +15,7 @@ import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/main/error_layout.dart';
 import 'package:nysse_asemanaytto/main/main_layout.dart';
 import 'package:nysse_asemanaytto/main/stopinfo.dart';
+import 'package:nysse_asemanaytto/main/stoptimes.dart';
 import 'package:nysse_asemanaytto/settings/settings_layout.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -147,7 +148,9 @@ class AppServices extends StatelessWidget {
     return Layout(
       info: LayoutData(mediaQueryData: MediaQuery.of(context)),
       child: const StopInfo(
-        child: AppCanvas(),
+        child: Stoptimes(
+          child: AppCanvas(),
+        ),
       ),
     );
   }

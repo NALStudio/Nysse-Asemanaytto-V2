@@ -1,51 +1,54 @@
 import 'dart:async';
-import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:mqtt5_client/mqtt5_client.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/helpers.dart';
 import 'package:nysse_asemanaytto/core/painters/bus_marker_painter.dart';
-import 'package:nysse_asemanaytto/core/request_info.dart';
 import 'package:nysse_asemanaytto/core/widgets/error_widgets.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/digitransit/mqtt/mqtt.dart';
+import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/settings.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
+import 'package:nysse_asemanaytto/embeds/_map_embeds/base.dart';
 import 'package:nysse_asemanaytto/gtfs/realtime.dart';
 import 'package:nysse_asemanaytto/main/stopinfo.dart';
 import 'dart:math' as math;
 
-final GlobalKey<_MapEmbedWidgetState> _mapKey = GlobalKey();
+import 'package:nysse_asemanaytto/main/stoptimes.dart';
 
-class MapEmbed extends Embed {
-  const MapEmbed({required super.name});
+final GlobalKey<_MapVehiclesEmbedWidgetState> _mapKey = GlobalKey();
 
-  @override
-  EmbedWidgetMixin<MapEmbed> createEmbed(covariant MapEmbedSettings settings) =>
-      MapEmbedWidget(key: _mapKey, settings: settings);
+class MapVehiclesEmbed extends Embed {
+  const MapVehiclesEmbed({required super.name});
 
   @override
-  EmbedSettings<MapEmbed> createDefaultSettings() => MapEmbedSettings(
-        beforeAnimationSeconds: 0.5,
+  EmbedWidgetMixin<MapVehiclesEmbed> createEmbed(
+          covariant MapEmbedSettings settings) =>
+      MapVehiclesEmbedWidget(key: _mapKey, settings: settings);
+
+  @override
+  EmbedSettings<MapVehiclesEmbed> createDefaultSettings() => MapEmbedSettings(
+        beforeAnimationSeconds: 1.0,
         animationDurationSeconds: 10,
         afterAnimationSeconds: 5.0,
-        cameraFit: MapEmbedCameraFit.fitVehicles,
-        vehicles: MapEmbedVehicles.arrivingOnly,
+        tileProvider: MapEmbedTileProvider.digitransitRetina,
+        cameraFit: MapEmbedCameraFit.fitArrivingVehicles,
+        vehicles: MapEmbedVehicles.scheduledTrips,
       );
 }
 
-class MapEmbedWidget extends StatefulWidget
-    implements EmbedWidgetMixin<MapEmbed> {
+class MapVehiclesEmbedWidget extends StatefulWidget
+    implements EmbedWidgetMixin<MapVehiclesEmbed> {
   final MapEmbedSettings settings;
 
-  const MapEmbedWidget({required this.settings, super.key});
+  const MapVehiclesEmbedWidget({required this.settings, super.key});
 
   @override
-  State<MapEmbedWidget> createState() => _MapEmbedWidgetState();
+  State<MapVehiclesEmbedWidget> createState() => _MapVehiclesEmbedWidgetState();
 
   @override
   Duration? getDuration() {
@@ -70,7 +73,7 @@ class MapEmbedWidget extends StatefulWidget
   }
 }
 
-class _MapEmbedWidgetState extends State<MapEmbedWidget>
+class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
     with SingleTickerProviderStateMixin {
   late final MapController _mapController;
   late final AnimationController _mapAnimationController;
@@ -137,7 +140,6 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
     }
 
     final GtfsId stopId = Config.of(context).stopId;
-    final stopInfo = StopInfo.of(context);
 
     _positioningSubError = null;
 
@@ -150,7 +152,25 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
           ).buildTopicString(),
           MqttQos.atMostOnce,
         );
+      case MapEmbedVehicles.scheduledTrips:
+        final List<DigitransitStoptime>? stoptimes =
+            Stoptimes.of(context)?.stoptimesWithoutPatterns;
+        if (stoptimes == null) {
+          _positioningSubError =
+              ErrorWidget.withDetails(message: "No stoptimes");
+          return;
+        }
+        _positioningSub = mqtt!.subscribeAll(
+          stoptimes.map(
+            (e) => DigitransitPositioningTopic(
+              feedId: e.tripGtfsId!.feedId,
+              tripId: e.tripGtfsId!.rawId,
+            ).buildTopicString(),
+          ),
+          MqttQos.atMostOnce,
+        );
       case MapEmbedVehicles.allRoutes:
+        final stopInfo = StopInfo.of(context);
         if (stopInfo == null) {
           _positioningSubError =
               ErrorWidget.withDetails(message: "No stop info.");
@@ -173,7 +193,7 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
     final FeedEntity ent = FeedEntity.fromBuffer(msg.bytes);
     setState(() {
       // BUG: After vehicle stops being updated
-      // (doesn't fit to our topic, too far for example)
+      // (doesn't fit to our topic <= too far for example)
       // The vehicle isn't removed from the map before the next disconnect.
       // This is fine for now, but I would like to make a timeout system in the future.
       _vehiclePositions[ent.id] = ent.vehicle;
@@ -222,10 +242,13 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
 
     final LatLng stopPos = _getStopPositionOrDefault();
 
+    Config config = Config.of(context);
+
     switch (widget.settings.cameraFit) {
       case MapEmbedCameraFit.fixed:
         destPos = stopPos;
         destZoom = _mapController.camera.maxZoom!;
+      case MapEmbedCameraFit.fitArrivingVehicles:
       case MapEmbedCameraFit.fitVehicles:
         if (_vehiclePositions.isEmpty) {
           destPos = stopPos;
@@ -233,7 +256,16 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
           break;
         }
 
-        final List<LatLng> vehiclePositions = _vehiclePositions.values
+        final Iterable<VehiclePosition> vehiclePositionsIterable;
+        if (widget.settings.cameraFit ==
+            MapEmbedCameraFit.fitArrivingVehicles) {
+          vehiclePositionsIterable = _vehiclePositions.values
+              .where((element) => element.stopId == config.stopId.rawId);
+        } else {
+          vehiclePositionsIterable = _vehiclePositions.values;
+        }
+
+        final List<LatLng> vehiclePositions = vehiclePositionsIterable
             .map((e) => LatLng(e.position.latitude, e.position.longitude))
             .toList(growable: true);
         vehiclePositions.add(stopPos);
@@ -287,13 +319,7 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
     }
 
     final List<Widget> mapChildren = [
-      TileLayer(
-        urlTemplate:
-            "https://cdn.digitransit.fi/map/v2/hsl-map-256/{z}/{x}/{y}{r}.png?digitransit-subscription-key=${Config.of(context).digitransitSubscriptionKey!}",
-        retinaMode: true,
-        tileProvider: CancellableNetworkTileProvider(silenceExceptions: true),
-        userAgentPackageName: RequestInfo.packageName,
-      ),
+      buildMapEmbedTileProvider(context, widget.settings.tileProvider),
       MarkerLayer(
         markers: _vehiclePositions.values
             .map((e) => _buildVehicleMarker(e))
@@ -397,11 +423,6 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
     final DigitransitStopInfoRoute? route = stopInfo?.routes[routeGtfsId];
 
     const double borderWidth = 3;
-    const double textBorderPadding = 1;
-
-    const double fontSizePadding = (2 * borderWidth) - (2 * textBorderPadding);
-    final double fontSize = size - fontSizePadding;
-    final double maxFontSize = maxSize - fontSizePadding;
 
     return Marker(
       point: point,
@@ -414,262 +435,10 @@ class _MapEmbedWidgetState extends State<MapEmbedWidget>
           borderColor: route?.color ?? Colors.grey,
           borderWidth: borderWidth,
           lineNumber: route?.shortName ?? "??",
-          lineNumberSize: fontSize,
+          maxSize: Size(maxSize, maxSize),
           lineNumberMinSize: 12 * Layout.of(context).logicalPixelSize,
-          lineNumberMaxSize: maxFontSize,
         ),
       ),
     );
   }
-}
-
-enum MapEmbedCameraFit { fixed, fitVehicles }
-
-const Map<MapEmbedCameraFit, String> _mapEmbedCameraFitNotes = {
-  MapEmbedCameraFit.fitVehicles:
-      "Only the vehicle positions received during 'Wait before animation' are considered when fitting the camera.",
-};
-
-enum MapEmbedVehicles { allRoutes, arrivingOnly }
-
-class MapEmbedSettings extends EmbedSettings<MapEmbed> {
-  double beforeAnimationSeconds;
-  double animationDurationSeconds;
-  double afterAnimationSeconds;
-
-  MapEmbedCameraFit cameraFit;
-  MapEmbedVehicles vehicles;
-
-  MapEmbedSettings({
-    required this.beforeAnimationSeconds,
-    required this.animationDurationSeconds,
-    required this.afterAnimationSeconds,
-    required this.cameraFit,
-    required this.vehicles,
-  });
-
-  @override
-  void deserialize(String serialized) {
-    final Map<String, dynamic> map = json.decode(serialized);
-    beforeAnimationSeconds = (map["waitBeforeAnim"] as num).toDouble();
-    animationDurationSeconds = (map["animDuration"] as num).toDouble();
-    afterAnimationSeconds = (map["waitAfterAnim"] as num).toDouble();
-
-    final String cameraFitStr = map["cameraFit"];
-    final String vehiclesStr = map["vehicles"];
-    cameraFit = MapEmbedCameraFit.values
-        .firstWhere((element) => element.name == cameraFitStr);
-    vehicles = MapEmbedVehicles.values
-        .firstWhere((element) => element.name == vehiclesStr);
-    // as num cast so that if there is an integer in the json,
-    // it is still saved as double. (aka doesn't crash)
-  }
-
-  @override
-  String serialize() {
-    final Map<String, dynamic> map = {
-      "waitBeforeAnim": beforeAnimationSeconds,
-      "animDuration": animationDurationSeconds,
-      "waitAfterAnim": afterAnimationSeconds,
-      "cameraFit": cameraFit.name,
-      "vehicles": vehicles.name,
-    };
-    return json.encode(map);
-  }
-
-  @override
-  EmbedSettingsForm<MapEmbedSettings> createForm(
-    covariant MapEmbedSettings defaultSettings,
-  ) =>
-      MapEmbedSettingsForm(
-        parentSettings: this,
-        defaultSettings: defaultSettings,
-      );
-}
-
-class MapEmbedSettingsForm extends EmbedSettingsForm<MapEmbedSettings> {
-  MapEmbedCameraFit? _cameraFitSetting;
-  MapEmbedVehicles? _vehicleSetting;
-
-  MapEmbedSettingsForm({
-    required super.parentSettings,
-    required super.defaultSettings,
-  });
-
-  String? _formatValue(num number) {
-    String suffix;
-    if (number == 1) {
-      suffix = "second";
-    } else {
-      suffix = "seconds";
-    }
-
-    return "$number $suffix";
-  }
-
-  double? _tryParseDouble(String? value) {
-    if (value == null) return null;
-
-    String? number = value.split(' ').firstOrNull;
-    if (number == null) return null;
-
-    return double.tryParse(number);
-  }
-
-  String _formatEnumName(Enum value, {bool capitalizeFirstChar = true}) {
-    final String enumName = value.name;
-    String output = "";
-
-    // first character isn't upper-case in camelCase
-    // But we want to take the portion from start to the first upper-case character
-    // So we set this as 0 at start.
-    int lastUpperIndex = 0;
-    for (final (int index, String char) in enumName.characters.indexed) {
-      if (char == char.toUpperCase()) {
-        // Add the portion between these upper characters.
-        output += ' ';
-        output += enumName.substring(lastUpperIndex, index).toLowerCase();
-        lastUpperIndex = index;
-      }
-    }
-    // Add the rest of the name
-    output += enumName.substring(lastUpperIndex);
-
-    if (capitalizeFirstChar) {
-      return output[0].toUpperCase() + output.substring(1);
-    } else {
-      return output;
-    }
-  }
-
-  List<DropdownMenuItem<T?>> _buildDropdownMenuItems<T extends Enum>(
-    List<T> enumValues, {
-    required T defaultValue,
-  }) {
-    return enumValues.map((e) {
-      String formattedName = _formatEnumName(e);
-      if (e == defaultValue) {
-        formattedName += " (default)";
-      }
-
-      return DropdownMenuItem(
-        value: e,
-        child: Text(formattedName),
-      );
-    }).toList();
-  }
-
-  String? _doubleValidate(
-    String? value, {
-    bool allowNegativeNumbers = false,
-  }) {
-    if (value?.isNotEmpty != true) {
-      return null;
-    }
-
-    final double? number = _tryParseDouble(value);
-    if (number == null) {
-      return "Not a valid decimal number.";
-    }
-    if (!allowNegativeNumbers && number < 0) {
-      return "Value cannot be negative.";
-    }
-    return null;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    _cameraFitSetting ??= parentSettings.cameraFit;
-    _vehicleSetting ??= parentSettings.vehicles;
-
-    return Column(
-      children: [
-        TextFormField(
-          decoration: InputDecoration(
-            labelText: "Wait before animation",
-            hintText: _formatValue(defaultSettings.beforeAnimationSeconds),
-          ),
-          initialValue: _formatValue(parentSettings.beforeAnimationSeconds),
-          validator: (value) => _doubleValidate(value),
-          onSaved: (newValue) {
-            if (newValue == null || newValue.isEmpty) {
-              parentSettings.beforeAnimationSeconds =
-                  defaultSettings.beforeAnimationSeconds;
-            } else {
-              parentSettings.beforeAnimationSeconds =
-                  _tryParseDouble(newValue)!;
-            }
-          },
-        ),
-        TextFormField(
-          decoration: InputDecoration(
-            labelText: "Animation duration",
-            hintText: _formatValue(defaultSettings.animationDurationSeconds),
-          ),
-          initialValue: _formatValue(parentSettings.animationDurationSeconds),
-          validator: (value) => _doubleValidate(value),
-          onSaved: (newValue) {
-            if (newValue == null || newValue.isEmpty) {
-              parentSettings.animationDurationSeconds =
-                  defaultSettings.animationDurationSeconds;
-            } else {
-              parentSettings.animationDurationSeconds =
-                  _tryParseDouble(newValue)!;
-            }
-          },
-        ),
-        TextFormField(
-          decoration: InputDecoration(
-            labelText: "Wait after animation",
-            hintText: _formatValue(defaultSettings.afterAnimationSeconds),
-          ),
-          initialValue: _formatValue(parentSettings.afterAnimationSeconds),
-          validator: (value) => _doubleValidate(value),
-          onSaved: (newValue) {
-            if (newValue == null || newValue.isEmpty) {
-              parentSettings.afterAnimationSeconds =
-                  defaultSettings.afterAnimationSeconds;
-            } else {
-              parentSettings.afterAnimationSeconds = _tryParseDouble(newValue)!;
-            }
-          },
-        ),
-        DropdownButtonFormField<MapEmbedCameraFit?>(
-          decoration: InputDecoration(
-            labelText: "Camera Fit",
-            hintText: _formatEnumName(defaultSettings.vehicles),
-            helperText: _mapEmbedCameraFitNotes[_cameraFitSetting],
-          ),
-          items: _buildDropdownMenuItems(
-            MapEmbedCameraFit.values,
-            defaultValue: defaultSettings.cameraFit,
-          ),
-          value: _cameraFitSetting,
-          onChanged: (value) => _cameraFitSetting = value,
-          onSaved: (newValue) =>
-              parentSettings.cameraFit = newValue ?? defaultSettings.cameraFit,
-        ),
-        DropdownButtonFormField<MapEmbedVehicles?>(
-          decoration: InputDecoration(
-            labelText: "Vehicles",
-            hintText: _formatEnumName(defaultSettings.vehicles),
-          ),
-          items: _buildDropdownMenuItems(
-            MapEmbedVehicles.values,
-            defaultValue: defaultSettings.vehicles,
-          ),
-          value: _vehicleSetting,
-          onChanged: (value) => _vehicleSetting = value,
-          onSaved: (newValue) =>
-              parentSettings.vehicles = newValue ?? defaultSettings.vehicles,
-        ),
-      ],
-    );
-  }
-
-  @override
-  Color get displayColor => Colors.green;
-
-  @override
-  String get displayName => "Map Embed";
 }
