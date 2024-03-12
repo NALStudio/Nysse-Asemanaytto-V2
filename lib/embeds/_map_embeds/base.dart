@@ -142,7 +142,7 @@ Marker buildVehicleMarker(
   );
 }
 
-CircleMarker buildStopMarker(
+Marker buildStopMarker(
   LatLng point, {
   required MapCamera camera,
   double? zoomOverride,
@@ -153,12 +153,20 @@ CircleMarker buildStopMarker(
     camera: camera,
     zoomOverride: zoomOverride,
   );
-  return CircleMarker(
+  return Marker(
     point: point,
-    radius: size / 2,
-    color: Colors.white,
-    borderColor: Colors.black,
-    borderStrokeWidth: 3,
+    width: size,
+    height: size,
+    child: DecoratedBox(
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.white,
+        border: Border.all(
+          color: Colors.black,
+          width: 3,
+        ),
+      ),
+    ),
   );
 }
 

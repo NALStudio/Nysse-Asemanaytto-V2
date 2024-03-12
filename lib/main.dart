@@ -242,13 +242,15 @@ class _EmbedCanvasState extends State<EmbedCanvas> {
   @override
   void initState() {
     super.initState();
-    _startIndexSwitching();
+    _startIndexSwitching(disablePrevious: false);
   }
 
-  void _startIndexSwitching() {
+  void _startIndexSwitching({bool disablePrevious = true}) {
     assert(_indexTimer?.isActive != true);
 
-    if (_childIndex != null) _embedWidgets[_childIndex!].onDisable();
+    if (_childIndex != null && disablePrevious) {
+      _embedWidgets[_childIndex!].onDisable();
+    }
 
     Duration? embedDuration;
     int? childIndex;

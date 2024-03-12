@@ -11,6 +11,7 @@ query getTripRoute(\$tripId: String!)
       gtfsId
     }
     pattern {
+      code
       stops {
         lat
         lon
@@ -44,12 +45,14 @@ query getTripRoute(\$tripId: String!)
 }
 
 class DigitransitPattern {
+  final String code;
   final List<DigitransitPatternStop> stops;
 
   /// List of coordinates in a Google encoded polyline format
   final String? patternGeometry;
 
   DigitransitPattern({
+    required this.code,
     required this.stops,
     required this.patternGeometry,
   });
@@ -57,6 +60,7 @@ class DigitransitPattern {
   static DigitransitPattern _parse(Map<String, dynamic> map) {
     final List<dynamic> stops = map["stops"];
     return DigitransitPattern(
+      code: map["code"] as String,
       stops: UnmodifiableListView(
         stops
             .map((e) => DigitransitPatternStop._parse(e))

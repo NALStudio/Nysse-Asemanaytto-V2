@@ -59,7 +59,7 @@ query getStopInfo(\$stopId: String!)
         final Map<String, dynamic> map = e;
         GtfsId gtfsId = GtfsId(map["gtfsId"] as String);
 
-        return MapEntry(gtfsId, DigitransitStopInfoRoute._parse(map));
+        return MapEntry(gtfsId, DigitransitStopInfoRoute._parse(gtfsId, map));
       }),
     );
   }
@@ -78,19 +78,24 @@ query getStopInfo(\$stopId: String!)
 }
 
 class DigitransitStopInfoRoute {
+  final GtfsId gtfsId;
   final String? shortName;
   final String? longName;
   final Color? color;
   final DigitransitMode? mode;
 
   DigitransitStopInfoRoute({
+    required this.gtfsId,
     required this.shortName,
     required this.longName,
     required this.color,
     required this.mode,
   });
 
-  static DigitransitStopInfoRoute _parse(Map<String, dynamic> map) {
+  static DigitransitStopInfoRoute _parse(
+    GtfsId gtfsId,
+    Map<String, dynamic> map,
+  ) {
     String? colorHex = map["color"];
     int? color;
     if (colorHex != null) {
@@ -101,6 +106,7 @@ class DigitransitStopInfoRoute {
     final String? mode = map["mode"];
 
     return DigitransitStopInfoRoute(
+      gtfsId: gtfsId,
       shortName: map["shortName"] as String?,
       longName: map["longName"] as String?,
       color: color != null ? Color(color) : null,

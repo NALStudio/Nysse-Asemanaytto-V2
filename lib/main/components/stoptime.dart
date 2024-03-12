@@ -15,6 +15,7 @@ class MainLayoutStoptime extends StatelessWidget {
 
     String time;
     if (stoptime.realtimeState == DigitransitRealtimeState.canceled) {
+      // Temporary, this will be seen so rarely that I can't be bothered to implement it right now.
       time = "PERUTTU";
     } else if (stoptime.realtime == true) {
       final int nowSinceEpochMs = DateTime.now().millisecondsSinceEpoch;

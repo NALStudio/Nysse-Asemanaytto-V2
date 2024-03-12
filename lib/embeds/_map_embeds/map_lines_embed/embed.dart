@@ -1,3 +1,5 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_svg/flutter_svg.dart';
@@ -51,15 +53,6 @@ class MapLinesEmbedWidget extends StatelessWidget
   }
 
   @override
-  void onDisable() {
-    _mapKey.currentState!.displayedData = null;
-    _mapKey.currentState!.unsubscribeMqtt();
-  }
-
-  @override
-  void onEnable() {}
-
-  @override
   Widget build(BuildContext context) {
     final DigitransitStoptime? stoptime =
         Stoptimes.of(context)?.stoptimesWithoutPatterns?.firstOrNull;
@@ -91,25 +84,34 @@ class MapLinesEmbedWidget extends StatelessWidget
         return _MapLinesEmbedWidget(
           settings,
           key: _mapKey,
-          displayedData: _DisplayedData(
-            routeGtfsId: stoptime.routeGtfsId!,
-            tripRoute: parsed,
-            route: route,
-          ),
+          tripRoute: parsed,
+          route: route,
         );
       },
     );
+  }
+
+  @override
+  void onDisable() {
+    _mapKey.currentState!.onDisabled();
+  }
+
+  @override
+  void onEnable() {
+    _mapKey.currentState!.onEnabled();
   }
 }
 
 class _MapLinesEmbedWidget extends StatefulWidget {
   final MapLinesEmbedSettings settings;
-  final _DisplayedData displayedData;
+  final DigitransitTripRouteQuery? tripRoute;
+  final DigitransitStopInfoRoute? route;
 
   const _MapLinesEmbedWidget(
     this.settings, {
     super.key,
-    required this.displayedData,
+    required this.tripRoute,
+    required this.route,
   });
 
   @override
@@ -117,12 +119,14 @@ class _MapLinesEmbedWidget extends StatefulWidget {
 }
 
 class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
-  _DisplayedData? displayedData;
-
   late final MapController _mapController;
 
   DigitransitMqttSubscription? _positioningSub;
-  bool get _mqttSubscribed => _positioningSub != null;
+  GtfsId? _subbedRouteId;
+  bool get _isSubbed {
+    assert((_positioningSub == null) == (_subbedRouteId == null));
+    return _positioningSub != null;
+  }
 
   ErrorWidget? _positioningSubError;
   final Map<String, VehiclePosition> _vehiclePositions = {};
@@ -130,6 +134,9 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
   _ComputedRoute? _computedRoute;
 
   DigitransitMqttState? _mqtt;
+
+  bool _embedIsEnabled = false;
+  bool _mapReady = false;
 
   @override
   void initState() {
@@ -145,13 +152,24 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
 
   @override
   void dispose() {
+    onDisabled();
     _mapController.dispose();
-    unsubscribeMqtt();
-
     super.dispose();
   }
 
+  void onEnabled() {
+    _embedIsEnabled = true;
+  }
+
+  void onDisabled() {
+    _embedIsEnabled = false;
+    _unsubscribeMqtt();
+  }
+
   void _subscribeMqtt(GtfsId routeId) {
+    assert(_embedIsEnabled);
+    assert(!_isSubbed);
+
     if (_mqtt?.isConnected != true) {
       _positioningSubError = MqttOfflineErrorWidget();
       return;
@@ -167,6 +185,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
       ).buildTopicString(),
       MqttQos.atMostOnce,
     );
+    _subbedRouteId = routeId;
 
     _positioningSub!.onMessageReceived = _onVehiclePositionUpdate;
   }
@@ -175,7 +194,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     final FeedEntity ent = FeedEntity.fromBuffer(msg.bytes);
     setState(() {
       // BUG: After vehicle stops being updated
-      // (doesn't fit to our topic <= too far for example)
+      // (doesn't fit to our topic (too far for example))
       // The vehicle isn't removed from the map before the next disconnect.
       // This is fine for now, but I would like to make a timeout system in the future.
       _vehiclePositions[ent.id] = ent.vehicle;
@@ -183,28 +202,33 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
   }
 
   /// Safe to call multiple times.
-  void unsubscribeMqtt() {
-    if (_positioningSub == null) {
-      return;
+  void _unsubscribeMqtt() {
+    if (_positioningSub != null) {
+      _mqtt?.unsubscribe(_positioningSub!);
+      _positioningSub = null;
+      _subbedRouteId = null;
     }
-
-    _mqtt?.unsubscribe(_positioningSub!);
     _vehiclePositions.clear();
   }
 
+  double get routeLineStrokeWidth => 4 * Layout.of(context).logicalPixelSize;
+
   /// Must be called before this widget's build will display the pattern route.
-  void _computeGeometry(DigitransitTripRouteQuery? route) {
-    final String? patternGeometry = route?.pattern.patternGeometry;
+  /// Sets the [_computedRoute] variable.
+  void _computeGeometry(DigitransitPattern pattern) {
+    final String? patternGeometry = pattern.patternGeometry;
     if (patternGeometry == null) {
       _computedRoute = null;
       return;
     }
 
     _computedRoute = _ComputedRoute(
-      routeGtfsId: route!.routeGtfsId,
+      patternCode: pattern.code,
       geometry: decodePolyline(patternGeometry).toList(),
-      stops: route.pattern.stops,
+      stops: pattern.stops,
     );
+
+    if (!_mapReady) return;
 
     final double cameraFitPadding = _RouteTitleHeader.getPadding(context);
     final double cameraTopPadding;
@@ -215,22 +239,32 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
       cameraTopPadding = cameraFitPadding;
     }
 
+    final double cameraFitPaddingAdjust = routeLineStrokeWidth / 2;
     final CameraFit cameraFit = CameraFit.bounds(
       bounds: LatLngBounds.fromPoints(_computedRoute!.geometry),
       padding: EdgeInsets.only(
-        left: cameraFitPadding,
-        right: cameraFitPadding,
-        bottom: cameraFitPadding,
-        top: cameraTopPadding,
+        left: cameraFitPadding + cameraFitPaddingAdjust,
+        right: cameraFitPadding + cameraFitPaddingAdjust,
+        bottom: cameraFitPadding + cameraFitPaddingAdjust,
+        top: cameraTopPadding + cameraFitPaddingAdjust,
       ),
     );
     _mapController.fitCamera(cameraFit);
   }
 
-  /// TODO: Rethink this entire data fetching process.
-
   @override
   Widget build(BuildContext context) {
+    if (widget.tripRoute != null &&
+        _computedRoute?.patternCode != widget.tripRoute!.pattern.code) {
+      _computeGeometry(widget.tripRoute!.pattern);
+    }
+    if (widget.route != null && _subbedRouteId != widget.route!.gtfsId) {
+      _unsubscribeMqtt();
+      if (_embedIsEnabled) {
+        _subscribeMqtt(widget.route!.gtfsId);
+      }
+    }
+
     final List<Widget> mapChildren = [
       buildMapEmbedTileProvider(context, widget.settings.tileProvider),
     ];
@@ -241,8 +275,8 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
           polylines: [
             Polyline(
               points: _computedRoute!.geometry,
-              color: displayedData?.route?.color ?? Colors.grey,
-              strokeWidth: 4 * Layout.of(context).logicalPixelSize,
+              color: widget.route?.color ?? Colors.grey,
+              strokeWidth: routeLineStrokeWidth,
             ),
           ],
         ),
@@ -250,8 +284,8 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     }
     if (widget.settings.showStops && _computedRoute != null) {
       mapChildren.add(
-        CircleLayer(
-          circles: _computedRoute!.stops
+        MarkerLayer(
+          markers: _computedRoute!.stops
               .map(
                 (e) => buildStopMarker(
                   LatLng(e.lat, e.lon),
@@ -281,7 +315,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     );
 
     if (widget.settings.showRouteInfo) {
-      mapChildren.add(_RouteTitleHeader(route: displayedData?.route));
+      mapChildren.add(_RouteTitleHeader(route: widget.route));
     }
 
     if (_positioningSubError != null) {
@@ -292,13 +326,14 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
 
     return FlutterMap(
       mapController: _mapController,
-      options: const MapOptions(
+      options: MapOptions(
         minZoom: 8,
         maxZoom: 22,
-        interactionOptions: InteractionOptions(
+        interactionOptions: const InteractionOptions(
           flags: InteractiveFlag.none,
         ),
         initialCenter: kDefaultMapPosition,
+        onMapReady: () => _mapReady = true,
       ),
       children: mapChildren,
     );
@@ -368,26 +403,13 @@ class _RouteTitleHeader extends StatelessWidget {
   }
 }
 
-class _DisplayedData {
-  /// Unlike [tripRoute], this will always be provided.
-  final GtfsId routeGtfsId;
-  final DigitransitTripRouteQuery? tripRoute;
-  final DigitransitStopInfoRoute? route;
-
-  _DisplayedData({
-    required this.routeGtfsId,
-    required this.tripRoute,
-    required this.route,
-  });
-}
-
 class _ComputedRoute {
-  final GtfsId routeGtfsId;
+  final String patternCode;
   final List<LatLng> geometry;
   final List<DigitransitPatternStop> stops;
 
   _ComputedRoute({
-    required this.routeGtfsId,
+    required this.patternCode,
     required this.geometry,
     required this.stops,
   });

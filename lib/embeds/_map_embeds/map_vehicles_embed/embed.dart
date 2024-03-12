@@ -319,31 +319,38 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
   Widget build(BuildContext context) {
     final stopinfo = StopInfo.of(context);
 
-    List<CircleMarker> stopMarkers = List.empty(growable: true);
-    if (stopinfo != null) {
-      stopMarkers.add(
-        buildStopMarker(
-          LatLng(stopinfo.lat, stopinfo.lon),
-          camera: _mapController.camera,
+    final List<Widget> mapChildren = [
+      buildMapEmbedTileProvider(context, widget.settings.tileProvider)
+    ];
+
+    if (_mapReady) {
+      mapChildren.add(
+        MarkerLayer(
+          markers: _vehiclePositions.values
+              .map(
+                (e) => buildVehicleMarker(
+                  context,
+                  mapController: _mapController,
+                  pos: e,
+                ),
+              )
+              .toList(growable: false),
         ),
       );
-    }
 
-    final List<Widget> mapChildren = [
-      buildMapEmbedTileProvider(context, widget.settings.tileProvider),
-      MarkerLayer(
-        markers: _vehiclePositions.values
-            .map(
-              (e) => buildVehicleMarker(
-                context,
-                mapController: _mapController,
-                pos: e,
+      if (stopinfo != null) {
+        mapChildren.add(
+          MarkerLayer(
+            markers: [
+              buildStopMarker(
+                LatLng(stopinfo.lat, stopinfo.lon),
+                camera: _mapController.camera,
               ),
-            )
-            .toList(growable: false),
-      ),
-      CircleLayer(circles: stopMarkers),
-    ];
+            ],
+          ),
+        );
+      }
+    }
 
     if (_positioningSubError != null) {
       mapChildren.add(MapErrorLayer(error: _positioningSubError!));
