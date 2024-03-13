@@ -15,9 +15,12 @@ class MainSettings extends SettingsForm {
   @override
   final displayColor = NysseColors.mediumBlue;
 
+  int? _stoptimesCount;
+
   @override
   Widget build(BuildContext context) {
     final Config config = Config.of(context);
+    _stoptimesCount ??= config.stoptimesCount;
 
     const List<DigitransitRoutingEndpoint> endpoints = [
       DigitransitRoutingEndpoint.waltti,
@@ -77,7 +80,7 @@ class MainSettings extends SettingsForm {
         ),
         const SizedBox(height: 16),
         Text(
-          "Stoptime count: ${config.stoptimesCount}",
+          "Stoptime count: $_stoptimesCount",
           style: const TextStyle(
             color: Colors.grey,
             fontStyle: FontStyle.italic,
@@ -88,9 +91,16 @@ class MainSettings extends SettingsForm {
           initialValue: UnmodifiableListView(
             config.embeds.map((e) => e.embed).toList(),
           ),
+          onChanged: (list) {
+            if (list != null && list.isNotEmpty) {
+              _stoptimesCount = 6;
+            } else {
+              _stoptimesCount = 10;
+            }
+          },
           onSaved: (newValue) {
-            if (newValue?.isNotEmpty == true) {
-              config.setEmbeds(newValue!);
+            if (newValue != null && newValue.isNotEmpty) {
+              config.setEmbeds(newValue);
               config.stoptimesCount = 6;
             } else {
               config.setEmbeds(List.empty());

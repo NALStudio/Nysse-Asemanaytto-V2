@@ -12,7 +12,7 @@ import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/digitransit/mqtt/mqtt.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/settings.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
-import 'package:nysse_asemanaytto/embeds/_map_embeds/base.dart';
+import 'package:nysse_asemanaytto/embeds/_map_embeds/map_base.dart';
 import 'package:nysse_asemanaytto/gtfs/realtime.dart';
 import 'package:nysse_asemanaytto/main/stopinfo.dart';
 

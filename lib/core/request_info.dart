@@ -3,6 +3,7 @@ class RequestInfo {
   static const String userAgent = "NysseAsemanaytto";
   static const RequestInfoRatelimits ratelimits = RequestInfoRatelimits(
     stoptimesRequest: Duration(seconds: 30),
+    alertsRequest: Duration(seconds: 60),
     stopInfoRequest: Duration(days: 1),
     tripRouteRequest: Duration(days: 1),
   );
@@ -10,11 +11,13 @@ class RequestInfo {
 
 class RequestInfoRatelimits {
   final Duration stoptimesRequest;
+  final Duration alertsRequest;
   final Duration stopInfoRequest;
   final Duration tripRouteRequest;
 
   const RequestInfoRatelimits({
     required this.stoptimesRequest,
+    required this.alertsRequest,
     required this.stopInfoRequest,
     required this.tripRouteRequest,
   });

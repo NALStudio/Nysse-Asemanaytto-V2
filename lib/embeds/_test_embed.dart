@@ -73,7 +73,7 @@ class TestEmbedSettingsForm extends EmbedSettingsForm {
   }
 
   @override
-  Color get displayColor => Colors.red;
+  Color get displayColor => Colors.purple;
 
   @override
   String get displayName => "Test Embed";

@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/core/helpers.dart';
-import 'package:nysse_asemanaytto/embeds/_map_embeds/base.dart';
+import 'package:nysse_asemanaytto/embeds/_map_embeds/map_base.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/settings/settings_switch_form_field.dart';
@@ -132,8 +132,8 @@ class MapLinesEmbedSettingsForm
   }
 
   @override
-  Color get displayColor => Colors.green;
+  Color get displayColor => Colors.blue;
 
   @override
-  String get displayName => "Map Embed";
+  String get displayName => "Map Embed (lines)";
 }

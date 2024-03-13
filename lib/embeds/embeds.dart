@@ -3,9 +3,11 @@ import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/embed.dart'
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/_test2_embed.dart';
 import 'package:nysse_asemanaytto/embeds/_test_embed.dart';
+import 'package:nysse_asemanaytto/embeds/alerts_embed.dart';
 import 'package:nysse_asemanaytto/settings/settings.dart';
 
 /// DO NOT INSTANTIATE OUTSIDE OF [Embed.allEmbeds]
+@immutable
 abstract class Embed {
   final String name;
 
@@ -26,6 +28,7 @@ abstract class Embed {
   int get hashCode => name.hashCode;
 
   static const List<Embed> allEmbeds = [
+    AlertsEmbed(name: "alerts"),
     MapVehiclesEmbed(name: "mapVehicles"),
     MapLinesEmbed(name: "mapLines"),
     TestEmbed(name: "test"),

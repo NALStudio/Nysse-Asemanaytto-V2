@@ -29,7 +29,16 @@ class _EmbedsFormFieldState
 
   @override
   void didChange(UnmodifiableListView<Embed>? value) {
+    if (widget.onChanged != null) {
+      widget.onChanged!(value);
+    }
+
     super.didChange(value);
+  }
+
+  @override
+  void reset() {
+    super.reset();
 
     if (widget.onChanged != null) {
       widget.onChanged!(value);

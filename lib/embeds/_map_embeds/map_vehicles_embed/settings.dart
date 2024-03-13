@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/core/helpers.dart';
-import 'package:nysse_asemanaytto/embeds/_map_embeds/base.dart';
+import 'package:nysse_asemanaytto/embeds/_map_embeds/map_base.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 
@@ -281,5 +281,5 @@ class MapVehiclesEmbedSettingsForm
   Color get displayColor => Colors.green;
 
   @override
-  String get displayName => "Map Embed";
+  String get displayName => "Map Embed (vehicles)";
 }
