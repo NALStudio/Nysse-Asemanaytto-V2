@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nysse_asemanaytto/embeds/_electricity_embed/electricity_embed_widget.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/_test2_embed.dart';
@@ -31,6 +32,7 @@ abstract class Embed {
     AlertsEmbed(name: "alerts"),
     MapVehiclesEmbed(name: "mapVehicles"),
     MapLinesEmbed(name: "mapLines"),
+    ElectricityEmbed(name: "electricity"),
     TestEmbed(name: "test"),
     Test2Embed(name: "test2"),
   ];
