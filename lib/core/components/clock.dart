@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:nysse_asemanaytto/core/helpers.dart';
 
 class ClockWidget extends StatefulWidget {
   final TextStyle? textStyle;
@@ -48,15 +49,12 @@ class _ClockWidgetState extends State<ClockWidget> {
 
   @override
   Widget build(BuildContext context) {
-    List<int> parts;
-    if (widget.displaySeconds) {
-      parts = [_time.hour, _time.minute, _time.second];
-    } else {
-      parts = [_time.hour, _time.minute];
-    }
-
     return Text(
-      parts.map((i) => i.toString().padLeft(2, '0')).join(':'),
+      formatTime(
+        _time.hour,
+        _time.minute,
+        widget.displaySeconds ? _time.second : null,
+      ),
       style: widget.textStyle,
       textAlign: widget.textAlign,
       maxLines: 1,

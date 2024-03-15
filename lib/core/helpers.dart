@@ -30,6 +30,11 @@ Duration durationFromDouble({
   );
 }
 
+String formatTime(int hour, int minute, [int? second]) {
+  final List<int?> parts = [hour, minute, second];
+  return parts.nonNulls.map((i) => i.toString().padLeft(2, '0')).join(':');
+}
+
 // Convert snakeCase to a sentence with capitalized words.
 String snakeCase2Sentence(String snakeCase) {
   final List<String> output = List.empty(growable: true);

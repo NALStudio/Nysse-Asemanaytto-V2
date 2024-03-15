@@ -135,7 +135,10 @@ class ElectricityPricingState extends State<ElectricityPricing> {
   }
 
   Future<List<dynamic>?> _fetch() async {
-    developer.log("Fetching day ahead prices...");
+    developer.log(
+      "Fetching day ahead prices...",
+      name: "electricity_data_widget.ElectricityDataState",
+    );
 
     final response = await http.get(
       _kDayAheadEndpoint,

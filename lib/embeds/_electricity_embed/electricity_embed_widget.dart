@@ -88,6 +88,8 @@ class _ChartWidget extends StatelessWidget {
         right: chartPadding,
       ),
       child: LayoutBuilder(builder: (context, constraints) {
+        final DateTime now = DateTime.now();
+
         final double leftAxisSize = 2 * chartPadding; // 44;
         final double bottomAxisSize = 2 * chartPadding; // 30;
 
@@ -111,7 +113,15 @@ class _ChartWidget extends StatelessWidget {
           BarChartData(
             minY: minY,
             maxY: maxY,
-            barTouchData: BarTouchData(enabled: false),
+            barTouchData: BarTouchData(
+              enabled: false,
+              touchTooltipData: BarTouchTooltipData(
+                getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                  return _getBarTooltipItem(group, groupIndex, rod, rodIndex,
+                      nowHour: now.hour);
+                },
+              ),
+            ),
             titlesData: FlTitlesData(
               leftTitles: AxisTitles(
                 sideTitles: SideTitles(
@@ -166,6 +176,7 @@ class _ChartWidget extends StatelessWidget {
 
                 return BarChartGroupData(
                   x: index,
+                  showingTooltipIndicators: index == now.hour ? [0] : null,
                   barRods: [
                     BarChartRodData(
                       fromY: 0,
@@ -176,7 +187,7 @@ class _ChartWidget extends StatelessWidget {
                         top: toY > 0 ? barBorderRadius : Radius.zero,
                         bottom: toY < 0 ? barBorderRadius : Radius.zero,
                       ),
-                    )
+                    ),
                   ],
                 );
               },
@@ -212,4 +223,32 @@ HSVColor _barColor(double price) {
   );
 
   return HSVColor.fromAHSV(1.0, hue, 1.0, value);
+}
+
+BarTooltipItem? _getBarTooltipItem(
+  BarChartGroupData group,
+  int groupIndex,
+  BarChartRodData rod,
+  int rodIndex, {
+  required int nowHour,
+}) {
+  final Color color = rod.color!;
+  final valueTextStyle = TextStyle(
+    color: color,
+    fontWeight: FontWeight.bold,
+    fontSize: 14,
+  );
+  const headerTextStyle = TextStyle(
+    color: Colors.white,
+    fontWeight: FontWeight.normal,
+    fontSize: 14,
+  );
+  final String priceText = rod.toY.toString().replaceFirst('.', ',');
+  return BarTooltipItem(
+    groupIndex == nowHour ? "Hinta Nyt" : formatTime(groupIndex, 0),
+    headerTextStyle,
+    children: [
+      TextSpan(text: "\n$priceText snt/kWh", style: valueTextStyle),
+    ],
+  );
 }
