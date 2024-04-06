@@ -40,5 +40,5 @@ class ElectricityEmbedSettingsForm extends EmbedSettingsForm {
   Color get displayColor => Colors.yellow;
 
   @override
-  String get displayName => "Test Embed";
+  String get displayName => "Electricity Embed";
 }

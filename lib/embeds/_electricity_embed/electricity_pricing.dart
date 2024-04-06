@@ -124,7 +124,7 @@ class ElectricityPricingState extends State<ElectricityPricing> {
         endIndex = endDate.hour;
       }
 
-      final double price = data["price"] as double;
+      final double price = (data["price"] as num).toDouble();
 
       if (startDate.isBefore(nextDayDate)) {
         _todayPrices.fillRange(startIndex, endIndex, price);
