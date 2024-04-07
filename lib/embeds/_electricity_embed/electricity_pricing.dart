@@ -1,5 +1,5 @@
-import 'dart:collection';
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
@@ -41,23 +41,34 @@ class ElectricityPricing extends StatefulWidget {
   }
 }
 
-class ElectricityPricingState extends State<ElectricityPricing> {
-  /// TODO: Debug todayDate... This is checked on each update but never assigned...
-  /// Date only
-  DateTime? _todayDate;
-  final List<double?> _todayPrices = List.generate(
-    24,
-    (index) => null,
-    growable: false,
-  );
-  List<double?> get todayPrices => UnmodifiableListView(_todayPrices);
+class ElectricityPrice {
+  final DateTime startTime;
+  final DateTime endTime;
+  final double price;
 
-  final List<double?> _nextDayPrices = List.generate(
-    24,
-    (index) => null,
-    growable: false,
-  );
-  List<double?> get nextDayPrices => _nextDayPrices;
+  ElectricityPrice({
+    required this.startTime,
+    required this.endTime,
+    required this.price,
+  });
+
+  factory ElectricityPrice._parse(dynamic obj) {
+    final DateTime start = DateTime.parse(obj["startDate"] as String).toLocal();
+    final DateTime end = DateTime.parse(obj["endDate"] as String).toLocal();
+
+    // cast as num first so if price is int, app won't crash
+    final double price = (obj["price"] as num).toDouble();
+
+    return ElectricityPrice(
+      startTime: start,
+      endTime: end,
+      price: price,
+    );
+  }
+}
+
+class ElectricityPricingState extends State<ElectricityPricing> {
+  List<ElectricityPrice> prices = List.empty(growable: true);
 
   /// Updates the prices if necessary
   /// Updated values will rebuild the inherited widget once they are loaded.
@@ -68,75 +79,65 @@ class ElectricityPricingState extends State<ElectricityPricing> {
     final DateTime nowDate = DateTimeHelpers.getDate(now);
     assert(DateTimeHelpers.isDateOnly(nowDate));
 
-    bool shouldRefreshDayAhead = false;
-    // if fetch has errored, todayDate is its old value
-    if (_todayDate == null || nowDate.isAfter(_todayDate!)) {
-      shouldRefreshDayAhead = true;
-    }
-    if (_nextDayPrices.last == null && _nextDayPricesAvailable(now)) {
-      shouldRefreshDayAhead = true;
+    while (prices.isNotEmpty && prices.first.startTime.isBefore(nowDate)) {
+      prices.removeAt(0);
     }
 
-    if (shouldRefreshDayAhead) {
-      try {
-        _updateDayAhead(nowDate).then((value) => setState(() {}));
-      } on _FetchError {
-        // fall back on older prices on error and retry on next update
-        // rethrow if no previous price data is available.
-        if (_todayDate == null) rethrow;
-      }
+    // NOTE: Today updates don't necessarily mean that we have the first 24 hours of prices
+    // 24 was just a good approximation on what the API gives me...
+    final bool updatePrices;
+    if (prices.isEmpty) {
+      updatePrices = true;
+    } else if (_nextDayPricesAvailable(now)) {
+      final DateTime theDayAfterTomorrow = nowDate.add(const Duration(days: 2));
+      assert(DateTimeHelpers.isDateOnly(theDayAfterTomorrow));
+
+      // if the last price is before midnight of the day after tomorrow, update
+      updatePrices = prices.last.endTime.isBefore(theDayAfterTomorrow);
+    } else {
+      updatePrices = false;
     }
-  }
 
-  Future<void> _updateDayAhead(DateTime nowDate) async {
-    // TODO: Redo this entire function...
-    // Currently it doesn't replace old data properly
-    // we should probably just use a around 48 hour (depends on the data given by the provider)
-    // list which pops the first element while it's yesterdays data
-    // and we try to load new data when nextDayPrices are available
-    throw UnimplementedError();
-
-    assert(DateTimeHelpers.isDateOnly(nowDate));
-    final DateTime nextDayDate = nowDate.add(const Duration(days: 1));
-    assert(DateTimeHelpers.isDateOnly(nextDayDate));
-
-    List<dynamic>? fetched = await _fetch();
-    if (fetched == null) {
-      throw _FetchError();
-    }
-    _todayDate = nowDate;
-
-    // today prices are not cleared since we can't refill that data from the next fetch
-    // (the first hour of the day isn't provided once new day ahead prices are available)
-    _nextDayPrices.fillRange(0, _nextDayPrices.length, null);
-    for (Map<String, dynamic> data in fetched) {
-      final DateTime startDate =
-          DateTime.parse(data["startDate"] as String).toLocal();
-      if (startDate.isBefore(nowDate)) continue;
-
-      final DateTime endDate =
-          DateTime.parse(data["endDate"] as String).toLocal();
-
-      final int startIndex = startDate.hour;
-      final int endIndex;
-      // next day hour 0 equals this day hour 24
-      if (endDate.hour == 0) {
-        endIndex = 24;
-      } else {
-        endIndex = endDate.hour;
-      }
-
-      final double price = (data["price"] as num).toDouble();
-
-      if (startDate.isBefore(nextDayDate)) {
-        _todayPrices.fillRange(startIndex, endIndex, price);
-      } else {
-        _nextDayPrices.fillRange(startIndex, endIndex, price);
-      }
+    if (updatePrices) {
+      _updateDayAhead().then((_) => setState(() {}));
     }
   }
 
-  Future<List<dynamic>?> _fetch() async {
+  /// returns true if successful, returns false if unsuccessful.
+  Future<bool> _updateDayAhead() async {
+    List<ElectricityPrice>? fetched = await _fetch();
+    if (fetched == null) return false;
+    if (fetched.isEmpty) return true;
+
+    // new to old => old to new
+    fetched = fetched.reversed.toList(growable: false);
+
+    // verify API output when debugging, assume correctness when in release mode
+    if (kDebugMode) {
+      for (int i = 1; i < fetched.length; i++) {
+        final ElectricityPrice a = fetched[i - 1];
+        final ElectricityPrice b = fetched[i];
+        assert(!a.endTime.isAfter(b.startTime));
+      }
+    }
+
+    final ElectricityPrice first = fetched.first;
+
+    // find index where price start time and fetched price start time meet
+    // the found price either starts at or after this point
+    // start overriding data at this index and forwards
+    // if list is empty, start overriding from 0
+    int i = 0;
+    while (i < prices.length && prices[i].startTime.isBefore(first.startTime)) {
+      i++;
+    }
+
+    prices.removeRange(i, prices.length);
+    prices.addAll(fetched);
+    return true;
+  }
+
+  Future<List<ElectricityPrice>?> _fetch() async {
     developer.log(
       "Fetching day ahead prices...",
       name: "_electricity_embed.ElectricityPricingEmbed",
@@ -148,7 +149,10 @@ class ElectricityPricingState extends State<ElectricityPricing> {
     );
 
     if (response.statusCode == 200) {
-      return json.decode(response.body)["prices"];
+      List<dynamic> prices = json.decode(response.body)["prices"];
+      return prices
+          .map((e) => ElectricityPrice._parse(e))
+          .toList(growable: false);
     } else {
       developer.log(
         "Received an error while fetching day-ahead prices: ${response.body}",
@@ -175,5 +179,3 @@ class _ElectricityDataInherited extends InheritedWidget {
   @override
   bool updateShouldNotify(covariant InheritedWidget oldWidget) => true;
 }
-
-class _FetchError implements Exception {}
