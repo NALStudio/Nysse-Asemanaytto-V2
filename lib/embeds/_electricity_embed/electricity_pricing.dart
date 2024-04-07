@@ -79,10 +79,6 @@ class ElectricityPricingState extends State<ElectricityPricing> {
     final DateTime nowDate = DateTimeHelpers.getDate(now);
     assert(DateTimeHelpers.isDateOnly(nowDate));
 
-    while (prices.isNotEmpty && prices.first.startTime.isBefore(nowDate)) {
-      prices.removeAt(0);
-    }
-
     // NOTE: Today updates don't necessarily mean that we have the first 24 hours of prices
     // 24 was just a good approximation on what the API gives me...
     final bool updatePrices;
@@ -99,7 +95,20 @@ class ElectricityPricingState extends State<ElectricityPricing> {
     }
 
     if (updatePrices) {
-      _updateDayAhead().then((_) => setState(() {}));
+      _updateDayAhead().then((_) {
+        _stripPreviousDay(nowDate);
+        setState(() {});
+      });
+    } else {
+      _stripPreviousDay(nowDate);
+    }
+  }
+
+  void _stripPreviousDay(DateTime nowDate) {
+    assert(DateTimeHelpers.isDateOnly(nowDate));
+
+    while (prices.isNotEmpty && prices.first.startTime.isBefore(nowDate)) {
+      prices.removeAt(0);
     }
   }
 

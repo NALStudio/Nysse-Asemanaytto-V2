@@ -46,6 +46,7 @@ class ElectricityEmbedWidget extends StatefulWidget
 
   @override
   void onEnable() {
+    // update electricity data before doing any logic on it
     _electricityDataKey.currentState?.update();
 
     final bool showTomorrow = _shouldShowTomorrowPrices();
@@ -57,8 +58,11 @@ class ElectricityEmbedWidget extends StatefulWidget
         DateTimeHelpers.getDate(DateTime.now()).add(const Duration(days: 1));
 
     // must be above 0
+    // NOTE: Might need a third one during winter time, not sure, haven't tested yet...
     const int minTomorrowPricesRequired = 2;
 
+    // we don't check prices.length > (24 + minTomorrowPricesRequired)
+    // because some hours can be grouped or missing
     final List<ElectricityPrice>? prices =
         _electricityDataKey.currentState?.prices;
 
@@ -80,6 +84,7 @@ class _ElectricityEmbedWidgetState extends State<ElectricityEmbedWidget> {
   int _dayIndex = 0;
 
   void onDisable() {
+    // set this on disable so the animation isn't ran when enabling
     _dayIndex = 0;
   }
 
@@ -138,14 +143,17 @@ class _ChartWidget extends StatelessWidget {
     const double defaultMax = 1;
 
     double? minPrice;
+    int? minPriceHour;
     double? maxPrice;
     int? maxPriceHour;
     for (ElectricityPrice price in prices) {
       if (maxPrice == null || price.price > maxPrice) {
         maxPrice = price.price;
         maxPriceHour = price.startTime.hour;
-      } else if (minPrice == null || price.price < minPrice) {
+      }
+      if (minPrice == null || price.price < minPrice) {
         minPrice = price.price;
+        minPriceHour = price.startTime.hour;
       }
     }
     minPrice ??= defaultMin;
@@ -187,13 +195,11 @@ class _ChartWidget extends StatelessWidget {
           width: lineStyle.strokeWidth,
         );
 
-        final int? tooltipHour;
+        final Set<int> tooltipHours;
         if (nowHour != null) {
-          tooltipHour = nowHour;
-        } else if (maxPriceHour != null) {
-          tooltipHour = maxPriceHour;
+          tooltipHours = {nowHour};
         } else {
-          tooltipHour = null;
+          tooltipHours = Set.from([minPriceHour, maxPriceHour].nonNulls);
         }
 
         return BarChart(
@@ -261,7 +267,7 @@ class _ChartWidget extends StatelessWidget {
               minPrice: minPrice!,
               maxPrice: maxPrice!,
               barWidth: barWidth,
-              showTooltip: (hour) => tooltipHour != null && hour == tooltipHour,
+              showTooltip: (hour) => tooltipHours.contains(hour),
             ),
           ),
         );
