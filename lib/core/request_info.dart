@@ -1,6 +1,6 @@
 class RequestInfo {
   static const String packageName = "com.nalstudio.nysse_asemanaytto";
-  static const String userAgent = "NysseAsemanaytto";
+  static const String userAgent = "NALStudioNysseAsemanaytto";
   static const RequestInfoRatelimits ratelimits = RequestInfoRatelimits(
     stoptimesRequest: Duration(seconds: 30),
     alertsRequest: Duration(seconds: 60),
