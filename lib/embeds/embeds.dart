@@ -4,7 +4,8 @@ import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/embed.dart'
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/_test2_embed.dart';
 import 'package:nysse_asemanaytto/embeds/_test_embed.dart';
-import 'package:nysse_asemanaytto/embeds/alerts_embed.dart';
+import 'package:nysse_asemanaytto/embeds/_alerts_embed.dart';
+import 'package:nysse_asemanaytto/embeds/_weather_embed/weather_embed.dart';
 import 'package:nysse_asemanaytto/settings/settings.dart';
 
 /// DO NOT INSTANTIATE OUTSIDE OF [Embed.allEmbeds]
@@ -32,6 +33,7 @@ abstract class Embed {
     AlertsEmbed(name: "alerts"),
     MapVehiclesEmbed(name: "mapVehicles"),
     MapLinesEmbed(name: "mapLines"),
+    WeatherEmbed(name: "weather"),
     ElectricityEmbed(name: "electricity"),
     TestEmbed(name: "test"),
     Test2Embed(name: "test2"),

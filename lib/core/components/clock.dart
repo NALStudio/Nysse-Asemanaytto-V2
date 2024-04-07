@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:nysse_asemanaytto/core/helpers.dart';
+import 'package:nysse_asemanaytto/core/helpers/helpers.dart';
 
 class ClockWidget extends StatefulWidget {
   final TextStyle? textStyle;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
-import 'package:nysse_asemanaytto/core/helpers.dart';
+import 'package:nysse_asemanaytto/core/helpers/helpers.dart';
 import 'package:nysse_asemanaytto/embeds/_electricity_embed/electricity_pricing.dart';
 import 'package:nysse_asemanaytto/embeds/_electricity_embed/electricity_embed_settings.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';

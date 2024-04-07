@@ -21,6 +21,7 @@ dependencies:
   mqtt5_client: ^4.2.2
   protobuf: ^3.1.0
   shared_preferences: ^2.2.2
+  xml: ^6.5.0
 
 dev_dependencies:
   flutter_test:
@@ -38,6 +39,7 @@ flutter:
 
   assets:
     - assets/images/
+    - assets/images/fmi_weather_symbols/
 
   fonts:
     - family: LotaGrotesque

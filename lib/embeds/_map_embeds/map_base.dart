@@ -4,7 +4,7 @@ import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_ti
 import 'package:latlong2/latlong.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
-import 'package:nysse_asemanaytto/core/helpers.dart';
+import 'package:nysse_asemanaytto/core/helpers/helpers.dart';
 import 'package:nysse_asemanaytto/core/painters/bus_marker_painter.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
 import 'package:nysse_asemanaytto/digitransit/_models/gtfs_id.dart';

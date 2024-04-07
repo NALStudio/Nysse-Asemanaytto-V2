@@ -1,0 +1,4 @@
+enum ForecastModel {
+  harmonie,
+  edited,
+}

@@ -19,7 +19,6 @@ import 'package:nysse_asemanaytto/main/stoptimes.dart';
 import 'package:nysse_asemanaytto/settings/settings_layout.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-// ignore: depend_on_referenced_packages
 import "package:http/http.dart" as http;
 import 'dart:developer' as developer;
 import 'dart:math' as math;
@@ -242,13 +241,13 @@ class _EmbedCanvasState extends State<EmbedCanvas> {
   @override
   void initState() {
     super.initState();
-    _startIndexSwitching(disablePrevious: false);
+    _startIndexSwitching();
   }
 
-  void _startIndexSwitching({bool disablePrevious = true}) {
+  void _startIndexSwitching() {
     assert(_indexTimer?.isActive != true);
 
-    if (_childIndex != null && disablePrevious) {
+    if (_childIndex != null) {
       _embedWidgets[_childIndex!].onDisable();
     }
 
@@ -273,7 +272,9 @@ class _EmbedCanvasState extends State<EmbedCanvas> {
       _childIndex = childIndex;
     });
 
-    if (_childIndex != null) _embedWidgets[_childIndex!].onEnable();
+    if (_childIndex != null) {
+      _embedWidgets[_childIndex!].onEnable();
+    }
 
     if (embedDuration != null) {
       _indexTimer = Timer(embedDuration, _startIndexSwitching);

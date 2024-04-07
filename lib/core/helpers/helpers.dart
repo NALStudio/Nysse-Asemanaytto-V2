@@ -30,9 +30,25 @@ Duration durationFromDouble({
   );
 }
 
+// Format time with leading zeroes on all parts.
 String formatTime(int hour, int minute, [int? second]) {
   final List<int?> parts = [hour, minute, second];
-  return parts.nonNulls.map((i) => i.toString().padLeft(2, '0')).join(':');
+  return parts.nonNulls.map((prt) => prt.toString().padLeft(2, '0')).join(':');
+}
+
+// Format time with leading zeroes on all parts except the first.
+String formatTime2(int hour, int minute, [int? second]) {
+  final List<int?> parts = [hour, minute, second];
+  return parts.nonNulls.indexed.map((x) {
+    final (int index, int part) = x;
+
+    String s = part.toString();
+    if (index > 0) {
+      s = s.padLeft(2, '0');
+    }
+
+    return s;
+  }).join(':');
 }
 
 // Convert snakeCase to a sentence with capitalized words.
@@ -64,4 +80,8 @@ String snakeCase2Sentence(String snakeCase) {
   }
 
   return output.join(' ');
+}
+
+bool isSuccessStatusCode(int statusCode) {
+  return (statusCode >= 200) && (statusCode <= 299);
 }

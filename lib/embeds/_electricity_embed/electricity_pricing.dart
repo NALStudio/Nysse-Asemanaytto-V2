@@ -4,26 +4,15 @@ import 'package:http/http.dart' as http;
 import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
+import 'package:nysse_asemanaytto/core/helpers/datetime.dart';
 
 final Uri _kDayAheadEndpoint = Uri.https(
   "api.porssisahko.net",
   "/v1/latest-prices.json",
 );
 
-bool _isLocalDateTime(DateTime dt) {
-  return dt.timeZoneName == dt.toLocal().timeZoneName;
-}
-
-bool _isDateOnly(DateTime dt) {
-  return dt.hour == 0 &&
-      dt.minute == 0 &&
-      dt.second == 0 &&
-      dt.millisecond == 0 &&
-      dt.microsecond == 0;
-}
-
 bool _nextDayPricesAvailable(DateTime now) {
-  assert(_isLocalDateTime(now));
+  assert(DateTimeHelpers.isLocalDateTime(now));
   final DateTime releaseDateTime = DateTime(now.year, now.month, now.day, 14);
   return now.isAfter(releaseDateTime);
 }
@@ -53,6 +42,7 @@ class ElectricityPricing extends StatefulWidget {
 }
 
 class ElectricityPricingState extends State<ElectricityPricing> {
+  /// TODO: Debug todayDate... This is checked on each update but never assigned...
   /// Date only
   DateTime? _todayDate;
   final List<double?> _todayPrices = List.generate(
@@ -73,12 +63,13 @@ class ElectricityPricingState extends State<ElectricityPricing> {
   /// Updated values will rebuild the inherited widget once they are loaded.
   void update({DateTime? now}) {
     now ??= DateTime.now();
-    assert(_isLocalDateTime(now));
+    assert(DateTimeHelpers.isLocalDateTime(now));
 
-    final DateTime nowDate = DateTime(now.year, now.month, now.day);
-    assert(_isDateOnly(nowDate));
+    final DateTime nowDate = DateTimeHelpers.getDate(now);
+    assert(DateTimeHelpers.isDateOnly(nowDate));
 
     bool shouldRefreshDayAhead = false;
+    // if fetch has errored, todayDate is its old value
     if (_todayDate == null || nowDate.isAfter(_todayDate!)) {
       shouldRefreshDayAhead = true;
     }
@@ -90,23 +81,34 @@ class ElectricityPricingState extends State<ElectricityPricing> {
       try {
         _updateDayAhead(nowDate).then((value) => setState(() {}));
       } on _FetchError {
+        // fall back on older prices on error and retry on next update
+        // rethrow if no previous price data is available.
         if (_todayDate == null) rethrow;
-        // Last date check will fail and the update is retried
-        // But today prices will break if the fetch fails.
       }
     }
   }
 
   Future<void> _updateDayAhead(DateTime nowDate) async {
-    assert(_isDateOnly(nowDate));
+    // TODO: Redo this entire function...
+    // Currently it doesn't replace old data properly
+    // we should probably just use a around 48 hour (depends on the data given by the provider)
+    // list which pops the first element while it's yesterdays data
+    // and we try to load new data when nextDayPrices are available
+    throw UnimplementedError();
+
+    assert(DateTimeHelpers.isDateOnly(nowDate));
     final DateTime nextDayDate = nowDate.add(const Duration(days: 1));
-    assert(_isDateOnly(nextDayDate));
+    assert(DateTimeHelpers.isDateOnly(nextDayDate));
 
     List<dynamic>? fetched = await _fetch();
     if (fetched == null) {
       throw _FetchError();
     }
+    _todayDate = nowDate;
 
+    // today prices are not cleared since we can't refill that data from the next fetch
+    // (the first hour of the day isn't provided once new day ahead prices are available)
+    _nextDayPrices.fillRange(0, _nextDayPrices.length, null);
     for (Map<String, dynamic> data in fetched) {
       final DateTime startDate =
           DateTime.parse(data["startDate"] as String).toLocal();
@@ -137,7 +139,7 @@ class ElectricityPricingState extends State<ElectricityPricing> {
   Future<List<dynamic>?> _fetch() async {
     developer.log(
       "Fetching day ahead prices...",
-      name: "electricity_data_widget.ElectricityDataState",
+      name: "_electricity_embed.ElectricityPricingEmbed",
     );
 
     final response = await http.get(
@@ -150,7 +152,7 @@ class ElectricityPricingState extends State<ElectricityPricing> {
     } else {
       developer.log(
         "Received an error while fetching day-ahead prices: ${response.body}",
-        name: "electricity_data_widget.ElectricityDataState",
+        name: "_electricity_embed.ElectricityPricingEmbed",
       );
       return null;
     }
