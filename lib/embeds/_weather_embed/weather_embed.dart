@@ -358,9 +358,7 @@ class WeatherEmbedSettingsForm extends EmbedSettingsForm {
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text("No Settings."),
-    );
+    return EmbedSettingsForm.buildNoSettingsWidget(context);
   }
 
   @override

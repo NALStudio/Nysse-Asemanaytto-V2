@@ -67,4 +67,8 @@ abstract class EmbedSettingsForm<T extends EmbedSettings> extends SettingsForm {
     required this.parentSettings,
     required this.defaultSettings,
   });
+
+  static Widget buildNoSettingsWidget(BuildContext context) {
+    return EmbedSettingsForm.buildNoSettingsWidget(context);
+  }
 }
