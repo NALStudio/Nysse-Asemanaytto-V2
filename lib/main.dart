@@ -241,12 +241,13 @@ class _EmbedCanvasState extends State<EmbedCanvas> {
   @override
   void initState() {
     super.initState();
-    _startIndexSwitching();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _startIndexSwitching());
   }
 
   void _startIndexSwitching() {
     assert(_indexTimer?.isActive != true);
 
+    // if index doesn't change, the disable is still pumped through the system
     if (_childIndex != null) {
       _embedWidgets[_childIndex!].onDisable();
     }
@@ -255,17 +256,27 @@ class _EmbedCanvasState extends State<EmbedCanvas> {
     int? childIndex;
     if (_embedWidgets.isEmpty) {
       childIndex = null;
-    } else if (_embedWidgets.length == 1) {
-      childIndex = 0;
     } else {
-      childIndex = _childIndex ?? -1;
-      do {
+      // iterate at max to the same index as where we were at start
+      for (int i = 1; i <= _embedWidgets.length; i++) {
         // increment index, default to 0 if null.
         // Will wrap around at after final element.
-        childIndex = (childIndex! + 1) % _embedWidgets.length;
+        childIndex = ((_childIndex ?? -1) + i) % _embedWidgets.length;
         embedDuration =
             _embedWidgets[childIndex].getDuration() ?? Duration.zero;
-      } while (embedDuration == Duration.zero);
+
+        // break on first embed which doesn't have 0 duration
+        if (embedDuration != Duration.zero) {
+          break;
+        }
+      }
+
+      // if all embeds had duration zero
+      if (embedDuration == Duration.zero) {
+        // set this to null so that no timer is scheduled
+        embedDuration = null;
+        childIndex = null;
+      }
     }
 
     setState(() {
@@ -287,25 +298,20 @@ class _EmbedCanvasState extends State<EmbedCanvas> {
     super.dispose();
   }
 
-  void _resetIndexSwitchTimer(List<EmbedRecord> embeds) {
-    _childIndex = null;
-
-    // startIndexSwitching will start a new timer if needed.
-    _indexTimer?.cancel();
-    _startIndexSwitching();
-  }
-
   @override
   Widget build(BuildContext context) {
     final embeds = Config.of(context).embeds;
 
-    bool resetIndex = embeds.length != _embedWidgets.length;
+    if (embeds.length != _embedWidgets.length) {
+      _embedWidgets.clear();
+      _embedWidgets.addAll(embeds.map((e) => e.embed.createEmbed(e.settings)));
 
-    _embedWidgets.clear();
-    _embedWidgets.addAll(embeds.map((e) => e.embed.createEmbed(e.settings)));
-
-    if (resetIndex) {
-      _resetIndexSwitchTimer(embeds);
+      if (_childIndex != null) {
+        _childIndex = null;
+        _indexTimer?.cancel();
+        // startIndexSwitching will start a new timer if needed.
+        _startIndexSwitching();
+      }
     }
 
     return Expanded(
