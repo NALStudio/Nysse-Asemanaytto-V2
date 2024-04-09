@@ -69,6 +69,8 @@ abstract class EmbedSettingsForm<T extends EmbedSettings> extends SettingsForm {
   });
 
   static Widget buildNoSettingsWidget(BuildContext context) {
-    return EmbedSettingsForm.buildNoSettingsWidget(context);
+    return const Center(
+      child: Text("No Settings."),
+    );
   }
 }
