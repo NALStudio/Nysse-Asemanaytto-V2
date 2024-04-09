@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nysse_asemanaytto/embeds/_analogue_clock/analogue_clock.dart';
 import 'package:nysse_asemanaytto/embeds/_electricity_embed/electricity_embed_widget.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/embed.dart';
@@ -35,6 +36,7 @@ abstract class Embed {
     MapLinesEmbed(name: "mapLines"),
     WeatherEmbed(name: "weather"),
     ElectricityEmbed(name: "electricity"),
+    ClockEmbed(name: "clock"),
     TestEmbed(name: "test"),
     Test2Embed(name: "test2"),
   ];
