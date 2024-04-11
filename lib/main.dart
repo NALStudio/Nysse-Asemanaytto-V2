@@ -238,12 +238,6 @@ class _EmbedCanvasState extends State<EmbedCanvas> {
 
   final List<EmbedWidgetMixin> _embedWidgets = [];
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _startIndexSwitching());
-  }
-
   void _startIndexSwitching() {
     assert(_indexTimer?.isActive != true);
 
@@ -306,12 +300,12 @@ class _EmbedCanvasState extends State<EmbedCanvas> {
       _embedWidgets.clear();
       _embedWidgets.addAll(embeds.map((e) => e.embed.createEmbed(e.settings)));
 
-      if (_childIndex != null) {
-        _childIndex = null;
-        _indexTimer?.cancel();
-        // startIndexSwitching will start a new timer if needed.
-        _startIndexSwitching();
-      }
+      _childIndex = null;
+      _indexTimer?.cancel();
+      // startIndexSwitching will start a new timer if needed.
+      WidgetsBinding.instance.addPostFrameCallback(
+        (_) => _startIndexSwitching(),
+      );
     }
 
     return Expanded(

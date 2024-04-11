@@ -179,6 +179,7 @@ class AlertsEmbedSettings extends EmbedSettings<AlertsEmbed> {
   @override
   void deserialize(String serialized) {}
 
+  // TODO:
   @override
   String serialize() => "";
 }

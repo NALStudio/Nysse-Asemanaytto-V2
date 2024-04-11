@@ -6,14 +6,24 @@ double remapDouble(
 }
 
 Duration durationFromDouble({
+  double? hours,
+  double? minutes,
   double? seconds,
   double? milliseconds,
   double? microseconds,
 }) {
+  hours ??= 0;
+  minutes ??= 0;
   seconds ??= 0;
   milliseconds ??= 0;
   microseconds ??= 0;
 
+  int trueHours = hours.toInt();
+
+  minutes += (hours - trueHours) * Duration.minutesPerHour;
+  int trueMinutes = minutes.toInt();
+
+  seconds += (minutes - trueMinutes) * Duration.secondsPerMinute;
   int trueSeconds = seconds.toInt();
 
   milliseconds += (seconds - trueSeconds) * Duration.millisecondsPerSecond;

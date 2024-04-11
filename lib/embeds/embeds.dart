@@ -3,8 +3,6 @@ import 'package:nysse_asemanaytto/embeds/_analogue_clock/analogue_clock.dart';
 import 'package:nysse_asemanaytto/embeds/_electricity_embed/electricity_embed_widget.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/embed.dart';
-import 'package:nysse_asemanaytto/embeds/_test2_embed.dart';
-import 'package:nysse_asemanaytto/embeds/_test_embed.dart';
 import 'package:nysse_asemanaytto/embeds/_alerts_embed.dart';
 import 'package:nysse_asemanaytto/embeds/_weather_embed/weather_embed.dart';
 import 'package:nysse_asemanaytto/settings/settings.dart';
@@ -35,10 +33,8 @@ abstract class Embed {
     MapVehiclesEmbed(name: "mapVehicles"),
     MapLinesEmbed(name: "mapLines"),
     WeatherEmbed(name: "weather"),
-    ElectricityEmbed(name: "electricity"),
+    ElectricityEmbed(name: "electricityPrices"),
     ClockEmbed(name: "clock"),
-    TestEmbed(name: "test"),
-    Test2Embed(name: "test2"),
   ];
 }
 
