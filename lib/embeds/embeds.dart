@@ -6,6 +6,7 @@ import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/embed.da
 import 'package:nysse_asemanaytto/embeds/_alerts_embed.dart';
 import 'package:nysse_asemanaytto/embeds/_weather_embed/weather_embed.dart';
 import 'package:nysse_asemanaytto/settings/settings.dart';
+import '_electricity_production/electricity_production_embed.dart';
 
 /// DO NOT INSTANTIATE OUTSIDE OF [Embed.allEmbeds]
 @immutable
@@ -34,6 +35,7 @@ abstract class Embed {
     MapLinesEmbed(name: "mapLines"),
     WeatherEmbed(name: "weather"),
     ElectricityEmbed(name: "electricityPrices"),
+    ElectricityProductionEmbed(name: "electricityProduction"),
     ClockEmbed(name: "clock"),
   ];
 }

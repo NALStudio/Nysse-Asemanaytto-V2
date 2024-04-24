@@ -33,10 +33,10 @@ class LayoutData {
 
   double get logicalPixelSize => _mq.size.width / 1080;
 
-  // padding - (padding / 4)
-  double get shrinkedPadding => logicalPixelSize * 21;
+  // currently padding - (padding / 4)
+  double get shrinkedPadding => padding - quarterPadding;
 
-  // double get quarterPadding => padding / 4;
+  double get quarterPadding => padding / 4;
   double get halfPadding => padding / 2;
 
   double get padding => logicalPixelSize * 28;

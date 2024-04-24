@@ -285,7 +285,7 @@ BarChartGroupData _buildGroup(
   required bool showTooltip,
 }) {
   final Radius barBorderRadius =
-      Radius.circular(Layout.of(context).halfPadding / 2);
+      Radius.circular(Layout.of(context).quarterPadding);
 
   return BarChartGroupData(
     x: index,
