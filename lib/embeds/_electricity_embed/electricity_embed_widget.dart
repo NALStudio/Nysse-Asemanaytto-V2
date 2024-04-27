@@ -85,7 +85,10 @@ class _ElectricityEmbedWidgetState extends State<ElectricityEmbedWidget> {
 
   void onDisable() {
     // set this on disable so the animation isn't ran when enabling
-    _dayIndex = 0;
+    setState(() {
+      // state has to be set on disable so that the animation isn't visible
+      _dayIndex = 0;
+    });
   }
 
   void onEnable({required bool showTomorrowPrices}) {
@@ -418,7 +421,7 @@ BarTooltipItem? _getBarTooltipItem(
     fontWeight: FontWeight.normal,
     fontSize: 14,
   );
-  final String priceText = rod.toY.toString().replaceFirst('.', ',');
+  final String priceText = rod.toY.toStringAsFixed(3).replaceFirst('.', ',');
   return BarTooltipItem(
     groupIndex == nowHour ? "Hinta Nyt" : formatTime(groupIndex, 0),
     headerTextStyle,

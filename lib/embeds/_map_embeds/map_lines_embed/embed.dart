@@ -158,6 +158,10 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
 
   void onEnabled() {
     _embedIsEnabled = true;
+
+    if (widget.route != null) {
+      _subscribeMqtt(widget.route!.gtfsId);
+    }
   }
 
   void onDisabled() {
