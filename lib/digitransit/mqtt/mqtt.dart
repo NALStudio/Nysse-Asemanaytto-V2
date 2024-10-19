@@ -74,7 +74,7 @@ class DigitransitMqttState extends State<DigitransitMqtt> {
       final msgBuffer = payload.payload.message!;
 
       final DigitransitMqttMessage digitransitMessage = DigitransitMqttMessage(
-        bytes: UnmodifiableUint8ListView(Uint8List.view(msgBuffer.buffer)),
+        bytes: Uint8List.view(msgBuffer.buffer).asUnmodifiableView(),
       );
 
       for (final DigitransitMqttSubscription sub in _subscriptions) {
@@ -172,7 +172,7 @@ class _DigitransitMqttInherited extends InheritedWidget {
 }
 
 class DigitransitMqttMessage {
-  final UnmodifiableUint8ListView bytes;
+  final Uint8List bytes;
 
   DigitransitMqttMessage({required this.bytes});
 }

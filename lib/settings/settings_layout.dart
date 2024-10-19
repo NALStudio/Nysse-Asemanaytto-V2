@@ -126,7 +126,7 @@ class _SettingsWidgetState extends State<SettingsWidget> {
         onChanged: () {
           setState(() => _isDirty = true);
         },
-        onPopInvoked: (didPop) {
+        onPopInvokedWithResult: (didPop, result) {
           if (!didPop) {
             _cannotNavigateBack();
           }
