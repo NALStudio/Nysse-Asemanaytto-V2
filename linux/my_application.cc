@@ -60,6 +60,18 @@ static void my_application_activate(GApplication* application) {
   fl_register_plugins(FL_PLUGIN_REGISTRY(view));
 
   gtk_widget_grab_focus(GTK_WIDGET(view));
+
+
+  // CUSTOM: Set default values for Raspberry Pi
+
+  // Set fullscreen
+  gtk_window_fullscreen(window);
+
+  // Hide cursor
+  GdkCursor* hide_cursor = gdk_cursor_new_from_name(gtk_widget_get_display(GTK_WIDGET(view)), "none");
+  gdk_window_set_cursor(gtk_widget_get_window(GTK_WIDGET(view)), hide_cursor);
+
+  // CUSTOM
 }
 
 // Implements GApplication::local_command_line.
