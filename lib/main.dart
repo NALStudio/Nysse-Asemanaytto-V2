@@ -144,11 +144,14 @@ class AppServices extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Layout(
-      info: LayoutData(mediaQueryData: MediaQuery.of(context)),
-      child: const StopInfo(
-        child: Stoptimes(
-          child: AppCanvas(),
+    return MouseRegion(
+      cursor: SystemMouseCursors.none,
+      child: Layout(
+        info: LayoutData(mediaQueryData: MediaQuery.of(context)),
+        child: const StopInfo(
+          child: Stoptimes(
+            child: AppCanvas(),
+          ),
         ),
       ),
     );
