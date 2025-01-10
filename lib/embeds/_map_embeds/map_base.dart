@@ -42,7 +42,7 @@ TileLayer _buildDigitransit(BuildContext context, {required bool retina}) {
   return TileLayer(
     urlTemplate:
         "https://cdn.digitransit.fi/map/v2/hsl-map-256/{z}/{x}/{y}{r}.png?digitransit-subscription-key=${Config.of(context).digitransitSubscriptionKey!}",
-    retinaMode: true,
+    retinaMode: retina,
     tileProvider: CancellableNetworkTileProvider(silenceExceptions: true),
     userAgentPackageName: RequestInfo.packageName,
   );

@@ -41,7 +41,6 @@ class _StoptimesList extends StatefulWidget {
 
 class _StoptimesListState extends State<_StoptimesList> {
   final GlobalKey<AnimatedListState> _listKey = GlobalKey();
-  AnimatedListState get _animatedList => _listKey.currentState!;
 
   final List<DigitransitStoptime> _internalList = List.empty(growable: true);
 
@@ -64,23 +63,18 @@ class _StoptimesListState extends State<_StoptimesList> {
       final DigitransitStoptime st = _internalList[i];
       if (tripIds.contains(st.tripGtfsId)) continue;
 
-      _removeItem(i, stoptimeHeight: childTotalSize);
+      _tryRemoveItem(i, stoptimeHeight: childTotalSize);
     }
 
     // Set new trips to correct indexes
     for (int i = 0; i < widget.stoptimes.length; i++) {
       final DigitransitStoptime st = widget.stoptimes[i];
-      if (i < _internalList.length) {
-        _internalList[i] = st;
-      } else {
-        _internalList.insert(i, st);
-        _animatedList.insertItem(i);
-      }
+      _trySetItem(i, st);
     }
 
     // Remove overflowing items
     while (_internalList.length > widget.stoptimes.length) {
-      _removeItem(
+      _tryRemoveItem(
         _internalList.length - 1,
         stoptimeHeight: childTotalSize,
       );
@@ -105,9 +99,26 @@ class _StoptimesListState extends State<_StoptimesList> {
     );
   }
 
-  void _removeItem(int index, {required double stoptimeHeight}) {
+  bool _trySetItem(int index, DigitransitStoptime stoptime) {
+    final AnimatedListState? animatedList = _listKey.currentState;
+    if (animatedList == null) return false;
+
+    if (index < _internalList.length) {
+      _internalList[index] = stoptime;
+    } else {
+      _internalList.insert(index, stoptime);
+      animatedList.insertItem(index);
+    }
+
+    return true;
+  }
+
+  bool _tryRemoveItem(int index, {required double stoptimeHeight}) {
+    final AnimatedListState? animatedList = _listKey.currentState;
+    if (animatedList == null) return false;
+
     final DigitransitStoptime removed = _internalList.removeAt(index);
-    _animatedList.removeItem(
+    animatedList.removeItem(
       index,
       (context, animation) => _buildAnimatedListStoptime(
         context,
@@ -117,6 +128,8 @@ class _StoptimesListState extends State<_StoptimesList> {
       ),
       duration: const Duration(milliseconds: 750),
     );
+
+    return true;
   }
 }
 
