@@ -1,7 +1,7 @@
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
+import 'package:nysse_asemanaytto/core/helpers/datetime.dart';
 
-import '_enum.dart';
 import '_forecast.dart';
 
 Uri _buildUri({
@@ -23,12 +23,8 @@ Uri _buildUri({
 
 Future<Forecast> getForecast(
   LatLng latlon, {
-  ForecastModel model = ForecastModel.edited,
   DateTime? startTime,
   DateTime? endTime,
-
-  /// default: UTC
-  String? timezone,
 
   /// Durations under a minute are handled identically to [Duration.inMinutes].
   Duration? timestep,
@@ -39,21 +35,22 @@ Future<Forecast> getForecast(
   };
 
   if (startTime != null) {
-    params["starttime"] = startTime.toUtc().toIso8601String();
+    params["starttime"] = DateTimeHelpers.toIso8601StringWithOffset(startTime);
   }
   if (endTime != null) {
-    params["endtime"] = endTime.toUtc().toIso8601String();
+    params["endtime"] = DateTimeHelpers.toIso8601StringWithOffset(endTime);
   }
-  if (timezone != null) {
-    params["timezone"] = timezone;
-  }
+  // Dart converts to UTC anyway
+  // if (timezone != null) {
+  //   params["timezone"] = timezone;
+  // }
   if (timestep != null) {
     params["timestep"] = timestep.inMinutes.toString();
   }
 
   final response = await http.get(_buildUri(
     storedQuery:
-        "fmi::forecast::${model.name}::weather::scandinavia::point::timevaluepair",
+        "fmi::forecast::edited::weather::scandinavia::point::timevaluepair",
     parameters: params,
   ));
 

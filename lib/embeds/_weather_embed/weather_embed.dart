@@ -13,7 +13,18 @@ import 'dart:developer' as developer;
 
 final GlobalKey<_WeatherEmbedWidgetState> _weatherKey = GlobalKey();
 
+// Weather embed doesn't display anything on first render
+// because stop latitude and longitude information is not yet available
 class WeatherEmbed extends Embed {
+  static const int stepCount = 4;
+
+  // During winter, Finland's UTC offset is +2
+  // during this time the timestep 3 returns times 2, 5, 8, 11, ...
+  // I don't like this, so I'll use timestep 1 instead
+  static const int timestepHours = 1;
+  static const int pollRateMinutes = (timestepHours * 60) ~/ 4;
+  static const Duration timestep = Duration(hours: timestepHours);
+
   const WeatherEmbed({required super.name});
 
   @override
@@ -76,8 +87,10 @@ class _WeatherEmbedWidgetState extends State<WeatherEmbedWidget> {
         fetchNextTimeOn == null ||
         now.isAfter(fetchNextTimeOn!)) {
       _getWeather(now: now).then((value) => setState(() => forecast = value));
-      fetchNextTimeOn =
-          DateTimeHelpers.getHour(now).add(const Duration(hours: 1));
+
+      fetchNextTimeOn = DateTimeHelpers.getHour(now).add(
+        const Duration(minutes: WeatherEmbed.pollRateMinutes),
+      );
     }
   }
 
@@ -90,17 +103,19 @@ class _WeatherEmbedWidgetState extends State<WeatherEmbedWidget> {
     final stopinfo = StopInfo.of(context);
     if (stopinfo == null) return null;
 
+    final DateTime startTime = DateTimeHelpers.roundToNearestHour(now);
+    final DateTime endTime = startTime.add(
+      Duration(hours: WeatherEmbed.stepCount * WeatherEmbed.timestepHours),
+    );
+
     final LatLng pos = LatLng(stopinfo.lat, stopinfo.lon);
     Forecast weather;
     try {
       weather = await getForecast(
         pos,
-        startTime: now
-            .copyWith(millisecond: 0, microsecond: 0)
-            .add(const Duration(hours: -3)),
-        // add -3 hours to show the latest passing third hour
-        timestep: const Duration(hours: 3),
-        timezone: "Europe/Helsinki",
+        startTime: startTime,
+        endTime: endTime,
+        timestep: WeatherEmbed.timestep,
       );
     } on Exception {
       return null;
@@ -129,7 +144,7 @@ class _ForegroundWeathers extends StatelessWidget {
   }
 
   Iterable<Widget> _buildChildren() sync* {
-    for (int i = 0; i < 4; i++) {
+    for (int i = 0; i < WeatherEmbed.stepCount; i++) {
       final Weather? w = weathers.length > i ? weathers[i] : null;
 
       if (i == 0) {
