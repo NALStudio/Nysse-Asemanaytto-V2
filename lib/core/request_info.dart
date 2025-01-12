@@ -1,6 +1,12 @@
 class RequestInfo {
   static const String packageName = "com.nalstudio.nysse_asemanaytto";
   static const String userAgent = "NALStudioNysseAsemanaytto";
+
+  /// GraphQL request timeout
+  // We picked a suitably long time that is below our rate limits
+  // so that if digitransit is slow, we don't show an error right away.
+  static const Duration qlTimeout = Duration(seconds: 20);
+
   static const RequestInfoRatelimits ratelimits = RequestInfoRatelimits(
     stoptimesRequest: Duration(seconds: 30),
     alertsRequest: Duration(seconds: 60),

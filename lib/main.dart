@@ -80,6 +80,7 @@ class _Asemanaytto extends StatelessWidget {
               httpResponseDecoder: _handleGraphQLResponse,
             ),
             cache: GraphQLCache(),
+            queryRequestTimeout: RequestInfo.qlTimeout,
           ),
         ),
         child: app,
