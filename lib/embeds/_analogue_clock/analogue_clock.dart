@@ -67,8 +67,6 @@ class _ClockEmbedWidgetState extends State<ClockEmbedWidget>
   }
 
   void onEnable() {
-    ticker.start();
-
     final now = DateTime.now();
     enabledTime = Duration(
       hours: now.hour,
@@ -77,6 +75,8 @@ class _ClockEmbedWidgetState extends State<ClockEmbedWidget>
       milliseconds: now.millisecond,
       microseconds: now.microsecond,
     );
+
+    ticker.start();
   }
 
   void onDisable() {
@@ -106,6 +106,7 @@ class _ClockEmbedWidgetState extends State<ClockEmbedWidget>
       color: Colors.white,
       padding: EdgeInsets.all(Layout.of(context).padding),
       child: CustomPaint(
+        willChange: true,
         painter: AnalogClockPainter(
           secondsAfterMidnight:
               currentTime.inMicroseconds / Duration.microsecondsPerSecond,
