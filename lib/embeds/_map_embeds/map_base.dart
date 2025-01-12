@@ -84,25 +84,24 @@ double calculateScaledSize({
 
 Marker buildVehicleMarker(
   BuildContext context, {
-  required MapController mapController,
+  required LatLng renderPos,
   required VehiclePosition pos,
   double? zoomOverride,
 }) {
   final Config config = Config.of(context);
+  final MapCamera camera = MapCamera.of(context);
   final stopInfo = StopInfo.of(context);
-
-  LatLng point = LatLng(pos.position.latitude, pos.position.longitude);
 
   double size = calculateScaledSize(
     minSize: 10,
     maxSize: 30,
-    camera: mapController.camera,
+    camera: camera,
   );
   double maxSize = calculateScaledSize(
     minSize: 10,
     maxSize: 30,
-    camera: mapController.camera,
-    zoomOverride: mapController.camera.maxZoom!,
+    camera: camera,
+    zoomOverride: camera.maxZoom!,
   );
 
   // example: 6921_91
@@ -125,7 +124,7 @@ Marker buildVehicleMarker(
   const double borderWidth = 3;
 
   return Marker(
-    point: point,
+    point: renderPos,
     width: size,
     height: size,
     child: CustomPaint(

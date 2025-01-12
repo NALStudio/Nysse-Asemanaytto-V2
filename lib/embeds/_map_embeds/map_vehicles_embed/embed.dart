@@ -11,6 +11,7 @@ import 'package:nysse_asemanaytto/core/widgets/error_widgets.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/digitransit/mqtt/mqtt.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/settings.dart';
+import 'package:nysse_asemanaytto/embeds/_map_embeds/vehicle_marker_layer.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_base.dart';
 import 'package:nysse_asemanaytto/gtfs/realtime.dart';
@@ -19,6 +20,7 @@ import 'package:nysse_asemanaytto/main/stopinfo.dart';
 import 'package:nysse_asemanaytto/main/stoptimes.dart';
 
 final GlobalKey<_MapVehiclesEmbedWidgetState> _mapKey = GlobalKey();
+final GlobalKey<VehicleMarkerLayerState> _vehiclesKey = GlobalKey();
 
 class MapVehiclesEmbed extends Embed {
   const MapVehiclesEmbed({required super.name});
@@ -61,6 +63,9 @@ class MapVehiclesEmbedWidget extends StatefulWidget
   @override
   void onDisable() {
     _mapKey.currentState?.unsubscribeMqtt();
+
+    _vehiclesKey.currentState?.stopUpdate();
+    _vehiclesKey.currentState?.clearVehicleData();
   }
 
   @override
@@ -69,6 +74,8 @@ class MapVehiclesEmbedWidget extends StatefulWidget
     _mapKey.currentState?.scheduleMapAnimation(
       durationFromDouble(seconds: settings.beforeAnimationSeconds),
     );
+
+    _vehiclesKey.currentState?.startUpdate();
   }
 }
 
@@ -93,7 +100,6 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
 
   DigitransitMqttSubscription? _positioningSub;
   ErrorWidget? _positioningSubError;
-  final Map<String, VehiclePosition> _vehiclePositions = {};
 
   DigitransitMqttState? _mqtt;
 
@@ -197,13 +203,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
 
   void _onVehiclePositionUpdate(DigitransitMqttMessage msg) {
     final FeedEntity ent = FeedEntity.fromBuffer(msg.bytes);
-    setState(() {
-      // BUG: After vehicle stops being updated
-      // (doesn't fit to our topic <= too far for example)
-      // The vehicle isn't removed from the map before the next disconnect.
-      // This is fine for now, but I would like to make a timeout system in the future.
-      _vehiclePositions[ent.id] = ent.vehicle;
-    });
+    _vehiclesKey.currentState?.updateVehicle(ent);
   }
 
   void unsubscribeMqtt() {
@@ -212,7 +212,6 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
     }
 
     _mqtt?.unsubscribe(_positioningSub!);
-    _vehiclePositions.clear();
   }
 
   void scheduleMapAnimation(Duration delay) {
@@ -256,28 +255,28 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
         destZoom = _mapController.camera.maxZoom!;
       case MapEmbedCameraFit.fitArrivingVehicles:
       case MapEmbedCameraFit.fitVehicles:
-        if (_vehiclePositions.isEmpty) {
+        final Iterable<LatLng>? vehiclePos;
+
+        if (widget.settings.cameraFit ==
+            MapEmbedCameraFit.fitArrivingVehicles) {
+          vehiclePos = _vehiclesKey.currentState?.getVehiclePositions(
+            filter: (v) => v.stopId == config.stopId.rawId,
+          );
+        } else {
+          vehiclePos = _vehiclesKey.currentState?.getVehiclePositions();
+        }
+
+        final List<LatLng>? fitPositions = vehiclePos?.toList(growable: true);
+        if (fitPositions == null || fitPositions.isEmpty) {
           destPos = stopPos;
           destZoom = _mapController.camera.maxZoom!;
           break;
         }
 
-        final Iterable<VehiclePosition> vehiclePositionsIterable;
-        if (widget.settings.cameraFit ==
-            MapEmbedCameraFit.fitArrivingVehicles) {
-          vehiclePositionsIterable = _vehiclePositions.values
-              .where((element) => element.stopId == config.stopId.rawId);
-        } else {
-          vehiclePositionsIterable = _vehiclePositions.values;
-        }
-
-        final List<LatLng> vehiclePositions = vehiclePositionsIterable
-            .map((e) => LatLng(e.position.latitude, e.position.longitude))
-            .toList(growable: true);
-        vehiclePositions.add(stopPos);
+        fitPositions.add(stopPos);
 
         final MapCamera fit = CameraFit.coordinates(
-          coordinates: vehiclePositions,
+          coordinates: fitPositions,
           padding: EdgeInsets.all(MediaQuery.sizeOf(context).width / 10),
           maxZoom: _mapController.camera.maxZoom!,
           minZoom: _mapController.camera.minZoom! + 1,
@@ -324,19 +323,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
     ];
 
     if (_mapReady) {
-      mapChildren.add(
-        MarkerLayer(
-          markers: _vehiclePositions.values
-              .map(
-                (e) => buildVehicleMarker(
-                  context,
-                  mapController: _mapController,
-                  pos: e,
-                ),
-              )
-              .toList(growable: false),
-        ),
-      );
+      mapChildren.add(VehicleMarkerLayer(key: _vehiclesKey));
 
       if (stopinfo != null) {
         mapChildren.add(

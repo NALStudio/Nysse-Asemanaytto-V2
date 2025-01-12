@@ -158,6 +158,7 @@ class BusMarkerPainter extends CustomPainter {
     return borderColor != oldDelegate.borderColor ||
         borderWidth != oldDelegate.borderWidth ||
         bearing != oldDelegate.bearing ||
+        lineNumberMinSize != oldDelegate.lineNumberMinSize ||
         lineNumber != oldDelegate.lineNumber ||
         maxSize != oldDelegate.maxSize;
   }

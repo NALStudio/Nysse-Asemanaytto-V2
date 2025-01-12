@@ -14,6 +14,7 @@ import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/digitransit/mqtt/mqtt.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/_decode_polyline.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/settings.dart';
+import 'package:nysse_asemanaytto/embeds/_map_embeds/vehicle_marker_layer.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_base.dart';
 import 'package:nysse_asemanaytto/gtfs/realtime.dart';
@@ -23,6 +24,7 @@ import 'package:nysse_asemanaytto/main/stoptimes.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
 
 final GlobalKey<_MapLinesEmbedWidgetState> _mapKey = GlobalKey();
+final GlobalKey<VehicleMarkerLayerState> _vehiclesKey = GlobalKey();
 
 class MapLinesEmbed extends Embed {
   const MapLinesEmbed({required super.name});
@@ -128,7 +130,6 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
   }
 
   ErrorWidget? _positioningSubError;
-  final Map<String, VehiclePosition> _vehiclePositions = {};
 
   _ComputedRoute? _computedRoute;
 
@@ -162,11 +163,16 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     if (widget.route != null) {
       _subscribeMqtt(widget.route!.gtfsId);
     }
+
+    _vehiclesKey.currentState?.startUpdate();
   }
 
   void onDisabled() {
     _embedIsEnabled = false;
     _unsubscribeMqtt();
+
+    _vehiclesKey.currentState?.stopUpdate();
+    _vehiclesKey.currentState?.clearVehicleData();
   }
 
   void _subscribeMqtt(GtfsId routeId) {
@@ -196,11 +202,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
   void _onVehiclePositionUpdate(DigitransitMqttMessage msg) {
     final FeedEntity ent = FeedEntity.fromBuffer(msg.bytes);
     setState(() {
-      // BUG: After vehicle stops being updated
-      // (doesn't fit to our topic (too far for example))
-      // The vehicle isn't removed from the map before the next disconnect.
-      // This is fine for now, but I would like to make a timeout system in the future.
-      _vehiclePositions[ent.id] = ent.vehicle;
+      _vehiclesKey.currentState?.updateVehicle(ent);
     });
   }
 
@@ -211,7 +213,6 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
       _positioningSub = null;
       _subbedRouteId = null;
     }
-    _vehiclePositions.clear();
   }
 
   double get routeLineStrokeWidth => 4 * Layout.of(context).logicalPixelSize;
@@ -263,6 +264,8 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     }
     if (widget.route != null && _subbedRouteId != widget.route!.gtfsId) {
       _unsubscribeMqtt();
+      _vehiclesKey.currentState?.clearVehicleData();
+
       if (_embedIsEnabled) {
         _subscribeMqtt(widget.route!.gtfsId);
       }
@@ -302,20 +305,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     }
 
     // Draw stops and vehicles on top of line
-    mapChildren.add(
-      MarkerLayer(
-        markers: _vehiclePositions.values
-            .map(
-              (e) => buildVehicleMarker(
-                context,
-                mapController: _mapController,
-                pos: e,
-                zoomOverride: _mapController.camera.minZoom!,
-              ),
-            )
-            .toList(growable: false),
-      ),
-    );
+    mapChildren.add(VehicleMarkerLayer(key: _vehiclesKey));
 
     if (widget.settings.showRouteInfo) {
       mapChildren.add(_RouteTitleHeader(route: widget.route));
