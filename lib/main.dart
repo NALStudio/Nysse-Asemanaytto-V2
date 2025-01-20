@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -240,28 +241,27 @@ class _EmbedCanvasState extends State<EmbedCanvas> {
   /// Timer can be an old outdated timer if no new timers have been scheduled.
   Timer? _indexTimer;
 
-  final List<EmbedWidgetMixin> _embedWidgets = [];
+  List<EmbedWidgetMixin>? _embeds;
 
-  void _startIndexSwitching() {
+  void _switchIndex() {
     assert(_indexTimer?.isActive != true);
 
     // if index doesn't change, the disable is still pumped through the system
     if (_childIndex != null) {
-      _embedWidgets[_childIndex!].onDisable();
+      _embeds![_childIndex!].onDisable();
     }
 
     Duration? embedDuration;
     int? childIndex;
-    if (_embedWidgets.isEmpty) {
+    if (_embeds!.isEmpty) {
       childIndex = null;
     } else {
       // iterate at max to the same index as where we were at start
-      for (int i = 1; i <= _embedWidgets.length; i++) {
+      for (int i = 1; i <= _embeds!.length; i++) {
         // increment index, default to 0 if null.
         // Will wrap around at after final element.
-        childIndex = ((_childIndex ?? -1) + i) % _embedWidgets.length;
-        embedDuration =
-            _embedWidgets[childIndex].getDuration() ?? Duration.zero;
+        childIndex = ((_childIndex ?? -1) + i) % _embeds!.length;
+        embedDuration = _embeds![childIndex].getDuration() ?? Duration.zero;
 
         // break on first embed which doesn't have 0 duration
         if (embedDuration != Duration.zero) {
@@ -282,11 +282,11 @@ class _EmbedCanvasState extends State<EmbedCanvas> {
     });
 
     if (_childIndex != null) {
-      _embedWidgets[_childIndex!].onEnable();
+      _embeds![_childIndex!].onEnable();
     }
 
     if (embedDuration != null) {
-      _indexTimer = Timer(embedDuration, _startIndexSwitching);
+      _indexTimer = Timer(embedDuration, _switchIndex);
     }
   }
 
@@ -296,27 +296,48 @@ class _EmbedCanvasState extends State<EmbedCanvas> {
     super.dispose();
   }
 
+  void _restartEmbeds() {
+    developer.log("(re)Starting embeds...", name: "Digitransit");
+
+    _childIndex = null;
+    _indexTimer?.cancel();
+
+    _embeds = null;
+
+    // Reconstruct embeds after frame render
+    // so that all embed state has been disposed
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _constructEmbedsAndStart(),
+    );
+  }
+
+  void _constructEmbedsAndStart() {
+    final UnmodifiableListView<EmbedRecord> embeds = Config.of(context).embeds;
+
+    assert(_embeds == null);
+    setState(() {
+      _embeds = embeds
+          .map((e) => e.embed.createEmbed(e.settings))
+          .toList(growable: false);
+    });
+
+    // Wait for next frame so that all widgets have their state in their keys set.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _switchIndex());
+  }
+
+  @override
+  void didChangeDependencies() {
+    _restartEmbeds();
+    super.didChangeDependencies();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final embeds = Config.of(context).embeds;
-
-    if (embeds.length != _embedWidgets.length) {
-      _embedWidgets.clear();
-      _embedWidgets.addAll(embeds.map((e) => e.embed.createEmbed(e.settings)));
-
-      _childIndex = null;
-      _indexTimer?.cancel();
-      // startIndexSwitching will start a new timer if needed.
-      WidgetsBinding.instance.addPostFrameCallback(
-        (_) => _startIndexSwitching(),
-      );
-    }
-
     return Expanded(
       child: IndexedStack(
         sizing: StackFit.passthrough,
         index: _childIndex,
-        children: _embedWidgets,
+        children: _embeds ?? [],
       ),
     );
   }
