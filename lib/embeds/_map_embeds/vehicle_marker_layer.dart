@@ -4,9 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:nysse_asemanaytto/embeds/_map_embeds/map_base.dart';
+import 'package:nysse_asemanaytto/core/components/layout.dart';
+import 'package:nysse_asemanaytto/core/config.dart';
+import 'package:nysse_asemanaytto/core/painters/bus_marker_painter.dart';
+import 'package:nysse_asemanaytto/digitransit/_models/gtfs_id.dart';
+import 'package:nysse_asemanaytto/digitransit/_queries/stop_info.dart';
 import 'package:nysse_asemanaytto/gtfs/realtime.dart';
 import 'dart:developer' as developer;
+import 'dart:math' as math;
+
+import 'package:nysse_asemanaytto/main/stopinfo.dart';
 
 class VehicleMarkerLayer extends StatefulWidget {
   const VehicleMarkerLayer({super.key});
@@ -155,7 +162,7 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
     return MarkerLayer(
       markers: _vehicles.values
           .map(
-            (data) => buildVehicleMarker(
+            (data) => _buildVehicleMarker(
               context,
               renderPos: _computePos(data),
               pos: data.position,
@@ -175,4 +182,50 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
 
 LatLng _positionToLatLng(Position pos) {
   return LatLng(pos.latitude, pos.longitude);
+}
+
+Marker _buildVehicleMarker(
+  BuildContext context, {
+  required LatLng renderPos,
+  required VehiclePosition pos,
+}) {
+  final Config config = Config.of(context);
+  final stopInfo = StopInfo.of(context);
+
+  double size = MapCamera.of(context).getScaleZoom(10);
+
+  // example: 6921_91
+  final String vehicleId = pos.vehicle.id;
+  // 6921_91 => 6921
+  final String vehicleIdHeader = vehicleId.substring(0, vehicleId.indexOf('_'));
+
+  // example: 86921
+  final String routeIdFull = pos.trip.routeId;
+  assert(routeIdFull.endsWith(vehicleIdHeader));
+  // ^^ No idea why routeId has this weird ass suffix
+  // 86921 => 8
+  final String routeId =
+      routeIdFull.substring(0, routeIdFull.length - vehicleIdHeader.length);
+
+  final GtfsId routeGtfsId = GtfsId.combine(config.stopId.feedId, routeId);
+
+  final DigitransitStopInfoRoute? route = stopInfo?.routes[routeGtfsId];
+
+  const double borderWidth = 3;
+
+  return Marker(
+    point: renderPos,
+    width: size,
+    height: size,
+    child: CustomPaint(
+      painter: BusMarkerPainter(
+        // deg2rad = math.pi / 180
+        bearing: pos.position.bearing * (math.pi / 180),
+        borderColor: route?.color ?? Colors.grey,
+        borderWidth: borderWidth,
+        lineNumber: route?.shortName ?? "??",
+        lineNumberMinSize: 12 * Layout.of(context).logicalPixelSize,
+      ),
+    ),
+  );
 }

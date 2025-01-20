@@ -14,8 +14,6 @@ class BusMarkerPainter extends CustomPainter {
   final double? lineNumberMinSize;
   final String? lineNumber;
 
-  final Size maxSize;
-
   BusMarkerPainter({
     super.repaint,
     required this.borderColor,
@@ -23,7 +21,6 @@ class BusMarkerPainter extends CustomPainter {
     required this.bearing,
     this.lineNumber,
     this.lineNumberMinSize,
-    required this.maxSize,
   });
 
   @override
@@ -55,7 +52,6 @@ class BusMarkerPainter extends CustomPainter {
     // kautta (täytyy myös muistaa offsettaa pisteet ympyrän keskeltä)
 
     double cSize = math.min(size.width, size.height);
-    double cMaxSize = math.min(maxSize.width, maxSize.height);
     Offset center = Offset(cSize / 2, cSize / 2);
 
     double arrowDistanceFromCenter = cSize;
@@ -103,20 +99,17 @@ class BusMarkerPainter extends CustomPainter {
     );
 
     if (lineNumber != null) {
-      const double textBorderPadding = 1;
-      final double fontSizePadding =
-          (2 * borderWidth) - (2 * textBorderPadding);
-      final double fontSize = cSize - fontSizePadding;
-      final double maxFontSize = cMaxSize - fontSizePadding;
+      final double fontSizePadding = (2 * borderWidth) - 3;
+      final double textSize = cSize - fontSizePadding;
 
-      if (lineNumberMinSize == null || fontSize > lineNumberMinSize!) {
-        final ui.Image textImage = _textImage(renderSize: maxFontSize);
+      if (lineNumberMinSize == null || textSize > lineNumberMinSize!) {
+        final ui.Image textImage = _textImage(fontSize: textSize);
         paintImage(
           canvas: canvas,
           rect: Rect.fromCenter(
             center: center,
-            width: (textImage.width / textImage.height) * fontSize,
-            height: fontSize,
+            width: textSize,
+            height: (textImage.height / textImage.width) * textSize,
           ),
           image: textImage,
         );
@@ -124,7 +117,7 @@ class BusMarkerPainter extends CustomPainter {
     }
   }
 
-  ui.Image _textImage({required double renderSize}) {
+  ui.Image _textImage({required double fontSize}) {
     final recorder = ui.PictureRecorder();
     final textCanvas = Canvas(recorder);
 
@@ -132,7 +125,7 @@ class BusMarkerPainter extends CustomPainter {
       text: lineNumber,
       style: TextStyle(
         color: Colors.black,
-        fontSize: renderSize,
+        fontSize: fontSize.ceilToDouble(),
         height: 1,
         fontWeight: FontWeight.bold,
       ),
@@ -159,7 +152,6 @@ class BusMarkerPainter extends CustomPainter {
         borderWidth != oldDelegate.borderWidth ||
         bearing != oldDelegate.bearing ||
         lineNumberMinSize != oldDelegate.lineNumberMinSize ||
-        lineNumber != oldDelegate.lineNumber ||
-        maxSize != oldDelegate.maxSize;
+        lineNumber != oldDelegate.lineNumber;
   }
 }

@@ -14,6 +14,7 @@ import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/digitransit/mqtt/mqtt.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/_decode_polyline.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/settings.dart';
+import 'package:nysse_asemanaytto/embeds/_map_embeds/stop_marker_layer.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/vehicle_marker_layer.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_base.dart';
@@ -165,6 +166,8 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     }
 
     _vehiclesKey.currentState?.startUpdate();
+
+    _fitCamera();
   }
 
   void onDisabled() {
@@ -217,40 +220,29 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
 
   double get routeLineStrokeWidth => 4 * Layout.of(context).logicalPixelSize;
 
-  /// Must be called before this widget's build will display the pattern route.
-  /// Sets the [_computedRoute] variable.
-  void _computeGeometry(DigitransitPattern pattern) {
-    final String? patternGeometry = pattern.patternGeometry;
-    if (patternGeometry == null) {
-      _computedRoute = null;
-      return;
-    }
-
-    _computedRoute = _ComputedRoute(
-      patternCode: pattern.code,
-      geometry: decodePolyline(patternGeometry).toList(),
-      stops: pattern.stops,
-    );
-
+  void _fitCamera() {
     if (!_mapReady) return;
+    if (_computedRoute == null) return;
 
-    final double cameraFitPadding = _RouteTitleHeader.getPadding(context);
+    final double cameraFitPadding = Layout.of(context).widePadding;
     final double cameraTopPadding;
     if (widget.settings.showRouteInfo) {
-      cameraTopPadding =
-          _RouteTitleHeader.getHeight(context) + (2 * cameraFitPadding);
+      cameraTopPadding = _RouteTitleHeader.getPadding(context) +
+          _RouteTitleHeader.getHeight(context) +
+          cameraFitPadding;
     } else {
       cameraTopPadding = cameraFitPadding;
     }
 
     final double cameraFitPaddingAdjust = routeLineStrokeWidth / 2;
+
     final CameraFit cameraFit = CameraFit.bounds(
       bounds: LatLngBounds.fromPoints(_computedRoute!.geometry),
-      padding: EdgeInsets.only(
-        left: cameraFitPadding + cameraFitPaddingAdjust,
-        right: cameraFitPadding + cameraFitPaddingAdjust,
-        bottom: cameraFitPadding + cameraFitPaddingAdjust,
-        top: cameraTopPadding + cameraFitPaddingAdjust,
+      padding: EdgeInsets.fromLTRB(
+        cameraFitPadding + cameraFitPaddingAdjust,
+        cameraTopPadding + cameraFitPaddingAdjust, // NOTE: Top is different
+        cameraFitPadding + cameraFitPaddingAdjust,
+        cameraFitPadding + cameraFitPaddingAdjust,
       ),
     );
     _mapController.fitCamera(cameraFit);
@@ -259,8 +251,8 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
   @override
   Widget build(BuildContext context) {
     if (widget.tripRoute != null &&
-        _computedRoute?.patternCode != widget.tripRoute!.pattern.code) {
-      _computeGeometry(widget.tripRoute!.pattern);
+        _computedRoute?.pattern.code != widget.tripRoute!.pattern.code) {
+      _computedRoute = _ComputedRoute.decode(widget.tripRoute!.pattern);
     }
     if (widget.route != null && _subbedRouteId != widget.route!.gtfsId) {
       _unsubscribeMqtt();
@@ -276,8 +268,11 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     ];
 
     if (_computedRoute != null) {
+      // Route line
       mapChildren.add(
         PolylineLayer(
+          // Disable culling: we always zoom the entire line into view
+          cullingMargin: null,
           polylines: [
             Polyline(
               points: _computedRoute!.geometry,
@@ -287,24 +282,14 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
           ],
         ),
       );
-    }
-    if (widget.settings.showStops && _computedRoute != null) {
-      mapChildren.add(
-        MarkerLayer(
-          markers: _computedRoute!.stops
-              .map(
-                (e) => buildStopMarker(
-                  LatLng(e.lat, e.lon),
-                  camera: _mapController.camera,
-                  zoomOverride: 6 * Layout.of(context).logicalPixelSize,
-                ),
-              )
-              .toList(),
-        ),
-      );
+
+      // Route stops
+      if (widget.settings.showStops) {
+        mapChildren.add(StopMarkerLayer.fromPattern(_computedRoute!.pattern));
+      }
     }
 
-    // Draw stops and vehicles on top of line
+    // Route vehicles
     mapChildren.add(VehicleMarkerLayer(key: _vehiclesKey));
 
     if (widget.settings.showRouteInfo) {
@@ -320,8 +305,6 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-        minZoom: 8,
-        maxZoom: 22,
         interactionOptions: const InteractionOptions(
           flags: InteractiveFlag.none,
         ),
@@ -397,13 +380,27 @@ class _RouteTitleHeader extends StatelessWidget {
 }
 
 class _ComputedRoute {
-  final String patternCode;
+  final DigitransitPattern pattern;
   final List<LatLng> geometry;
-  final List<DigitransitPatternStop> stops;
+  final LatLngBounds bounds;
 
   _ComputedRoute({
-    required this.patternCode,
+    required this.pattern,
     required this.geometry,
-    required this.stops,
+    required this.bounds,
   });
+
+  static _ComputedRoute? decode(DigitransitPattern pattern) {
+    String? geometry = pattern.patternGeometry;
+    if (geometry == null) return null;
+
+    List<LatLng> geo = decodePolyline(geometry).toList(growable: false);
+    LatLngBounds bounds = LatLngBounds.fromPoints(geo);
+
+    return _ComputedRoute(
+      pattern: pattern,
+      geometry: geo,
+      bounds: bounds,
+    );
+  }
 }

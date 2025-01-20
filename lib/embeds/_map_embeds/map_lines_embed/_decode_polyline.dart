@@ -1,5 +1,6 @@
 import 'package:latlong2/latlong.dart';
 
+// Modified from: https://github.com/Dammyololade/flutter_polyline_points/blob/5367d567c9dca46859b9f3e3fd734c9aae333d54/lib/src/utils/polyline_decoder.dart
 Iterable<LatLng> decodePolyline(String encoded) sync* {
   int index = 0, len = encoded.length;
   int lat = 0, lng = 0;

@@ -11,6 +11,7 @@ import 'package:nysse_asemanaytto/core/widgets/error_widgets.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/digitransit/mqtt/mqtt.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/settings.dart';
+import 'package:nysse_asemanaytto/embeds/_map_embeds/stop_marker_layer.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/vehicle_marker_layer.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_base.dart';
@@ -277,11 +278,10 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
 
         final MapCamera fit = CameraFit.coordinates(
           coordinates: fitPositions,
-          padding: EdgeInsets.all(MediaQuery.sizeOf(context).width / 10),
+          padding: EdgeInsets.all(MediaQuery.sizeOf(context).width / 8),
           maxZoom: _mapController.camera.maxZoom!,
+          // +1 so that map zooms even at least a little bit.
           minZoom: _mapController.camera.minZoom! + 1,
-          // +2 so that map zooms even at least a little bit.
-          forceIntegerZoomLevel: false,
         ).fit(_mapController.camera);
 
         destPos = fit.center;
@@ -327,14 +327,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
 
       if (stopinfo != null) {
         mapChildren.add(
-          MarkerLayer(
-            markers: [
-              buildStopMarker(
-                LatLng(stopinfo.lat, stopinfo.lon),
-                camera: _mapController.camera,
-              ),
-            ],
-          ),
+          StopMarkerLayer(stops: [LatLng(stopinfo.lat, stopinfo.lon)]),
         );
       }
     }
