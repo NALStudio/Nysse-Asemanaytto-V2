@@ -183,7 +183,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     assert(!_isSubbed);
 
     if (_mqtt?.isConnected != true) {
-      _positioningSubError = MqttOfflineErrorWidget();
+      _positioningSubError = MqttOfflineErrorWidget(_mqtt);
       return;
     }
 

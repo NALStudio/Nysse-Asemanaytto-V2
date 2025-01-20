@@ -148,7 +148,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
 
   void subscribeMqtt() {
     if (_mqtt?.isConnected != true) {
-      _positioningSubError = MqttOfflineErrorWidget();
+      _positioningSubError = MqttOfflineErrorWidget(_mqtt);
       return;
     }
 
