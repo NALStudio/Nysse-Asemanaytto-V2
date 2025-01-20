@@ -167,6 +167,8 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
 
     _vehiclesKey.currentState?.startUpdate();
 
+    // Fit camera always on enable in case we lose our state
+    // This will sometimes re-fit twice if the route changes on the first build after enabling embed
     _fitCamera();
   }
 
@@ -253,6 +255,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     if (widget.tripRoute != null &&
         _computedRoute?.pattern.code != widget.tripRoute!.pattern.code) {
       _computedRoute = _ComputedRoute.decode(widget.tripRoute!.pattern);
+      _fitCamera();
     }
     if (widget.route != null && _subbedRouteId != widget.route!.gtfsId) {
       _unsubscribeMqtt();
