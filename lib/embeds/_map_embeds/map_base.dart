@@ -52,8 +52,8 @@ class MapErrorLayer extends StatelessWidget {
     return Positioned(
       top: 0,
       right: 0,
-      width: mapController.camera.nonRotatedSize.x / 2.5,
-      height: mapController.camera.nonRotatedSize.y / 2.5,
+      width: mapController.camera.nonRotatedSize.x / 1.5,
+      height: mapController.camera.nonRotatedSize.y / 1.5,
       child: error,
     );
   }
