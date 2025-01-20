@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
+import 'package:nysse_asemanaytto/core/widgets/error_widgets.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 
 class Stoptimes extends StatefulWidget {
@@ -35,18 +36,27 @@ class _StoptimesState extends State<Stoptimes> {
         pollInterval: RequestInfo.ratelimits.stoptimesRequest,
       ),
       builder: (result, {fetchMore, refetch}) {
-        if (result.hasException) {
-          return ErrorWidget(result.exception!);
+        DigitransitStoptimeQuery? parsed;
+        if (!result.hasException) {
+          final Map<String, dynamic>? data = result.data;
+          if (data != null) {
+            parsed = DigitransitStoptimeQuery.parse(data);
+          }
         }
 
-        final Map<String, dynamic>? data = result.data;
-        final DigitransitStoptimeQuery? parsed =
-            data != null ? DigitransitStoptimeQuery.parse(data) : null;
-
-        return _StoptimesInherited(
+        final Widget child = _StoptimesInherited(
           stoptimes: parsed,
           child: widget.child,
         );
+
+        if (result.hasException) {
+          return FloatingErrorWidget(
+            error: ErrorWidget(result.exception!),
+            child: child,
+          );
+        } else {
+          return child;
+        }
       },
     );
   }
