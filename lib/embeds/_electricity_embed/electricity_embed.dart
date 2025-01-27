@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/helpers/datetime.dart';
 import 'package:nysse_asemanaytto/core/helpers/helpers.dart';
-import 'package:nysse_asemanaytto/embeds/_electricity_embed/electricity_pricing.dart';
+import 'package:nysse_asemanaytto/embeds/_electricity_embed/_electricity_pricing.dart';
 import 'package:nysse_asemanaytto/embeds/_electricity_embed/electricity_embed_settings.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -20,18 +20,19 @@ class ElectricityEmbed extends Embed {
   @override
   EmbedWidgetMixin<Embed> createEmbed(
           covariant EmbedSettings<Embed> settings) =>
-      ElectricityEmbedWidget(key: _embedWidgetKey);
+      _ElectricityEmbedWidget(key: _embedWidgetKey);
 }
 
 final GlobalKey<ElectricityPricingState> _electricityDataKey = GlobalKey();
 final GlobalKey<_ElectricityEmbedWidgetState> _embedWidgetKey = GlobalKey();
 
-class ElectricityEmbedWidget extends StatefulWidget
+class _ElectricityEmbedWidget extends StatefulWidget
     implements EmbedWidgetMixin {
-  const ElectricityEmbedWidget({super.key});
+  const _ElectricityEmbedWidget({super.key});
 
   @override
-  State<ElectricityEmbedWidget> createState() => _ElectricityEmbedWidgetState();
+  State<_ElectricityEmbedWidget> createState() =>
+      _ElectricityEmbedWidgetState();
 
   @override
   Duration getDuration() {
@@ -78,7 +79,7 @@ class ElectricityEmbedWidget extends StatefulWidget
   }
 }
 
-class _ElectricityEmbedWidgetState extends State<ElectricityEmbedWidget> {
+class _ElectricityEmbedWidgetState extends State<_ElectricityEmbedWidget> {
   Timer? switchDayTimer;
 
   int _dayIndex = 0;

@@ -18,21 +18,21 @@ class ClockEmbed extends Embed {
 
   @override
   EmbedWidgetMixin<ClockEmbed> createEmbed(ClockEmbedSettings settings) =>
-      ClockEmbedWidget(key: _clockKey, settings: settings);
+      _ClockEmbedWidget(key: _clockKey, settings: settings);
 
   @override
   EmbedSettings<Embed> createDefaultSettings() =>
       ClockEmbedSettings(showDigitalClock: false);
 }
 
-class ClockEmbedWidget extends StatefulWidget
+class _ClockEmbedWidget extends StatefulWidget
     with EmbedWidgetMixin<ClockEmbed> {
   final ClockEmbedSettings settings;
 
-  ClockEmbedWidget({super.key, required this.settings});
+  _ClockEmbedWidget({super.key, required this.settings});
 
   @override
-  State<ClockEmbedWidget> createState() => _ClockEmbedWidgetState();
+  State<_ClockEmbedWidget> createState() => _ClockEmbedWidgetState();
 
   @override
   Duration? getDuration() {
@@ -52,7 +52,7 @@ class ClockEmbedWidget extends StatefulWidget
   }
 }
 
-class _ClockEmbedWidgetState extends State<ClockEmbedWidget>
+class _ClockEmbedWidgetState extends State<_ClockEmbedWidget>
     with SingleTickerProviderStateMixin {
   late Ticker ticker;
   Duration? enabledTime;

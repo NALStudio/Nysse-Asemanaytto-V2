@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/settings/settings_switch_form_field.dart';
 
-import './electricity_production_embed.dart';
+import 'electricity_production_embed.dart';
 
 class ElectricityProductionEmbedSettings
     extends EmbedSettings<ElectricityProductionEmbed> {

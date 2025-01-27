@@ -29,18 +29,18 @@ class WeatherEmbed extends Embed {
 
   @override
   EmbedWidgetMixin<WeatherEmbed> createEmbed(WeatherEmbedSettings settings) =>
-      WeatherEmbedWidget(key: _weatherKey);
+      _WeatherEmbedWidget(key: _weatherKey);
 
   @override
   EmbedSettings<Embed> createDefaultSettings() => const WeatherEmbedSettings();
 }
 
-class WeatherEmbedWidget extends StatefulWidget
+class _WeatherEmbedWidget extends StatefulWidget
     with EmbedWidgetMixin<WeatherEmbed> {
-  WeatherEmbedWidget({super.key});
+  _WeatherEmbedWidget({super.key});
 
   @override
-  State<WeatherEmbedWidget> createState() => _WeatherEmbedWidgetState();
+  State<_WeatherEmbedWidget> createState() => _WeatherEmbedWidgetState();
 
   @override
   Duration? getDuration() => const Duration(seconds: 15);
@@ -54,7 +54,7 @@ class WeatherEmbedWidget extends StatefulWidget
   }
 }
 
-class _WeatherEmbedWidgetState extends State<WeatherEmbedWidget> {
+class _WeatherEmbedWidgetState extends State<_WeatherEmbedWidget> {
   DateTime? fetchNextTimeOn;
   Forecast? forecast;
   Exception? forecastError;
