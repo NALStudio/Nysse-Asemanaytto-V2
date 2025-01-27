@@ -1,6 +1,11 @@
+import 'dart:io';
+
 class RequestInfo {
   static const String packageName = "com.nalstudio.nysse_asemanaytto";
   static const String userAgent = "NALStudioNysseAsemanaytto";
+
+  static const String philipsHueAppName = userAgent;
+  static String get philipsHueInstanceName => Platform.operatingSystem;
 
   /// GraphQL request timeout
   // We picked a suitably long time that is below our rate limits

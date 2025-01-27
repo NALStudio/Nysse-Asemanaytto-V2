@@ -2,7 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
-import 'package:flutter_hue/flutter_hue.dart';
+import 'package:nysse_asemanaytto/core/request_info.dart';
+import 'package:nysse_asemanaytto/philips_hue/_authentication.dart';
+import 'package:nysse_asemanaytto/philips_hue/_bridge.dart';
+import 'package:nysse_asemanaytto/philips_hue/philips_hue.dart';
 
 /// Must be wrapped inside a [Dialog] widget.
 class PhilipsHueOnboardingDialog extends StatefulWidget {
@@ -15,10 +18,11 @@ class PhilipsHueOnboardingDialog extends StatefulWidget {
 
 class _PhilipsHueOnboardingDialogState extends State<PhilipsHueOnboardingDialog>
     with SingleTickerProviderStateMixin {
-  List<DiscoveredBridge> _bridges = List.empty();
+  final List<HueDiscoveredBridge> _bridges = List.empty(growable: true);
 
-  DiscoveryTimeoutController? _firstContact;
-  Duration? _elapsedSinceConnectStart;
+  bool authenticating = false;
+  static const Duration _authTimeout = Duration(seconds: 20);
+  Duration? _elapsedSinceAuthStart;
   late Ticker _updateConnectDuration;
 
   late GlobalKey<RefreshIndicatorState> _refresh;
@@ -29,7 +33,7 @@ class _PhilipsHueOnboardingDialogState extends State<PhilipsHueOnboardingDialog>
 
     _updateConnectDuration = Ticker((time) {
       setState(() {
-        _elapsedSinceConnectStart = time;
+        _elapsedSinceAuthStart = time;
       });
     });
 
@@ -40,40 +44,52 @@ class _PhilipsHueOnboardingDialogState extends State<PhilipsHueOnboardingDialog>
   }
 
   Future reloadBridges() async {
-    List<DiscoveredBridge> b =
-        await BridgeDiscoveryRepo.discoverBridges(writeToLocal: false);
+    _bridges.clear();
 
-    setStateIfMounted(() {
-      _bridges = b;
-    });
+    await for (HueDiscoveredBridge b in HueBridgeDiscovery.discoverBridges()) {
+      setStateIfMounted(() {
+        _bridges.add(b);
+      });
+    }
   }
 
-  Future handleConnect(DiscoveredBridge ip) async {
-    setStateIfMounted(() {
-      _firstContact = DiscoveryTimeoutController(timeoutSeconds: 15);
+  Future handleConnect(HueDiscoveredBridge ip) async {
+    setState(() {
+      authenticating = true;
     });
 
+    HueBridgeCredentials? creds;
+    bool cancelAuth = false;
+
+    final auth = HueAuthentication(bridgeIp: ip.ipAddress);
+
     _updateConnectDuration.start();
-    Bridge? bridge = await BridgeDiscoveryRepo.firstContact(
-      bridgeIpAddr: ip.ipAddress,
-      controller: _firstContact,
-      writeToLocal: false,
-    );
+    Future.delayed(_authTimeout).then((_) => cancelAuth = true);
+    while (creds == null && !cancelAuth) {
+      creds = await auth.tryAuthenticate(
+        appName: RequestInfo.philipsHueAppName,
+        instanceName: RequestInfo.philipsHueInstanceName,
+      );
+    }
     _updateConnectDuration.stop();
 
-    if (bridge == null) {
-      if (mounted) {
+    if (mounted) {
+      setState(() {
+        authenticating = false;
+      });
+
+      if (creds == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Bridge connection failed.")),
         );
-      }
-
-      setStateIfMounted(() {
-        _firstContact = null;
-      });
-    } else {
-      if (mounted) {
-        Navigator.pop(context, bridge);
+      } else {
+        Navigator.pop(
+          context,
+          HueBridge(
+            ipAddress: ip.ipAddress,
+            credentials: creds,
+          ),
+        );
       }
     }
   }
@@ -84,14 +100,13 @@ class _PhilipsHueOnboardingDialogState extends State<PhilipsHueOnboardingDialog>
     }
   }
 
-  String getBridgeTitle(DiscoveredBridge b) {
-    String id = b.id ?? "unknown";
-    return "Bridge $id (${b.ipAddress})";
+  String getBridgeTitle(HueDiscoveredBridge b) {
+    return "${b.name} (${b.ipAddress})";
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_firstContact == null) {
+    if (!authenticating) {
       return Scaffold(
         backgroundColor: Colors.transparent,
         body: Padding(
@@ -117,10 +132,8 @@ class _PhilipsHueOnboardingDialogState extends State<PhilipsHueOnboardingDialog>
         ),
       );
     } else {
-      int elapsedUs = _elapsedSinceConnectStart?.inMicroseconds ?? 0;
-      int totalUs =
-          _firstContact!.timeoutSeconds * Duration.microsecondsPerSecond;
-      double progress = elapsedUs / totalUs;
+      int elapsedUs = _elapsedSinceAuthStart?.inMicroseconds ?? 0;
+      double progress = elapsedUs / _authTimeout.inMicroseconds;
 
       return Padding(
         padding: EdgeInsets.all(16.0),
