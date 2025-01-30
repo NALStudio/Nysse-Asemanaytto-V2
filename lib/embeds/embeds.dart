@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/embeds/_analogue_clock/analogue_clock.dart';
-import 'package:nysse_asemanaytto/embeds/_electricity_embed/electricity_embed_widget.dart';
+import 'package:nysse_asemanaytto/embeds/_electricity_embed/electricity_embed.dart';
+import 'package:nysse_asemanaytto/embeds/_hue_embed/hue_embed.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/_alerts_embed.dart';
@@ -37,6 +38,7 @@ abstract class Embed {
     ElectricityEmbed(name: "electricityPrices"),
     ElectricityProductionEmbed(name: "electricityProduction"),
     ClockEmbed(name: "clock"),
+    HueEmbed(name: "hue"),
   ];
 }
 

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
-import './electricity_production_embed_settings.dart';
+import 'electricity_production_embed_settings.dart';
 import '_electricity_production.dart';
 import 'dart:developer' as developer;
 
@@ -15,7 +15,7 @@ class ElectricityProductionEmbed extends Embed {
   @override
   EmbedWidgetMixin<ElectricityProductionEmbed> createEmbed(
           covariant ElectricityProductionEmbedSettings settings) =>
-      ElectricityProductionEmbedWidget(key: _widgetState, settings: settings);
+      _ElectricityProductionEmbedWidget(key: _widgetState, settings: settings);
 
   @override
   EmbedSettings<Embed> createDefaultSettings() =>
@@ -103,14 +103,14 @@ const List<Dataset> _datasets = [
   ),
 ];
 
-class ElectricityProductionEmbedWidget extends StatefulWidget
+class _ElectricityProductionEmbedWidget extends StatefulWidget
     implements EmbedWidgetMixin<ElectricityProductionEmbed> {
   final ElectricityProductionEmbedSettings settings;
 
-  const ElectricityProductionEmbedWidget({super.key, required this.settings});
+  const _ElectricityProductionEmbedWidget({super.key, required this.settings});
 
   @override
-  State<ElectricityProductionEmbedWidget> createState() =>
+  State<_ElectricityProductionEmbedWidget> createState() =>
       _ElectricityProductionEmbedWidgetState();
 
   @override
@@ -134,7 +134,7 @@ const TextStyle _kDefaultTextStyle = TextStyle(
 );
 
 class _ElectricityProductionEmbedWidgetState
-    extends State<ElectricityProductionEmbedWidget> {
+    extends State<_ElectricityProductionEmbedWidget> {
   final Map<int, double> data = {};
   Exception? error;
 

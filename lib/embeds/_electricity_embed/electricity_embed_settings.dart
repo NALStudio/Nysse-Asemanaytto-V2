@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:nysse_asemanaytto/embeds/_electricity_embed/electricity_embed_widget.dart';
+import 'package:nysse_asemanaytto/embeds/_electricity_embed/electricity_embed.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 
 class ElectricityEmbedSettings extends EmbedSettings<ElectricityEmbed> {
