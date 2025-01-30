@@ -3,13 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/embeds/_hue_embed/_hue_onboarding.dart';
-import 'package:nysse_asemanaytto/philips_hue/_authentication.dart';
 import 'package:nysse_asemanaytto/philips_hue/_bridge.dart';
+import 'package:nysse_asemanaytto/philips_hue/_icons.dart';
 
 class HueEmbedSettings extends EmbedSettings {
   HueBridge? bridge;
 
-  HueEmbedSettings._({required this.bridge});
+  HueEmbedSettings({required this.bridge});
 
   @override
   EmbedSettingsForm<EmbedSettings<Embed>> createForm(
@@ -52,21 +52,10 @@ class _HueEmbedSettingsForm extends EmbedSettingsForm<HueEmbedSettings> {
         initialValue: parentSettings.bridge,
         onSaved: (newValue) => parentSettings.bridge = newValue,
         builder: (field) {
-          String? bridgeName;
-          if (field.value != null) {
-            HueBridge b = field.value!;
-            bridgeName = "Bridge at ${b.ipAddress})";
-          }
-
           return Row(
             spacing: 24,
             children: [
-              Text(
-                bridgeName ?? "No bridge selected.",
-                style: DefaultTextStyle.of(context)
-                    .style
-                    .copyWith(color: Colors.grey),
-              ),
+              ..._buildBridgeDisplay(context, field.value),
               TextButton(
                 onPressed: () => changeBridge(context, field),
                 child: Text("Change"),
@@ -75,6 +64,22 @@ class _HueEmbedSettingsForm extends EmbedSettingsForm<HueEmbedSettings> {
           );
         },
       ),
+    );
+  }
+
+  Iterable<Widget> _buildBridgeDisplay(
+    BuildContext context,
+    HueBridge? bridge,
+  ) sync* {
+    if (bridge != null) {
+      yield Icon(HueIcons.bridge);
+    }
+
+    yield Text(
+      bridge != null ? "Bridge at ${bridge.ipAddress}" : "No bridge selected.",
+      style: DefaultTextStyle.of(context).style.copyWith(
+            color: bridge == null ? Colors.grey : null,
+          ),
     );
   }
 

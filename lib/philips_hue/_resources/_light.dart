@@ -38,6 +38,12 @@ class HueLightDimming implements HueBase {
   @override
   void update(Map? json) {
     if (json == null) return;
+
+    brightness =
+        json.containsKey("brightness") ? json["brightness"] : brightness;
+
+    minDimLevel =
+        json.containsKey("min_dim_level") ? json["min_dim_level"] : minDimLevel;
   }
 }
 
@@ -116,5 +122,8 @@ class HueLight extends HueResource {
         isOn = on["on"];
       }
     }
+
+    dimming.update(json["dimming"]);
+    color.update(json["color"]);
   }
 }

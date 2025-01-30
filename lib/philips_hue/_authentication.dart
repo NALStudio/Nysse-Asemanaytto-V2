@@ -1,8 +1,9 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
-import 'package:nysse_asemanaytto/philips_hue/_endpoints.dart';
+import 'package:nysse_asemanaytto/philips_hue/_internal/_endpoints.dart';
 import 'package:nysse_asemanaytto/philips_hue/_errors.dart';
+import 'package:nysse_asemanaytto/philips_hue/_internal/_hue_http_client.dart';
 
 class HueBridgeCredentials {
   final String appKey;
@@ -31,9 +32,12 @@ class HueBridgeCredentials {
 
 // Reference: https://github.com/NALStudio/NDiscoPlus/blob/353869cbf252f1ea3bbc462a078c95ab941dde44/NDiscoPlus.PhilipsHue/Authentication/HueAuthentication.cs
 class HueAuthentication {
+  final HueHttpClient _hueHttp;
   final String _bridgeIp;
 
-  HueAuthentication({required String bridgeIp}) : _bridgeIp = bridgeIp;
+  HueAuthentication({required String bridgeIp})
+      : _hueHttp = HueHttpClient(),
+        _bridgeIp = bridgeIp;
 
   /// Returns [HueBridgeCredentials] if authentication was successful.
   /// Returns [null] if the link button was not pressed.
@@ -49,13 +53,15 @@ class HueAuthentication {
     String body = json.encode(
         {"devicetype": "$appName#$instanceName", "generateclientkey": true});
 
-    http.Response response = await http.post(endpoint, body: body);
+    http.Response response = await _hueHttp.post(endpoint, body: body);
     if (response.statusCode != 200) {
       throw HueAuthenticationError.statusCode(response.statusCode);
     }
 
     // response
-    Map<String, dynamic> resp = json.decode(response.body);
+    List bodyJson = json.decode(response.body);
+    assert(bodyJson.length == 1);
+    Map<String, dynamic> resp = bodyJson[0];
     Map<String, dynamic>? success = resp["success"];
     if (success == null) {
       Map? error = resp["error"];
@@ -79,5 +85,9 @@ class HueAuthentication {
     if (name.length > maxLen) {
       throw ArgumentError("Name too long", paramName);
     }
+  }
+
+  void dispose() {
+    _hueHttp.close();
   }
 }

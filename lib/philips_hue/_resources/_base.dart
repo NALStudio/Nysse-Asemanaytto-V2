@@ -1,4 +1,9 @@
 import 'package:meta/meta.dart' as meta;
+import 'package:nysse_asemanaytto/philips_hue/_resources/_base_resource_type.dart';
+
+export '_base_resource_type.dart';
+export '_light.dart';
+export '_entertainment_configuration.dart';
 
 abstract interface class HueBase {
   void update(Map? json);
@@ -26,11 +31,11 @@ class HueResource implements HueBase {
   String id;
 
   // Type of the supported resources
-  String? type;
+  HueResourceType? type;
 
   HueResource.fromJson(Map json)
       : id = json["id"],
-        type = json["type"];
+        type = HueResourceType.fromString(json["type"]);
 
   @override
   @meta.mustBeOverridden
@@ -39,7 +44,10 @@ class HueResource implements HueBase {
     if (json == null) return;
 
     id = json.containsKey("id") ? json["id"] : id;
-    type = json.containsKey("type") ? json["type"] : type;
+
+    if (json.containsKey("type")) {
+      type = HueResourceType.fromString(json["type"]);
+    }
   }
 }
 

@@ -1,10 +1,11 @@
 import 'dart:async';
+import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
 import 'package:nysse_asemanaytto/philips_hue/_authentication.dart';
-import 'package:nysse_asemanaytto/philips_hue/_bridge.dart';
+import 'package:nysse_asemanaytto/philips_hue/_icons.dart';
 import 'package:nysse_asemanaytto/philips_hue/philips_hue.dart';
 
 /// Must be wrapped inside a [Dialog] widget.
@@ -18,10 +19,12 @@ class PhilipsHueOnboardingDialog extends StatefulWidget {
 
 class _PhilipsHueOnboardingDialogState extends State<PhilipsHueOnboardingDialog>
     with SingleTickerProviderStateMixin {
-  final List<HueDiscoveredBridge> _bridges = List.empty(growable: true);
+  final LinkedHashSet<HueDiscoveredBridge> _bridges = LinkedHashSet();
 
   bool authenticating = false;
   static const Duration _authTimeout = Duration(seconds: 20);
+  static const Duration _delayBetweenTries = Duration(seconds: 5);
+
   Duration? _elapsedSinceAuthStart;
   late Ticker _updateConnectDuration;
 
@@ -54,18 +57,27 @@ class _PhilipsHueOnboardingDialogState extends State<PhilipsHueOnboardingDialog>
   }
 
   Future handleConnect(HueDiscoveredBridge ip) async {
+    final auth = HueAuthentication(bridgeIp: ip.ipAddress);
+    try {
+      await authenticate(auth, ip.ipAddress);
+    } finally {
+      auth.dispose();
+    }
+  }
+
+  Future authenticate(HueAuthentication auth, String ip) async {
     setState(() {
       authenticating = true;
     });
 
     HueBridgeCredentials? creds;
-    bool cancelAuth = false;
-
-    final auth = HueAuthentication(bridgeIp: ip.ipAddress);
+    int iterations =
+        (_authTimeout.inMicroseconds / _delayBetweenTries.inMicroseconds)
+            .ceil();
 
     _updateConnectDuration.start();
-    Future.delayed(_authTimeout).then((_) => cancelAuth = true);
-    while (creds == null && !cancelAuth) {
+    for (int i = 0; i < iterations && creds == null; i++) {
+      await Future.delayed(_delayBetweenTries); // Retry every 5 seconds
       creds = await auth.tryAuthenticate(
         appName: RequestInfo.philipsHueAppName,
         instanceName: RequestInfo.philipsHueInstanceName,
@@ -86,7 +98,7 @@ class _PhilipsHueOnboardingDialogState extends State<PhilipsHueOnboardingDialog>
         Navigator.pop(
           context,
           HueBridge(
-            ipAddress: ip.ipAddress,
+            ipAddress: ip,
             credentials: creds,
           ),
         );
@@ -114,14 +126,16 @@ class _PhilipsHueOnboardingDialogState extends State<PhilipsHueOnboardingDialog>
           child: RefreshIndicator(
             key: _refresh,
             onRefresh: reloadBridges,
-            child: ListView.builder(
-              itemCount: _bridges.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(getBridgeTitle(_bridges[index])),
-                  onTap: () => handleConnect(_bridges[index]),
-                );
-              },
+            child: ListView(
+              children: _bridges
+                  .map(
+                    (b) => ListTile(
+                      leading: Icon(HueIcons.bridge),
+                      title: Text(getBridgeTitle(b)),
+                      onTap: () => handleConnect(b),
+                    ),
+                  )
+                  .toList(growable: false),
             ),
           ),
         ),

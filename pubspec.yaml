@@ -36,18 +36,36 @@ flutter:
     - assets/images/fmi_weather_symbols/
 
   fonts:
+    # Nysse
     - family: LotaGrotesque
       fonts:
         - asset: assets/fonts/Lota-Grotesque-Regular.otf
         - asset: assets/fonts/Lota-Grotesque-Bold.otf
           weight: 700
 
+    # BMW
     - family: BMWTypeNext
       fonts:
         - asset: assets/fonts/BMWTypeNextTT-Regular.ttf
         - asset: assets/fonts/BMWTypeNextTT-Bold.ttf
           weight: 700
 
+    # Philips Hue
+    - family: NeueFrutiger
+      fonts:
+        - asset: assets/fonts/NeueFrutigerWorld-Light.ttf
+          weight: 300
+        - asset: assets/fonts/NeueFrutigerWorld-Book.ttf
+        - asset: assets/fonts/NeueFrutigerWorld-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/NeueFrutigerWorld-Bold.ttf
+          weight: 700
+
+    - family: HueIcons
+      fonts:
+        - asset: assets/fonts/hue_icons.ttf
+
+    # Default
     - family: Lato
       fonts:
         - asset: assets/fonts/Lato-Regular.ttf

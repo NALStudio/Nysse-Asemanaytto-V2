@@ -1,12 +1,9 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
-import 'package:flutter_hue/flutter_hue.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/embeds/_hue_embed/hue_embed_settings.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
-import 'package:nysse_asemanaytto/philips_hue/hue_icons_helper.dart';
+import 'package:nysse_asemanaytto/philips_hue/_icons.dart';
+import 'package:nysse_asemanaytto/philips_hue/philips_hue.dart';
 
 GlobalKey<_HueEmbedState> _hueWidget = GlobalKey();
 
@@ -34,11 +31,11 @@ class _HueEmbedWidget extends StatefulWidget with EmbedWidgetMixin<HueEmbed> {
   State<_HueEmbedWidget> createState() => _HueEmbedState();
 
   @override
-  Duration? getDuration() => Duration(seconds: 5);
+  Duration? getDuration() => Duration(seconds: 10);
 
   @override
   void onEnable() {
-    _hueWidget.currentState?.update();
+    _hueWidget.currentState?.onEnabled();
   }
 
   @override
@@ -46,14 +43,43 @@ class _HueEmbedWidget extends StatefulWidget with EmbedWidgetMixin<HueEmbed> {
 }
 
 class _HueEmbedState extends State<_HueEmbedWidget> {
-  HueNetwork? _network;
-  List<Light> _lights = List.empty();
+  HueEventApi? _hue;
+
+  List<HueLight> _lights = List.empty();
   bool _entertainmentOn = false;
+
+  Future onEnabled() async {
+    HueBridge? bridge = widget.settings.bridge;
+    if (_hue?.bridge.ipAddress != bridge?.ipAddress ||
+        _hue?.connected == false) {
+      _hue?.dispose();
+      _hue = await connectApi(bridge);
+
+      _hue?.addListener(updateHueState);
+      updateHueState(); // update state immediately and don't wait for an event
+    }
+  }
+
+  Future<HueEventApi?> connectApi(HueBridge? bridge) async {
+    if (bridge == null) return null;
+
+    return await HueEventApi.listen(
+      bridge: bridge,
+      types: [
+        HueResourceType.light,
+        HueResourceType.entertainmentConfiguration
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     if (widget.settings.bridge == null) {
       return ErrorWidget.withDetails(message: "No bridge selected.");
+    }
+
+    if (_hue?.connected != true) {
+      return ErrorWidget.withDetails(message: "Philips Hue disconnected.");
     }
 
     final layout = Layout.of(context);
@@ -75,58 +101,48 @@ class _HueEmbedState extends State<_HueEmbedWidget> {
         physics: NeverScrollableScrollPhysics(),
         itemCount: _lights.length,
         itemBuilder: (context, index) {
-          Light l = _lights[index];
+          HueLight l = _lights[index];
           return _HueEmbedLight(l, isEntertaining: _entertainmentOn);
         },
       ),
     );
   }
 
-  Future update() async {
-    if (_network == null) {
-      Bridge? bridge = widget.settings.bridge;
-      if (bridge != null) {
-        _network = HueNetwork(bridges: [bridge]);
+  void updateHueState() {
+    bool entertainmentOn = false;
+    List<HueLight> lights = List.empty(growable: true);
+    for (HueResource r in _hue!.resources) {
+      if (r is HueLight) {
+        lights.add(r);
+      } else if (r is HueEntertainmentConfiguration && r.isActive) {
+        entertainmentOn = true;
       }
     }
 
-    if (_network != null) {
-      await fetchData(_network!);
-    }
-  }
-
-  Future fetchData(HueNetwork hue) async {
-    await hue.fetchAllType(ResourceType.light);
-
-    List<Light> lights = hue.lights.toList(growable: false);
     lights.sort((a, b) {
-      String aName = _HueEmbedLight.getRawLightName(a);
-      String bName = _HueEmbedLight.getRawLightName(b);
+      String aName = _HueEmbedLight.getLightName(a);
+      String bName = _HueEmbedLight.getLightName(b);
       return aName.compareTo(bName);
     });
 
-    if (mounted) {
-      setState(() {
-        _lights = lights;
-      });
-    }
+    setState(() {
+      _lights = lights;
+      _entertainmentOn = entertainmentOn;
+    });
+  }
 
-    await hue.fetchAllType(ResourceType.entertainmentConfiguration);
+  @override
+  void dispose() {
+    // fix crash: remove listener before dispose
+    _hue?.removeListener(updateHueState);
+    _hue?.dispose();
 
-    bool entertaining = hue.entertainmentConfigurations.any(
-      (e) => e.status == "active",
-    );
-
-    if (mounted) {
-      setState(() {
-        _entertainmentOn = entertaining;
-      });
-    }
+    super.dispose();
   }
 }
 
 class _HueEmbedLight extends StatelessWidget {
-  final Light light;
+  final HueLight light;
   final bool isEntertaining;
 
   const _HueEmbedLight(this.light, {required this.isEntertaining});
@@ -135,39 +151,52 @@ class _HueEmbedLight extends StatelessWidget {
   Widget build(BuildContext context) {
     final layout = Layout.of(context);
 
-    final Color color;
+    Color? color;
     if (isEntertaining) {
       color = Color(0xFFFFFFFF);
     } else if (light.isOn) {
       final xy = light.color.xy;
-      final double brightness = light.dimming.brightness / 100;
-      List<int> rgb = ColorConverter.xy2rgb(xy.x, xy.y, brightness);
-      color = Color.fromARGB(255, rgb[0], rgb[1], rgb[2]);
-    } else {
-      color = const Color(0xFF303236);
+      color = HueColorConverter.colorFromXY(xy);
     }
 
+    final double brightness = light.dimming.brightness / 100;
+
     Color foregroundColor =
-        color.computeLuminance() >= 0.5 ? Colors.black : Colors.white;
+        brightness < 0.5 || color == null || color.computeLuminance() < 0.5
+            ? Colors.white
+            : Color(0xFF383838);
+
+    const Color offColor = Color(0xFF303236);
 
     return AnimatedContainer(
       duration: Durations.medium1,
       decoration: BoxDecoration(
-        color: color,
+        color: offColor,
+        gradient: getLightColorGradient(
+          color,
+          offColor: offColor,
+          brightness: brightness,
+        ),
         borderRadius: BorderRadius.circular(Layout.of(context).shrinkedPadding),
       ),
       child: Padding(
         padding: EdgeInsets.all(layout.padding),
         child: Row(
           children: [
-            Icon(getLightIcon(), color: foregroundColor),
+            Icon(
+              getLightIcon(light),
+              size: layout.doublePadding,
+              color: foregroundColor,
+            ),
             SizedBox(width: layout.widePadding),
             Text(
-              getLightName(),
-              style: DefaultTextStyle.of(context).style.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: foregroundColor,
-                  ),
+              getLightName(light),
+              style: TextStyle(
+                fontFamily: "NeueFrutiger",
+                fontWeight: FontWeight.bold,
+                fontSize: layout.padding,
+                color: foregroundColor,
+              ),
             ),
           ],
         ),
@@ -175,20 +204,29 @@ class _HueEmbedLight extends StatelessWidget {
     );
   }
 
-  static String getRawLightName(Light l) {
-    // ignore: deprecated_member_use
+  static String getLightName(HueLight l) {
     return l.metadata.name;
   }
 
-  String getLightName() {
-    String name = getRawLightName(light);
-    Uint8List encoded = latin1.encode(name); // re-encode to fix ä and ö
-    return utf8.decode(encoded);
+  static IconData getLightIcon(HueLight l) {
+    return HueIcons.findArchetype(l.metadata.archetype) ??
+        HueIcons.questionMark;
   }
 
-  IconData? getLightIcon() {
-    // ignore: deprecated_member_use
-    LightArchetype arch = light.metadata.archetype;
-    return HueIconsHelper.toIcon(arch);
+  LinearGradient? getLightColorGradient(
+    Color? color, {
+    required Color offColor,
+    required double brightness,
+  }) {
+    if (color == null) return null;
+
+    // HSVColor.lerp provided ugly middle colors
+    Color endColor = Color.lerp(color, offColor, 1.0 - brightness)!;
+
+    return LinearGradient(
+      begin: Alignment.topCenter,
+      end: Alignment.bottomCenter,
+      colors: [color, endColor],
+    );
   }
 }

@@ -4,7 +4,7 @@ class RequestInfo {
   static const String packageName = "com.nalstudio.nysse_asemanaytto";
   static const String userAgent = "NALStudioNysseAsemanaytto";
 
-  static const String philipsHueAppName = userAgent;
+  static const String philipsHueAppName = "NysseAsemanaytto";
   static String get philipsHueInstanceName => Platform.operatingSystem;
 
   /// GraphQL request timeout
