@@ -36,11 +36,11 @@ class ScreenDarkenWidget extends StatefulWidget {
         ?.parent;
   }
 
-  static ScreenDarkenWidgetState of(BuildContext context) {
-    final ScreenDarkenWidgetState? result = maybeOf(context);
-    assert(result != null, "No config found in context.");
-    return result!;
-  }
+  // static ScreenDarkenWidgetState of(BuildContext context) {
+  //   final ScreenDarkenWidgetState? result = maybeOf(context);
+  //   assert(result != null, "No screen darken found in context.");
+  //   return result!;
+  // }
 }
 
 class ScreenDarkenWidgetState extends State<ScreenDarkenWidget>
@@ -90,18 +90,14 @@ class ScreenDarkenWidgetState extends State<ScreenDarkenWidget>
     }
 
     bool added = _activeHandles.add(handle);
-    _updateDarkenAtEndOfFrame();
+    _updateDarken();
     return added;
   }
 
   bool _deactivate(ScreenDarkenHandle handle) {
     bool removed = _activeHandles.remove(handle);
-    _updateDarkenAtEndOfFrame();
+    _updateDarken();
     return removed;
-  }
-
-  void _updateDarkenAtEndOfFrame() {
-    WidgetsBinding.instance.addPostFrameCallback((_) => _updateDarken());
   }
 
   void _updateDarken() {

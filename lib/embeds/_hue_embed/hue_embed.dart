@@ -15,6 +15,8 @@ class HueEmbed extends Embed {
   EmbedSettings<Embed> createDefaultSettings() {
     return HueEmbedSettings(
       bridge: null,
+      darkenOnLightsOff: true,
+      darkenOnEntertainment: true,
     );
   }
 
@@ -56,7 +58,7 @@ class _HueEmbedState extends State<_HueEmbedWidget> {
     super.didChangeDependencies();
 
     _screenDarkenHandle?.dispose();
-    _screenDarkenHandle = ScreenDarkenWidget.of(context).createHandle();
+    _screenDarkenHandle = ScreenDarkenWidget.maybeOf(context)?.createHandle();
   }
 
   Future onEnabled() async {
@@ -146,7 +148,8 @@ class _HueEmbedState extends State<_HueEmbedWidget> {
       _entertainmentOn = entertainmentOn;
     });
 
-    if (!anyLightsOn) {
+    if ((!anyLightsOn && widget.settings.darkenOnLightsOff) ||
+        (entertainmentOn && widget.settings.darkenOnEntertainment)) {
       _screenDarkenHandle?.activate();
     } else {
       _screenDarkenHandle?.deactivate();

@@ -149,14 +149,32 @@ class AppServices extends StatelessWidget {
   Widget build(BuildContext context) {
     return Layout(
       info: LayoutData(mediaQueryData: MediaQuery.of(context)),
-      child: ScreenDarkenWidget(
-        child: const StopInfo(
-          child: Stoptimes(
+      child: const StopInfo(
+        child: Stoptimes(
+          child: _DynamicAppServices(
             child: AppCanvas(),
           ),
         ),
       ),
     );
+  }
+}
+
+class _DynamicAppServices extends StatelessWidget {
+  final Widget child;
+
+  const _DynamicAppServices({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    final Config config = Config.of(context);
+
+    Widget child = this.child;
+    if (config.screenDarkenEnabled) {
+      child = ScreenDarkenWidget(child: child);
+    }
+
+    return child;
   }
 }
 

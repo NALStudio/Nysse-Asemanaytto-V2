@@ -31,6 +31,9 @@ abstract class Config {
   int get stoptimesCount;
   set stoptimesCount(int? count);
 
+  bool get screenDarkenEnabled;
+  set screenDarkenEnabled(bool enabled);
+
   bool get digitransitMqttProviderEnabled;
   set digitransitMqttProviderEnabled(bool enabled);
 
@@ -91,6 +94,11 @@ class _DefaultConfig implements Config {
   EmbedSettings? getEmbedSettings(Embed embed) => null;
   @override
   void saveEmbedSettings(Embed embed) => _throw();
+
+  @override
+  bool get screenDarkenEnabled => false;
+  @override
+  set screenDarkenEnabled(bool enabled) => _throw();
 
   @override
   final bool digitransitMqttProviderEnabled = false;
@@ -243,6 +251,15 @@ class _SharedPrefsConfig extends State<ConfigWidget> implements Config {
   set stoptimesCount(int? count) => setState(() {
         _prefs.setInt(
             "stoptimeCount", count ?? Config.defaultConfig.stoptimesCount);
+      });
+
+  @override
+  bool get screenDarkenEnabled =>
+      _prefs.getBool("screenDarken") ??
+      Config.defaultConfig.screenDarkenEnabled;
+  @override
+  set screenDarkenEnabled(bool enabled) => setState(() {
+        _prefs.setBool("screenDarken", enabled);
       });
 
   @override

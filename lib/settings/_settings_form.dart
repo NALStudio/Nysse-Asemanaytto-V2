@@ -71,6 +71,13 @@ class MainSettings extends SettingsForm {
           },
         ),
         SettingsSwitchFormField(
+          initialValue: config.screenDarkenEnabled,
+          titleText: "Auto Dim Screen",
+          subtitleText:
+              "Enable automatic dimming of the screen for enhanced embed functionality.",
+          onSaved: (newValue) => config.screenDarkenEnabled = newValue!,
+        ),
+        SettingsSwitchFormField(
           initialValue: config.digitransitMqttProviderEnabled,
           titleText: "MQTT Provider",
           subtitleText:
