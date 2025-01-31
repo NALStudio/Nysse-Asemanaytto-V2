@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
+import 'package:nysse_asemanaytto/core/components/screen_darken.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/painters/nysse_wave_painter.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
@@ -146,10 +147,9 @@ class AppServices extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MouseRegion(
-      cursor: SystemMouseCursors.none,
-      child: Layout(
-        info: LayoutData(mediaQueryData: MediaQuery.of(context)),
+    return Layout(
+      info: LayoutData(mediaQueryData: MediaQuery.of(context)),
+      child: ScreenDarkenWidget(
         child: const StopInfo(
           child: Stoptimes(
             child: AppCanvas(),

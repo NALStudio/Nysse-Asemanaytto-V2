@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
-import 'package:nysse_asemanaytto/core/widgets/error_widgets.dart';
+import 'package:nysse_asemanaytto/core/components/error_widgets.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 
 class StopInfo extends StatefulWidget {

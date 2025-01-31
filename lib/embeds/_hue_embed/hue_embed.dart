@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
+import 'package:nysse_asemanaytto/core/components/screen_darken.dart';
 import 'package:nysse_asemanaytto/embeds/_hue_embed/hue_embed_settings.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/philips_hue/_icons.dart';
@@ -45,8 +46,18 @@ class _HueEmbedWidget extends StatefulWidget with EmbedWidgetMixin<HueEmbed> {
 class _HueEmbedState extends State<_HueEmbedWidget> {
   HueEventApi? _hue;
 
+  ScreenDarkenHandle? _screenDarkenHandle;
+
   List<HueLight> _lights = List.empty();
   bool _entertainmentOn = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    _screenDarkenHandle?.dispose();
+    _screenDarkenHandle = ScreenDarkenWidget.of(context).createHandle();
+  }
 
   Future onEnabled() async {
     HueBridge? bridge = widget.settings.bridge;
@@ -110,10 +121,15 @@ class _HueEmbedState extends State<_HueEmbedWidget> {
 
   void updateHueState() {
     bool entertainmentOn = false;
+    bool anyLightsOn = false;
     List<HueLight> lights = List.empty(growable: true);
     for (HueResource r in _hue!.resources) {
       if (r is HueLight) {
         lights.add(r);
+
+        if (r.isOn) {
+          anyLightsOn = true;
+        }
       } else if (r is HueEntertainmentConfiguration && r.isActive) {
         entertainmentOn = true;
       }
@@ -129,6 +145,12 @@ class _HueEmbedState extends State<_HueEmbedWidget> {
       _lights = lights;
       _entertainmentOn = entertainmentOn;
     });
+
+    if (!anyLightsOn) {
+      _screenDarkenHandle?.activate();
+    } else {
+      _screenDarkenHandle?.deactivate();
+    }
   }
 
   @override
@@ -136,6 +158,8 @@ class _HueEmbedState extends State<_HueEmbedWidget> {
     // fix crash: remove listener before dispose
     _hue?.removeListener(updateHueState);
     _hue?.dispose();
+
+    _screenDarkenHandle?.dispose();
 
     super.dispose();
   }

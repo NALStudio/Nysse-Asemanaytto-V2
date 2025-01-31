@@ -2,7 +2,7 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/core/helpers/helpers.dart';
-import 'package:nysse_asemanaytto/core/widgets/reorderable_add_remove_list.dart';
+import 'package:nysse_asemanaytto/core/components/reorderable_add_remove_list.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'dart:math' as math;
 

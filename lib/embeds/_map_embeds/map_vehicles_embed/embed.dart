@@ -7,7 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:mqtt5_client/mqtt5_client.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/helpers/helpers.dart';
-import 'package:nysse_asemanaytto/core/widgets/error_widgets.dart';
+import 'package:nysse_asemanaytto/core/components/error_widgets.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/digitransit/mqtt/mqtt.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/settings.dart';

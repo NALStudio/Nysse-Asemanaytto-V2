@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
-import 'package:nysse_asemanaytto/core/widgets/nysse_tile.dart';
+import 'package:nysse_asemanaytto/core/components/nysse_tile.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'dart:math' as math;
 

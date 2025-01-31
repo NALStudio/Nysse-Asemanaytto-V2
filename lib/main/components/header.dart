@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:nysse_asemanaytto/core/components/clock.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
-import 'package:nysse_asemanaytto/core/widgets/nysse_tile.dart';
+import 'package:nysse_asemanaytto/core/components/nysse_tile.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/main/stopinfo.dart';
 import 'package:nysse_asemanaytto/nysse/_pictograms.dart';
