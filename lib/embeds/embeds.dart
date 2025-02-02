@@ -5,7 +5,7 @@ import 'package:nysse_asemanaytto/embeds/_hue_embed/hue_embed.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_lines_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/_map_embeds/map_vehicles_embed/embed.dart';
 import 'package:nysse_asemanaytto/embeds/_alerts_embed.dart';
-import 'package:nysse_asemanaytto/embeds/_weather_embed/weather_embed.dart';
+import 'package:nysse_asemanaytto/embeds/_weather_embed.dart';
 import 'package:nysse_asemanaytto/settings/settings.dart';
 import '_electricity_production/electricity_production_embed.dart';
 

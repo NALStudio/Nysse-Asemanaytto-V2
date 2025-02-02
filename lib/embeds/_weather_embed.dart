@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:logging/logging.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/helpers/datetime.dart';
 import 'package:nysse_asemanaytto/core/helpers/helpers.dart';
-import 'package:nysse_asemanaytto/embeds/_weather_embed/_weather_symbol_provider.dart';
 import 'package:nysse_asemanaytto/fmi_open_data/fmi_open_data.dart';
 import 'package:nysse_asemanaytto/main/stopinfo.dart';
-import '../embeds.dart';
-import 'dart:developer' as developer;
+import 'embeds.dart';
 
 final GlobalKey<_WeatherEmbedWidgetState> _weatherKey = GlobalKey();
 
@@ -55,6 +54,8 @@ class _WeatherEmbedWidget extends StatefulWidget
 }
 
 class _WeatherEmbedWidgetState extends State<_WeatherEmbedWidget> {
+  final Logger _logger = Logger("WeatherEmbed");
+
   DateTime? fetchNextTimeOn;
   Forecast? forecast;
   Exception? forecastError;
@@ -95,10 +96,7 @@ class _WeatherEmbedWidgetState extends State<_WeatherEmbedWidget> {
   }
 
   Future<Forecast?> _getWeather({required DateTime now}) async {
-    developer.log(
-      "Fetching weather...",
-      name: "weather_embed._WeatherEmbedWidgetState",
-    );
+    _logger.fine("Fetching weather...");
 
     final stopinfo = StopInfo.of(context);
     if (stopinfo == null) return null;
@@ -156,53 +154,22 @@ class _ForegroundWeathers extends StatelessWidget {
   }
 }
 
-class __WeatherSymbol extends StatefulWidget {
+class __WeatherSymbol extends StatelessWidget {
   final int? symbol;
   final double width;
 
   const __WeatherSymbol({required this.symbol, required this.width});
 
   @override
-  State<__WeatherSymbol> createState() => __WeatherSymbolState();
-}
-
-class __WeatherSymbolState extends State<__WeatherSymbol> {
-  Map<int, String>? weatherSymbols;
-
-  @override
-  void initState() {
-    super.initState();
-
-    loadWeatherSymbols(DefaultAssetBundle.of(context)).then((value) {
-      setState(() => weatherSymbols = value);
-    });
-  }
-
-  @override
   Widget build(BuildContext context) {
-    int? symbol = widget.symbol;
     if (symbol == null) {
       return const FlutterLogo();
     }
 
-    if (weatherSymbols == null) {
-      return SvgPicture.defaultPlaceholderBuilder(context);
-    }
-
-    // day or night symbol
-    String? symbolAsset = weatherSymbols![symbol];
-    if (symbolAsset == null) {
-      assert(symbol > 100);
-
-      // fall back on day symbol only
-      symbolAsset = weatherSymbols![symbol - 100];
-      assert(symbolAsset != null);
-    }
-
     return SvgPicture.asset(
-      symbolAsset!,
+      "assets/images/fmi_weather_symbols/${symbol!}.svg",
       alignment: Alignment.topCenter,
-      width: widget.width,
+      width: width,
     );
   }
 }
