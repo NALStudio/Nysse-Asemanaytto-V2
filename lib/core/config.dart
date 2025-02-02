@@ -1,10 +1,10 @@
 import 'dart:collection';
 
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:developer' as developer;
 
 class EmbedRecord {
   final Embed embed;
@@ -128,6 +128,8 @@ class _InternalEmbedRecord {
 }
 
 class _SharedPrefsConfig extends State<ConfigWidget> implements Config {
+  final Logger _logger = Logger("SharedPrefsConfig");
+
   SharedPreferences get _prefs => widget._prefs;
 
   late List<EmbedRecord> _embeds;
@@ -152,9 +154,8 @@ class _SharedPrefsConfig extends State<ConfigWidget> implements Config {
     List<Embed> matching =
         Embed.allEmbeds.where((e) => e.name == embedName).toList();
     if (matching.isEmpty) {
-      developer.log(
-        "No embed definitions for: $embedName. "
-        "Skipping embed config loading...",
+      _logger.warning(
+        "No embed definitions for: $embedName. Skipping embed config loading...",
       );
       return null;
     }

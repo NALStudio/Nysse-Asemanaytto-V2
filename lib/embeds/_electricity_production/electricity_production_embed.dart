@@ -1,11 +1,11 @@
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:logging/logging.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'electricity_production_embed_settings.dart';
 import '_electricity_production.dart';
-import 'dart:developer' as developer;
 
 GlobalKey<_ElectricityProductionEmbedWidgetState> _widgetState = GlobalKey();
 
@@ -135,6 +135,8 @@ const TextStyle _kDefaultTextStyle = TextStyle(
 
 class _ElectricityProductionEmbedWidgetState
     extends State<_ElectricityProductionEmbedWidget> {
+  final Logger _logger = Logger("ElectricityProductionEmbed");
+
   final Map<int, double> data = {};
   Exception? error;
 
@@ -146,11 +148,7 @@ class _ElectricityProductionEmbedWidgetState
       return;
     }
 
-    developer.log(
-      "Fetching electricity production data...",
-      name:
-          "_electricity_production_embed._ElectricityProductionEmbedWidgetState",
-    );
+    _logger.fine("Fetching electricity production data...");
 
     getData(
       apiKey: widget.settings.apiKey!,

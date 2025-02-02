@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'dart:developer' as developer;
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
 import 'package:nysse_asemanaytto/core/helpers/datetime.dart';
 
@@ -68,6 +68,8 @@ class ElectricityPrice {
 }
 
 class ElectricityPricingState extends State<ElectricityPricing> {
+  final Logger _logger = Logger("ElectricityPricing");
+
   List<ElectricityPrice> prices = List.empty(growable: true);
 
   /// Updates the prices if necessary
@@ -147,10 +149,7 @@ class ElectricityPricingState extends State<ElectricityPricing> {
   }
 
   Future<List<ElectricityPrice>?> _fetch() async {
-    developer.log(
-      "Fetching day ahead prices...",
-      name: "_electricity_embed.ElectricityPricingEmbed",
-    );
+    _logger.fine("Fetching day ahead prices...");
 
     final response = await http.get(
       _kDayAheadEndpoint,
@@ -163,9 +162,8 @@ class ElectricityPricingState extends State<ElectricityPricing> {
           .map((e) => ElectricityPrice._parse(e))
           .toList(growable: false);
     } else {
-      developer.log(
+      _logger.severe(
         "Received an error while fetching day-ahead prices: ${response.body}",
-        name: "_electricity_embed.ElectricityPricingEmbed",
       );
       return null;
     }

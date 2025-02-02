@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/widgets.dart';
+import 'package:logging/logging.dart';
 import 'package:nysse_asemanaytto/philips_hue/_api/_hue_eventstream_event.dart';
 import 'package:nysse_asemanaytto/philips_hue/_api/_hue_response.dart';
 import 'package:nysse_asemanaytto/philips_hue/_bridge.dart';
@@ -9,10 +10,11 @@ import 'package:nysse_asemanaytto/philips_hue/_errors.dart';
 import 'package:nysse_asemanaytto/philips_hue/_internal/_hue_http_client.dart';
 import 'package:nysse_asemanaytto/philips_hue/_resources/_base.dart';
 import 'package:http/http.dart' as http;
-import 'dart:developer' as developer;
 
 // Hue API that updates its state constantly from the events provided by the bridge.
 class HueEventApi extends ChangeNotifier {
+  final Logger _logger = Logger("HueEventApi");
+
   final HueBridge bridge;
   final Set<HueResourceType> types;
 
@@ -107,7 +109,7 @@ class HueEventApi extends ChangeNotifier {
             _state.remove(resource.id);
             break;
           case HueEsType.error:
-            developer.log("Hue event stream error.", name: "HueEventApi");
+            _logger.warning("Hue event stream error.");
             break;
         }
       }
@@ -122,11 +124,11 @@ class HueEventApi extends ChangeNotifier {
   }
 
   void _handleError(Object? error, StackTrace trace) {
-    developer.log(
-      "Hue event stream connection error.",
-      name: "HueEventApi",
-      error: error,
-      stackTrace: trace,
+    _logger.warning(
+      "Hue event stream connection error. This event is only a warning because a disconnect error is to be expected on dispose.",
+      error,
+      // I don't want to spam this in the console each time I hot reload
+      // trace,
     );
     _handleDisconnect();
   }

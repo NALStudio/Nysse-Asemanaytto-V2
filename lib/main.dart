@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:collection';
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
+import 'package:logging/logging.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/components/screen_darken.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
+import 'package:nysse_asemanaytto/core/logging.dart';
 import 'package:nysse_asemanaytto/core/painters/nysse_wave_painter.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
 import 'package:nysse_asemanaytto/core/routes.dart';
@@ -22,33 +23,58 @@ import 'package:nysse_asemanaytto/settings/settings_layout.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import "package:http/http.dart" as http;
-import 'dart:developer' as developer;
 import 'dart:math' as math;
 
 Future<void> main() async {
+  await initLogging();
+
   WidgetsFlutterBinding.ensureInitialized();
 
   final SharedPreferences prefs = await SharedPreferences.getInstance();
+  final GraphQLCache graphQLCacheSingleton = GraphQLCache();
 
-  runApp(MainApp(prefs: prefs));
+  final MainApp app = MainApp(
+    prefs: prefs,
+    qlCache: graphQLCacheSingleton,
+  );
+
+  try {
+    runApp(app);
+  } catch (error, stackTrace) {
+    Logger.root.shout(
+      "Application failed with a fatal error.",
+      error,
+      stackTrace,
+    );
+    rethrow;
+  }
 }
 
 class MainApp extends StatelessWidget {
   final SharedPreferences prefs;
 
-  const MainApp({super.key, required this.prefs});
+  // Use GraphQL cache singleton so that data isn't refetched on every hot reload
+  final GraphQLCache qlCache;
+
+  const MainApp({
+    super.key,
+    required this.prefs,
+    required this.qlCache,
+  });
 
   @override
   Widget build(BuildContext context) {
     return ConfigWidget(
       prefs: prefs,
-      child: const _Asemanaytto(),
+      child: _Asemanaytto(qlCache: qlCache),
     );
   }
 }
 
 class _Asemanaytto extends StatelessWidget {
-  const _Asemanaytto();
+  final GraphQLCache qlCache;
+
+  const _Asemanaytto({required this.qlCache});
 
   @override
   Widget build(BuildContext context) {
@@ -181,8 +207,11 @@ class _DynamicAppServices extends StatelessWidget {
   }
 }
 
+final Logger graphQlLogger = Logger("GraphQL");
 Map<String, dynamic>? _handleGraphQLResponse(http.Response response) {
-  developer.log("Decoding GraphQL response...", name: "Digitransit");
+  graphQlLogger.fine(
+    "Decoding response from: ${response.request?.url ?? "unknown"}",
+  );
 
   return json.decode(
     utf8.decode(
@@ -318,7 +347,7 @@ class _EmbedCanvasState extends State<EmbedCanvas> {
   }
 
   void _restartEmbeds() {
-    developer.log("(re)Starting embeds...", name: "Digitransit");
+    Logger.root.fine("(re)Starting embeds...");
 
     _childIndex = null;
     _indexTimer?.cancel();

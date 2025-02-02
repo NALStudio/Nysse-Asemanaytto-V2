@@ -4,13 +4,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:logging/logging.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/painters/bus_marker_painter.dart';
 import 'package:nysse_asemanaytto/digitransit/_models/gtfs_id.dart';
 import 'package:nysse_asemanaytto/digitransit/_queries/stop_info.dart';
 import 'package:nysse_asemanaytto/gtfs/realtime.dart';
-import 'dart:developer' as developer;
 import 'dart:math' as math;
 
 import 'package:nysse_asemanaytto/main/stopinfo.dart';
@@ -42,6 +42,8 @@ class _VehicleData {
 
 class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
     with SingleTickerProviderStateMixin {
+  final Logger _logger = Logger("VehicleMarkerLayer");
+
   static const Duration moveDuration = Duration(seconds: 1);
 
   Duration? lastTickerUpdate;
@@ -132,10 +134,7 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
     int afterCount = _vehicles.length;
 
     if (beforeCount != afterCount) {
-      developer.log(
-        "${beforeCount - afterCount} vehicles timed out.",
-        name: "vehicle_marker_layer.VehicleMarkerLayer",
-      );
+      _logger.info("${beforeCount - afterCount} vehicles timed out.");
     }
   }
 
