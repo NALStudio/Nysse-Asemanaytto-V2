@@ -69,7 +69,7 @@ class _HueEmbedSettingsForm extends EmbedSettingsForm<HueEmbedSettings> {
       children: [
         SettingsSwitchFormField(
           initialValue: parentSettings.darkenOnLightsOff,
-          disabled: !config.screenDarkenEnabled,
+          disabled: config.screenDarkenStrength == null,
           disabledValue: false,
           titleText: "Dim Screen on lights off",
           subtitleText: "Dim screen when all lights are off.",
@@ -77,7 +77,7 @@ class _HueEmbedSettingsForm extends EmbedSettingsForm<HueEmbedSettings> {
         ),
         SettingsSwitchFormField(
           initialValue: parentSettings.darkenOnEntertainment,
-          disabled: !config.screenDarkenEnabled,
+          disabled: config.screenDarkenStrength == null,
           disabledValue: false,
           titleText: "Dim Screen on entertainment active",
           subtitleText: "Dim screen when any entertainment area is active.",

@@ -5,6 +5,7 @@ import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
 import 'package:nysse_asemanaytto/settings/_embeds_form_field.dart';
+import 'package:nysse_asemanaytto/settings/_settings_darken_slider_form_field.dart';
 import 'package:nysse_asemanaytto/settings/settings.dart';
 import 'package:nysse_asemanaytto/settings/settings_switch_form_field.dart';
 
@@ -70,12 +71,12 @@ class MainSettings extends SettingsForm {
             }
           },
         ),
-        SettingsSwitchFormField(
-          initialValue: config.screenDarkenEnabled,
-          titleText: "Auto Dim Screen",
-          subtitleText:
-              "Enable automatic dimming of the screen for enhanced embed functionality.",
-          onSaved: (newValue) => config.screenDarkenEnabled = newValue!,
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 8.0),
+          child: SettingsDarkenSliderFormField(
+            initialValue: config.screenDarkenStrength,
+            onSaved: (newValue) => config.screenDarkenStrength = newValue,
+          ),
         ),
         SettingsSwitchFormField(
           initialValue: config.digitransitMqttProviderEnabled,

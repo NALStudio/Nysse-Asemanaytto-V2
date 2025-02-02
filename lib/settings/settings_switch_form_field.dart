@@ -17,21 +17,21 @@ class SettingsSwitchFormField extends FormField<bool> {
     super.onSaved,
     super.validator,
   }) : super(builder: _buildFormField);
-}
 
-Widget _buildFormField(FormFieldState<bool> state) {
-  final SettingsSwitchFormField widget =
-      state.widget as SettingsSwitchFormField;
+  static Widget _buildFormField(FormFieldState<bool> state) {
+    final SettingsSwitchFormField widget =
+        state.widget as SettingsSwitchFormField;
 
-  bool value = state.value!;
-  if (widget.disabled && widget.disabledValue != null) {
-    value = widget.disabledValue!;
+    bool value = state.value!;
+    if (widget.disabled && widget.disabledValue != null) {
+      value = widget.disabledValue!;
+    }
+
+    return SwitchListTile(
+      value: value,
+      onChanged: !widget.disabled ? (value) => state.didChange(value) : null,
+      title: widget.titleText != null ? Text(widget.titleText!) : null,
+      subtitle: widget.subtitleText != null ? Text(widget.subtitleText!) : null,
+    );
   }
-
-  return SwitchListTile(
-    value: value,
-    onChanged: !widget.disabled ? (value) => state.didChange(value) : null,
-    title: widget.titleText != null ? Text(widget.titleText!) : null,
-    subtitle: widget.subtitleText != null ? Text(widget.subtitleText!) : null,
-  );
 }

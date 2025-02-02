@@ -23,9 +23,14 @@ class ScreenDarkenHandle {
 }
 
 class ScreenDarkenWidget extends StatefulWidget {
+  final double strength;
   final Widget child;
 
-  const ScreenDarkenWidget({super.key, required this.child});
+  const ScreenDarkenWidget({
+    super.key,
+    required this.child,
+    required this.strength,
+  }) : assert(strength > 0 && strength < 1);
 
   @override
   State<ScreenDarkenWidget> createState() => ScreenDarkenWidgetState();
@@ -66,7 +71,7 @@ class ScreenDarkenWidgetState extends State<ScreenDarkenWidget>
 
   void onAnimationUpdated() {
     double t = Curves.easeInOut.transform(_opacityController.value);
-    double opacity = lerpDouble(0.0, 0.75, t)!;
+    double opacity = lerpDouble(0.0, widget.strength, t)!;
 
     setState(() {
       _overlayOpacity = opacity;

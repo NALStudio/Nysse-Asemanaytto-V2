@@ -31,8 +31,8 @@ abstract class Config {
   int get stoptimesCount;
   set stoptimesCount(int? count);
 
-  bool get screenDarkenEnabled;
-  set screenDarkenEnabled(bool enabled);
+  double? get screenDarkenStrength;
+  set screenDarkenStrength(double? strength);
 
   bool get digitransitMqttProviderEnabled;
   set digitransitMqttProviderEnabled(bool enabled);
@@ -96,9 +96,9 @@ class _DefaultConfig implements Config {
   void saveEmbedSettings(Embed embed) => _throw();
 
   @override
-  bool get screenDarkenEnabled => false;
+  double? get screenDarkenStrength => null;
   @override
-  set screenDarkenEnabled(bool enabled) => _throw();
+  set screenDarkenStrength(double? strength) => _throw();
 
   @override
   final bool digitransitMqttProviderEnabled = false;
@@ -254,13 +254,25 @@ class _SharedPrefsConfig extends State<ConfigWidget> implements Config {
       });
 
   @override
-  bool get screenDarkenEnabled =>
-      _prefs.getBool("screenDarken") ??
-      Config.defaultConfig.screenDarkenEnabled;
+  double? get screenDarkenStrength =>
+      _prefs.getDouble("screenDarkenStrength") ??
+      Config.defaultConfig.screenDarkenStrength;
   @override
-  set screenDarkenEnabled(bool enabled) => setState(() {
-        _prefs.setBool("screenDarken", enabled);
-      });
+  set screenDarkenStrength(double? strength) {
+    setState(() {
+      if (strength != null) {
+        if (strength <= 0 || strength >= 1) {
+          throw ArgumentError(
+            "Invalid strength value. Expected value in range 0-1 (both ends exclusive). Use null when disabling screen darken.",
+          );
+        }
+
+        _prefs.setDouble("screenDarkenStrength", strength);
+      } else {
+        _prefs.remove("screenDarkenStrength");
+      }
+    });
+  }
 
   @override
   bool get digitransitMqttProviderEnabled =>
