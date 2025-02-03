@@ -53,8 +53,8 @@ class _SettingsDarkenSliderState extends State<SettingsDarkenSlider> {
               ? "${(state.value! * 100).round()} %"
               : "Disabled",
           min: 0,
-          max: 0.9,
-          divisions: 9,
+          max: 0.95,
+          divisions: 19,
           onChanged: (value) {
             _updateDarken(value);
             state.didChange(_convertValue(value));

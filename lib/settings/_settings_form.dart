@@ -5,7 +5,7 @@ import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
 import 'package:nysse_asemanaytto/nysse/nysse.dart';
 import 'package:nysse_asemanaytto/settings/_embeds_form_field.dart';
-import 'package:nysse_asemanaytto/settings/_settings_darken_slider_form_field.dart';
+import 'package:nysse_asemanaytto/settings/_settings_darken_slider.dart';
 import 'package:nysse_asemanaytto/settings/settings.dart';
 import 'package:nysse_asemanaytto/settings/settings_switch_form_field.dart';
 
