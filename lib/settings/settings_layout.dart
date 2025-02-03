@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:nysse_asemanaytto/core/components/screen_darken.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import '_settings_form.dart';
@@ -83,60 +84,64 @@ class _SettingsWidgetState extends State<SettingsWidget> {
       _formExpanded.add(null);
     }
 
-    return Scaffold(
-      backgroundColor: NysseColors.white,
-      appBar: AppBar(
-        title: const Text("Settings"),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings_backup_restore),
-            onPressed: _isDirty
-                ? () {
-                    _formKey.currentState!.reset();
-                    setState(() {
-                      _isDirty = false;
-                    });
-                  }
-                : null,
-          ),
-          IconButton(
-            icon: const Icon(Icons.save),
-            onPressed: () {
-              if (!_formKey.currentState!.validate()) {
-                return;
-              }
+    // For settings darken slider preview
+    return ScreenDarkenWidget(
+      defaultStrength: 0.5,
+      child: Scaffold(
+        backgroundColor: NysseColors.white,
+        appBar: AppBar(
+          title: const Text("Settings"),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.settings_backup_restore),
+              onPressed: _isDirty
+                  ? () {
+                      _formKey.currentState!.reset();
+                      setState(() {
+                        _isDirty = false;
+                      });
+                    }
+                  : null,
+            ),
+            IconButton(
+              icon: const Icon(Icons.save),
+              onPressed: () {
+                if (!_formKey.currentState!.validate()) {
+                  return;
+                }
 
-              _formKey.currentState!.save();
+                _formKey.currentState!.save();
 
-              for (final EmbedRecord embed in config.embeds) {
-                config.saveEmbedSettings(embed.embed);
-              }
+                for (final EmbedRecord embed in config.embeds) {
+                  config.saveEmbedSettings(embed.embed);
+                }
 
-              setState(() {
-                _formKey = GlobalKey();
-                _isDirty = false;
-              });
-            },
-          ),
-        ],
-      ),
-      body: Form(
-        key: _formKey,
-        canPop: !_isDirty,
-        onChanged: () {
-          setState(() => _isDirty = true);
-        },
-        onPopInvokedWithResult: (didPop, result) {
-          if (!didPop) {
-            _cannotNavigateBack();
-          }
-        },
-        child: ListView.builder(
-          itemCount: formCount,
-          itemBuilder: (context, index) => _buildListItem(
-            context,
-            index,
-            embedForms: embedForms,
+                setState(() {
+                  _formKey = GlobalKey();
+                  _isDirty = false;
+                });
+              },
+            ),
+          ],
+        ),
+        body: Form(
+          key: _formKey,
+          canPop: !_isDirty,
+          onChanged: () {
+            setState(() => _isDirty = true);
+          },
+          onPopInvokedWithResult: (didPop, result) {
+            if (!didPop) {
+              _cannotNavigateBack();
+            }
+          },
+          child: ListView.builder(
+            itemCount: formCount,
+            itemBuilder: (context, index) => _buildListItem(
+              context,
+              index,
+              embedForms: embedForms,
+            ),
           ),
         ),
       ),

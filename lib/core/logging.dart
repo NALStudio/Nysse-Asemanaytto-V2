@@ -5,8 +5,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
-import 'dart:developer' as developer;
-
 import 'package:path_provider/path_provider.dart';
 import 'package:synchronized/synchronized.dart';
 

@@ -73,7 +73,7 @@ class MainSettings extends SettingsForm {
         ),
         Padding(
           padding: EdgeInsets.symmetric(vertical: 8.0),
-          child: SettingsDarkenSliderFormField(
+          child: SettingsDarkenSlider(
             initialValue: config.screenDarkenStrength,
             onSaved: (newValue) => config.screenDarkenStrength = newValue,
           ),

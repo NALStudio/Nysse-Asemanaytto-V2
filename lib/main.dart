@@ -198,7 +198,7 @@ class _DynamicAppServices extends StatelessWidget {
     Widget child = this.child;
     if (config.screenDarkenStrength != null) {
       child = ScreenDarkenWidget(
-        strength: config.screenDarkenStrength!,
+        defaultStrength: config.screenDarkenStrength!,
         child: child,
       );
     }

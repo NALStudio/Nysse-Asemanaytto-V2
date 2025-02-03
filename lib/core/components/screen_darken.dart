@@ -4,12 +4,16 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 
 class ScreenDarkenHandle {
+  double? _strength;
+  double? get strength => _strength;
+
   final ScreenDarkenWidgetState _parent;
 
   ScreenDarkenHandle._({required ScreenDarkenWidgetState parent})
       : _parent = parent;
 
-  void activate() {
+  void activate({double? strength}) {
+    _strength = strength;
     _parent._activate(this);
   }
 
@@ -23,14 +27,14 @@ class ScreenDarkenHandle {
 }
 
 class ScreenDarkenWidget extends StatefulWidget {
-  final double strength;
+  final double defaultStrength;
   final Widget child;
 
   const ScreenDarkenWidget({
     super.key,
     required this.child,
-    required this.strength,
-  }) : assert(strength > 0 && strength < 1);
+    required this.defaultStrength,
+  }) : assert(defaultStrength > 0 && defaultStrength < 1);
 
   @override
   State<ScreenDarkenWidget> createState() => ScreenDarkenWidgetState();
@@ -54,6 +58,7 @@ class ScreenDarkenWidgetState extends State<ScreenDarkenWidget>
   late AnimationController _opacityController;
   bool _disposed = false;
 
+  double? _strength;
   double _overlayOpacity = 1.0;
   bool _omitOverlay = true;
 
@@ -65,20 +70,20 @@ class ScreenDarkenWidgetState extends State<ScreenDarkenWidget>
       vsync: this,
       duration: Duration(seconds: 1),
     );
-    _opacityController.addListener(onAnimationUpdated);
-    _opacityController.addStatusListener(onAnimationStateUpdated);
+    _opacityController.addListener(_updateOpacityFromDarken);
+    _opacityController.addStatusListener(_onAnimationStateUpdated);
   }
 
-  void onAnimationUpdated() {
+  void _updateOpacityFromDarken() {
     double t = Curves.easeInOut.transform(_opacityController.value);
-    double opacity = lerpDouble(0.0, widget.strength, t)!;
+    double opacity = lerpDouble(0.0, _strength, t)!;
 
     setState(() {
       _overlayOpacity = opacity;
     });
   }
 
-  void onAnimationStateUpdated(AnimationStatus status) {
+  void _onAnimationStateUpdated(AnimationStatus status) {
     bool omit = status.isDismissed;
     if (_omitOverlay != omit) {
       setState(() {
@@ -108,6 +113,10 @@ class ScreenDarkenWidgetState extends State<ScreenDarkenWidget>
   void _updateDarken() {
     bool darken = _activeHandles.isNotEmpty;
     if (darken) {
+      // Only update strength if darken is true
+      // so that the animation doesn't bug out during disable
+      _updateDarkenStrength();
+
       if (!_opacityController.isCompleted) {
         _opacityController.forward();
       }
@@ -115,6 +124,16 @@ class ScreenDarkenWidgetState extends State<ScreenDarkenWidget>
       if (!_opacityController.isDismissed) {
         _opacityController.reverse();
       }
+    }
+  }
+
+  void _updateDarkenStrength() {
+    double strength =
+        _activeHandles.lastOrNull?.strength ?? widget.defaultStrength;
+    if (_strength != strength) {
+      _strength = strength;
+      // Always force update opacity if darkness strength changes
+      _updateOpacityFromDarken();
     }
   }
 
