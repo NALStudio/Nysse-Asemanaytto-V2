@@ -186,7 +186,8 @@ class _HueEmbedLight extends StatelessWidget {
       color = HueColorConverter.colorFromXY(xy);
     }
 
-    final double brightness = light.dimming.brightness / 100;
+    final double brightness =
+        isEntertaining ? 1.0 : light.dimming.brightness / 100;
 
     Color foregroundColor =
         brightness < 0.5 || color == null || color.computeLuminance() < 0.5
