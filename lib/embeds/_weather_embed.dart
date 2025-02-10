@@ -17,13 +17,6 @@ final GlobalKey<_WeatherEmbedWidgetState> _weatherKey = GlobalKey();
 class WeatherEmbed extends Embed {
   static const int stepCount = 4;
 
-  // During winter, Finland's UTC offset is +2
-  // during this time the timestep 3 returns times 2, 5, 8, 11, ...
-  // I don't like this, so I'll use timestep 1 instead
-  static const int timestepHours = 1;
-  static const int pollRateMinutes = (timestepHours * 60) ~/ 4;
-  static const Duration timestep = Duration(hours: timestepHours);
-
   const WeatherEmbed({required super.name});
 
   @override
@@ -80,31 +73,48 @@ class _WeatherEmbedWidgetState extends State<_WeatherEmbedWidget> {
 
   /// Updates the weather data if necessary
   /// Updated values will rebuild the inherited widget once they are loaded.
-  void update({DateTime? now}) {
-    now ??= DateTime.now();
-    assert(DateTimeHelpers.isLocalDateTime(now));
+  void update() {
+    DateTime now = DateTime.now();
 
     if (forecast == null ||
         fetchNextTimeOn == null ||
         now.isAfter(fetchNextTimeOn!)) {
-      _getWeather(now: now).then((value) => setState(() => forecast = value));
+      Duration timestep = computeTimestep(now);
+      _getWeather(now: now, timestep: timestep)
+          .then((value) => setState(() => forecast = value));
 
-      fetchNextTimeOn = DateTimeHelpers.getHour(now).add(
-        const Duration(minutes: WeatherEmbed.pollRateMinutes),
-      );
+      // Fetch new weather every hour
+      fetchNextTimeOn = DateTimeHelpers.getHour(now).add(Duration(hours: 1));
     }
   }
 
-  Future<Forecast?> _getWeather({required DateTime now}) async {
+  Duration computeTimestep(DateTime now) {
+    // Ensure that we always display 00:00 weather at midnight
+    assert(DateTimeHelpers.isLocalDateTime(now));
+    int tzOffsetInHours = now.timeZoneOffset.inHours;
+    int timestepHours;
+    if (tzOffsetInHours % 3 == 0) {
+      timestepHours = 3;
+    } else if (tzOffsetInHours % 2 == 0) {
+      timestepHours = 2;
+    } else {
+      timestepHours = 1;
+    }
+
+    return Duration(hours: timestepHours);
+  }
+
+  Future<Forecast?> _getWeather({
+    required DateTime now,
+    required Duration timestep,
+  }) async {
     _logger.fine("Fetching weather...");
 
     final stopinfo = StopInfo.of(context);
     if (stopinfo == null) return null;
 
     final DateTime startTime = DateTimeHelpers.roundToNearestHour(now);
-    final DateTime endTime = startTime.add(
-      Duration(hours: WeatherEmbed.stepCount * WeatherEmbed.timestepHours),
-    );
+    final DateTime endTime = startTime.add(timestep * WeatherEmbed.stepCount);
 
     final LatLng pos = LatLng(stopinfo.lat, stopinfo.lon);
     Forecast weather;
@@ -113,7 +123,7 @@ class _WeatherEmbedWidgetState extends State<_WeatherEmbedWidget> {
         pos,
         startTime: startTime,
         endTime: endTime,
-        timestep: WeatherEmbed.timestep,
+        timestep: timestep,
       );
     } on Exception {
       return null;
