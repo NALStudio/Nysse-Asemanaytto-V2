@@ -1,10 +1,11 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:mqtt5_client/mqtt5_client.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/helpers/helpers.dart';
 import 'package:nysse_asemanaytto/core/components/error_widgets.dart';
@@ -37,7 +38,7 @@ class MapVehiclesEmbed extends Embed {
         beforeAnimationSeconds: 1.0,
         animationDurationSeconds: 10,
         afterAnimationSeconds: 5.0,
-        tileProvider: MapEmbedTileProvider.digitransitRetina,
+        tileProvider: MapEmbedTiles.digitransit512,
         cameraFit: MapEmbedCameraFit.fitArrivingVehicles,
         vehicles: MapEmbedVehicles.scheduledTrips,
       );
@@ -63,7 +64,8 @@ class MapVehiclesEmbedWidget extends StatefulWidget
 
   @override
   void onDisable() {
-    _mapKey.currentState?.unsubscribeMqtt();
+    // Reset animation so that the tiles don't pop in during enable
+    _mapKey.currentState?.resetMapAnimation();
 
     _vehiclesKey.currentState?.stopUpdate();
     _vehiclesKey.currentState?.clearVehicleData();
@@ -71,7 +73,6 @@ class MapVehiclesEmbedWidget extends StatefulWidget
 
   @override
   void onEnable() {
-    _mapKey.currentState?.subscribeMqtt();
     _mapKey.currentState?.scheduleMapAnimation(
       durationFromDouble(seconds: settings.beforeAnimationSeconds),
     );
@@ -84,6 +85,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
     with SingleTickerProviderStateMixin {
   late final MapController _mapController;
   late final AnimationController _mapAnimationController;
+  late final TileProvider _tileProvider;
 
   static const Curve _moveCurve = Curves.easeInOut;
   static const Curve _zoomCurve = Curves.easeInOut;
@@ -99,25 +101,29 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
 
   final List<Timer> _scheduledMapAnimations = [];
 
-  DigitransitMqttSubscription? _positioningSub;
-  ErrorWidget? _positioningSubError;
+  final Map<GtfsId, DigitransitMqttSubscription> _positioningSubs = {};
 
   DigitransitMqttState? _mqtt;
 
   @override
   void initState() {
     super.initState();
+
     _mapController = MapController();
 
     _mapAnimationController = AnimationController(vsync: this);
     _mapAnimationController.addListener(
       () => _updateMapAnimation(_mapAnimationController.value),
     );
+
+    _tileProvider = CancellableNetworkTileProvider(silenceExceptions: true);
   }
 
   @override
   void didChangeDependencies() {
     _mqtt = DigitransitMqtt.maybeOf(context);
+    updateMqttSubs();
+
     super.didChangeDependencies();
   }
 
@@ -131,7 +137,9 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
     _mapController.dispose();
     _mapAnimationController.dispose();
 
-    unsubscribeMqtt();
+    _tileProvider.dispose();
+
+    _unsubscribeMqtt();
 
     super.dispose();
   }
@@ -139,84 +147,78 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
   LatLng _getStopPositionOrDefault() {
     final stopinfo = StopInfo.of(context);
 
-    if (stopinfo != null) {
-      return LatLng(stopinfo.lat, stopinfo.lon);
+    final double? lat = stopinfo?.lat;
+    final double? lon = stopinfo?.lon;
+
+    if (lat != null && lon != null) {
+      return LatLng(lat, lon);
     } else {
       return kDefaultMapPosition;
     }
   }
 
-  void subscribeMqtt() {
-    if (_mqtt?.isConnected != true) {
-      _positioningSubError = MqttOfflineErrorWidget(_mqtt);
-      return;
+  void updateMqttSubs() {
+    MapEmbedVehicles vehicles = widget.settings.vehicles;
+
+    bool trip;
+    Set<GtfsId>? requests;
+    if (vehicles == MapEmbedVehicles.scheduledTrips) {
+      trip = true;
+      requests = Stoptimes.of(context)
+          ?.stoptimesWithoutPatterns
+          ?.map((st) => st.tripGtfsId)
+          .nonNulls
+          .toSet();
+    } else if (vehicles == MapEmbedVehicles.allRoutes) {
+      trip = false;
+      requests = StopInfo.of(context)?.routes.keys.toSet();
+    } else {
+      throw UnimplementedError("Setting: $vehicles not implemented.");
     }
 
-    final GtfsId stopId = Config.of(context).stopId;
+    if (requests == null) return;
 
-    _positioningSubError = null;
+    // Delete all subs that are not needed anymore (no pending request found)
+    // We also remove all requests that already have a value
+    _positioningSubs.removeWhere((key, value) {
+      if (!requests!.remove(key)) {
+        _mqtt?.unsubscribe(value);
+        return true;
+      }
+      return false;
+    });
 
-    switch (widget.settings.vehicles) {
-      case MapEmbedVehicles.arrivingOnly:
-        _positioningSub = _mqtt!.subscribe(
-          DigitransitPositioningTopic(
-            feedId: stopId.feedId,
-            nextStop: stopId.rawId,
-          ).buildTopicString(),
-          MqttQos.atMostOnce,
-        );
-      case MapEmbedVehicles.scheduledTrips:
-        final List<DigitransitStoptime>? stoptimes =
-            Stoptimes.of(context)?.stoptimesWithoutPatterns;
-        if (stoptimes == null) {
-          _positioningSubError =
-              ErrorWidget.withDetails(message: "No stoptimes");
-          return;
-        }
-        _positioningSub = _mqtt!.subscribeAll(
-          stoptimes.map(
-            (e) => DigitransitPositioningTopic(
-              feedId: e.tripGtfsId!.feedId,
-              tripId: e.tripGtfsId!.rawId,
-            ).buildTopicString(),
-          ),
-          MqttQos.atMostOnce,
-        );
-      case MapEmbedVehicles.allRoutes:
-        final stopInfo = StopInfo.of(context);
-        if (stopInfo == null) {
-          _positioningSubError =
-              ErrorWidget.withDetails(message: "No stop info.");
-          return;
-        }
-        _positioningSub = _mqtt!.subscribeAll(
-          stopInfo.routes.keys.map(
-            (e) =>
-                DigitransitPositioningTopic(feedId: e.feedId, routeId: e.rawId)
-                    .buildTopicString(),
-          ),
-          MqttQos.atMostOnce,
-        );
+    // Add new requests
+    for (final GtfsId req in requests) {
+      DigitransitMqttSubscription? sub;
+      if (trip) {
+        sub = _mqtt?.subscribeTrip(req);
+      } else {
+        sub = _mqtt?.subscribeRoute(req);
+      }
+
+      if (sub != null) {
+        sub.onMessageReceived = _onVehiclePositionUpdate;
+
+        assert(!_positioningSubs.containsKey(req));
+        _positioningSubs[req] = sub;
+      }
     }
-
-    _positioningSub!.onMessageReceived = _onVehiclePositionUpdate;
   }
 
-  void _onVehiclePositionUpdate(DigitransitMqttMessage msg) {
-    final FeedEntity ent = FeedEntity.fromBuffer(msg.bytes);
-    _vehiclesKey.currentState?.updateVehicle(ent);
+  void _onVehiclePositionUpdate(FeedEntity entity) {
+    _vehiclesKey.currentState?.updateVehicle(entity);
   }
 
-  void unsubscribeMqtt() {
-    if (_positioningSub == null) {
-      return;
+  void _unsubscribeMqtt() {
+    for (DigitransitMqttSubscription sub in _positioningSubs.values) {
+      _mqtt?.unsubscribe(sub);
     }
-
-    _mqtt?.unsubscribe(_positioningSub!);
+    _positioningSubs.clear();
   }
 
   void scheduleMapAnimation(Duration delay) {
-    _prepareMapAnimation();
+    resetMapAnimation();
 
     if (delay == Duration.zero) {
       _runMapAnimation();
@@ -227,12 +229,12 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
   }
 
   void runMapAnimation() {
-    _prepareMapAnimation();
+    resetMapAnimation();
     _runMapAnimation();
   }
 
   // Resets the map to the start of animation.
-  void _prepareMapAnimation() {
+  void resetMapAnimation() {
     if (!_mapReady) return;
 
     _sourcePos = _getStopPositionOrDefault();
@@ -248,7 +250,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
 
     final LatLng stopPos = _getStopPositionOrDefault();
 
-    Config config = Config.of(context);
+    final String stopRawId = Config.of(context).stopId.rawId;
 
     switch (widget.settings.cameraFit) {
       case MapEmbedCameraFit.fixed:
@@ -261,7 +263,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
         if (widget.settings.cameraFit ==
             MapEmbedCameraFit.fitArrivingVehicles) {
           vehiclePos = _vehiclesKey.currentState?.getVehiclePositions(
-            filter: (v) => v.stopId == config.stopId.rawId,
+            filter: (v) => v.stopId == stopRawId,
           );
         } else {
           vehiclePos = _vehiclesKey.currentState?.getVehiclePositions();
@@ -298,7 +300,6 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
 
   void _updateMapAnimation(double t) {
     assert(_destPos != null || t == 0);
-    assert(_destZoom != null || t == 0);
 
     setState(() {
       _posAnimT = _moveCurve.transform(t);
@@ -319,21 +320,26 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
     final stopinfo = StopInfo.of(context);
 
     final List<Widget> mapChildren = [
-      buildMapEmbedTileProvider(context, widget.settings.tileProvider)
+      buildMapEmbedTileProvider(
+        context,
+        tileProvider: _tileProvider,
+        tileStyle: widget.settings.tileProvider,
+      )
     ];
 
     if (_mapReady) {
       mapChildren.add(VehicleMarkerLayer(key: _vehiclesKey));
 
-      if (stopinfo != null) {
+      final LatLng? stopPos = stopinfo?.latlon;
+      if (stopPos != null) {
         mapChildren.add(
-          StopMarkerLayer(stops: [LatLng(stopinfo.lat, stopinfo.lon)]),
+          StopMarkerLayer(stops: [stopPos]),
         );
       }
     }
 
-    if (_positioningSubError != null) {
-      mapChildren.add(MapErrorLayer(error: _positioningSubError!));
+    if (_mqtt?.healthy != true) {
+      mapChildren.add(MapErrorLayer(error: MqttOfflineErrorWidget(_mqtt)));
     }
 
     return FlutterMap(

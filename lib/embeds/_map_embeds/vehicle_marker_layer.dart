@@ -9,7 +9,7 @@ import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/painters/bus_marker_painter.dart';
 import 'package:nysse_asemanaytto/digitransit/_models/gtfs_id.dart';
-import 'package:nysse_asemanaytto/digitransit/_queries/stop_info.dart';
+import 'package:nysse_asemanaytto/digitransit/_models/route.dart';
 import 'package:nysse_asemanaytto/gtfs/realtime.dart';
 import 'dart:math' as math;
 
@@ -26,7 +26,6 @@ class _VehicleData {
   static const Duration defaultTimeout = Duration(seconds: 3);
 
   Duration elapsed;
-  Duration totalExistTime;
   final Duration timeout;
 
   final VehiclePosition? previousPosition;
@@ -34,7 +33,6 @@ class _VehicleData {
 
   _VehicleData({
     required this.timeout,
-    required this.totalExistTime,
     required this.previousPosition,
     required this.position,
   }) : elapsed = Duration.zero;
@@ -49,12 +47,14 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
   Duration? lastTickerUpdate;
 
   late Ticker _ticker;
+  bool _canStartTicker = false;
   final Map<String, _VehicleData> _vehicles = {};
 
   @override
   void initState() {
     super.initState();
 
+    // createTicker doesn't stop when the embed is hidden, I'll stop the ticker manually instead
     _ticker = Ticker(_tickerTick);
   }
 
@@ -62,20 +62,22 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
     FeedEntity vehicle, {
     Duration timeout = _VehicleData.defaultTimeout,
   }) {
+    _startTickerIfPossible();
+
     _vehicles.update(
       vehicle.id,
       (previous) => _VehicleData(
         timeout: timeout,
-        totalExistTime: previous.totalExistTime,
-        previousPosition: previous.position,
+        previousPosition: _ticker.isTicking ? previous.position : null,
         position: vehicle.vehicle,
       ),
-      ifAbsent: () => _VehicleData(
-        timeout: timeout,
-        totalExistTime: Duration.zero,
-        previousPosition: null,
-        position: vehicle.vehicle,
-      ),
+      ifAbsent: () {
+        return _VehicleData(
+          timeout: timeout,
+          previousPosition: null,
+          position: vehicle.vehicle,
+        );
+      },
     );
   }
 
@@ -98,17 +100,35 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
   }
 
   void startUpdate() {
-    _ticker.start();
+    _canStartTicker = true;
+
+    if (_vehicles.isNotEmpty) {
+      // Start ticker so that we can timeout any vehicles that have stopped updating
+      _startTickerIfPossible();
+    }
+  }
+
+  void _startTickerIfPossible() {
+    if (_canStartTicker && !_ticker.isActive) {
+      // If there are no more vehicles to render,
+      // the ticker will continue ticking until stopUpdate is called.
+      _ticker.start();
+    }
   }
 
   void stopUpdate() {
+    _canStartTicker = false;
     _ticker.stop();
+    lastTickerUpdate = null;
   }
 
   void _tickerTick(Duration elapsed) {
-    setState(() {
-      _updateVehicles(elapsed);
-    });
+    // Only update UI state if there are any vehicles to be updated
+    if (_vehicles.isNotEmpty) {
+      setState(() {
+        _updateVehicles(elapsed);
+      });
+    }
   }
 
   void _updateVehicles(Duration elapsedSinceStart) {
@@ -124,8 +144,6 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
 
     _vehicles.updateAll((_, data) {
       data.elapsed += elapsed;
-      data.totalExistTime += elapsed;
-
       return data;
     });
 
@@ -133,8 +151,10 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
     _vehicles.removeWhere((_, data) => data.elapsed >= data.timeout);
     int afterCount = _vehicles.length;
 
-    if (beforeCount != afterCount) {
-      _logger.info("${beforeCount - afterCount} vehicles timed out.");
+    if (beforeCount != afterCount && _logger.isLoggable(Level.INFO)) {
+      final int diff = beforeCount - afterCount;
+      final String msg = "$diff vehicle${diff != 1 ? 's' : ''} timed out.";
+      _logger.info(msg);
     }
   }
 
@@ -145,8 +165,7 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
     if (prev == null || data.elapsed > moveDuration) {
       return _positionToLatLng(cur);
     }
-
-    // Verify so that t is computed correctly
+    // Verify that elapsed is computed correctly
     assert(!data.elapsed.isNegative);
 
     double t = data.elapsed.inMicroseconds / moveDuration.inMicroseconds;
@@ -208,7 +227,7 @@ Marker _buildVehicleMarker(
 
   final GtfsId routeGtfsId = GtfsId.combine(config.stopId.feedId, routeId);
 
-  final DigitransitStopInfoRoute? route = stopInfo?.routes[routeGtfsId];
+  final DigitransitRoute? route = stopInfo?.routes[routeGtfsId];
 
   const double borderWidth = 3;
 

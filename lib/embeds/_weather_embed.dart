@@ -110,13 +110,12 @@ class _WeatherEmbedWidgetState extends State<_WeatherEmbedWidget> {
   }) async {
     _logger.fine("Fetching weather...");
 
-    final stopinfo = StopInfo.of(context);
-    if (stopinfo == null) return null;
+    final LatLng? pos = StopInfo.of(context)?.latlon;
+    if (pos == null) return null;
 
     final DateTime startTime = DateTimeHelpers.roundToNearestHour(now);
     final DateTime endTime = startTime.add(timestep * WeatherEmbed.stepCount);
 
-    final LatLng pos = LatLng(stopinfo.lat, stopinfo.lon);
     Forecast weather;
     try {
       weather = await getForecast(

@@ -1,8 +1,9 @@
 import 'dart:collection';
 
-import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart';
 import 'package:nysse_asemanaytto/digitransit/_enums.dart';
 import 'package:nysse_asemanaytto/digitransit/_models/gtfs_id.dart';
+import 'package:nysse_asemanaytto/digitransit/_models/route.dart';
 
 class DigitransitStopInfoQuery {
   static const String query = """
@@ -25,9 +26,11 @@ query getStopInfo(\$stopId: String!)
 """;
   final String name;
   final DigitransitMode? vehicleMode;
-  final double lat;
-  final double lon;
-  final Map<GtfsId, DigitransitStopInfoRoute> routes;
+  final Map<GtfsId, DigitransitRoute> routes;
+  final double? lat;
+  final double? lon;
+
+  LatLng? get latlon => lat != null && lon != null ? LatLng(lat!, lon!) : null;
 
   const DigitransitStopInfoQuery({
     required this.name,
@@ -51,15 +54,14 @@ query getStopInfo(\$stopId: String!)
     );
   }
 
-  static Map<GtfsId, DigitransitStopInfoRoute> parseRoutes(
+  static Map<GtfsId, DigitransitRoute> parseRoutes(
     List<dynamic> routes,
   ) {
     return Map.fromEntries(
       routes.map((e) {
         final Map<String, dynamic> map = e;
-        GtfsId gtfsId = GtfsId(map["gtfsId"] as String);
-
-        return MapEntry(gtfsId, DigitransitStopInfoRoute._parse(gtfsId, map));
+        final DigitransitRoute route = DigitransitRoute.parse(map);
+        return MapEntry(route.gtfsId, route);
       }),
     );
   }
@@ -75,42 +77,4 @@ query getStopInfo(\$stopId: String!)
 
   @override
   int get hashCode => Object.hash(name, vehicleMode, lat, lon);
-}
-
-class DigitransitStopInfoRoute {
-  final GtfsId gtfsId;
-  final String? shortName;
-  final String? longName;
-  final Color? color;
-  final DigitransitMode? mode;
-
-  DigitransitStopInfoRoute({
-    required this.gtfsId,
-    required this.shortName,
-    required this.longName,
-    required this.color,
-    required this.mode,
-  });
-
-  static DigitransitStopInfoRoute _parse(
-    GtfsId gtfsId,
-    Map<String, dynamic> map,
-  ) {
-    String? colorHex = map["color"];
-    int? color;
-    if (colorHex != null) {
-      assert(colorHex.length == 6);
-      color = int.parse("ff$colorHex", radix: 16);
-    }
-
-    final String? mode = map["mode"];
-
-    return DigitransitStopInfoRoute(
-      gtfsId: gtfsId,
-      shortName: map["shortName"] as String?,
-      longName: map["longName"] as String?,
-      color: color != null ? Color(color) : null,
-      mode: mode != null ? DigitransitMode(mode) : null,
-    );
-  }
 }

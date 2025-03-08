@@ -22,7 +22,6 @@ const Map<MapEmbedCameraFit, String> _mapEmbedCameraFitNotes = {
 enum MapEmbedVehicles {
   allRoutes,
   scheduledTrips,
-  arrivingOnly,
 }
 
 const Map<MapEmbedVehicles, String> _mapEmbedVehiclesNotes = {
@@ -35,7 +34,7 @@ class MapVehiclesEmbedSettings extends EmbedSettings<MapVehiclesEmbed> {
   double animationDurationSeconds;
   double afterAnimationSeconds;
 
-  MapEmbedTileProvider tileProvider;
+  MapEmbedTiles tileProvider;
   MapEmbedCameraFit cameraFit;
   MapEmbedVehicles vehicles;
 
@@ -58,8 +57,10 @@ class MapVehiclesEmbedSettings extends EmbedSettings<MapVehiclesEmbed> {
     final String tileProviderStr = map["tileProvider"];
     final String cameraFitStr = map["cameraFit"];
     final String vehiclesStr = map["vehicles"];
-    tileProvider = MapEmbedTileProvider.values
-        .firstWhere((element) => element.name == tileProviderStr);
+    tileProvider = MapEmbedTiles.values.firstWhere(
+      (element) => element.name == tileProviderStr,
+      orElse: () => tileProvider,
+    );
     cameraFit = MapEmbedCameraFit.values
         .firstWhere((element) => element.name == cameraFitStr);
     vehicles = MapEmbedVehicles.values
@@ -93,7 +94,7 @@ class MapVehiclesEmbedSettings extends EmbedSettings<MapVehiclesEmbed> {
 
 class MapVehiclesEmbedSettingsForm
     extends EmbedSettingsForm<MapVehiclesEmbedSettings> {
-  MapEmbedTileProvider? _tileProviderSetting;
+  MapEmbedTiles? _tileProviderSetting;
   MapEmbedCameraFit? _cameraFitSetting;
   MapEmbedVehicles? _vehicleSetting;
 
@@ -228,13 +229,13 @@ class MapVehiclesEmbedSettingsForm
             }
           },
         ),
-        DropdownButtonFormField<MapEmbedTileProvider?>(
+        DropdownButtonFormField<MapEmbedTiles?>(
           decoration: InputDecoration(
             labelText: "Tile Provider",
             hintText: _formatEnumName(defaultSettings.tileProvider),
           ),
           items: _buildDropdownMenuItems(
-            MapEmbedTileProvider.values,
+            MapEmbedTiles.values,
             defaultValue: defaultSettings.tileProvider,
             tooltips: null,
           ),

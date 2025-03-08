@@ -1,12 +1,17 @@
 export '_topics/positioning.dart';
 
+import 'dart:async';
 import 'dart:collection';
-import 'dart:typed_data';
+import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:mqtt5_client/mqtt5_client.dart';
 import 'package:mqtt5_client/mqtt5_server_client.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
+import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
+import 'package:nysse_asemanaytto/digitransit/mqtt/_topics/positioning.dart';
+import 'package:nysse_asemanaytto/gtfs/realtime.dart';
 
 const String digitransitMqttEndpoint = "mqtt.digitransit.fi";
 
@@ -31,22 +36,26 @@ class DigitransitMqtt extends StatefulWidget {
   }
 }
 
-class UnknownDigitransitMqttConnectionError implements Exception {
-  @override
-  String toString() => "Unknown Digitransit MQTT Connection Error.";
-}
-
 class DigitransitMqttState extends State<DigitransitMqtt> {
-  bool _isConnected = false;
-  bool get isConnected => _isConnected;
+  bool get healthy => connected && _connectionError == null;
+
+  bool get connected =>
+      _client.connectionStatus?.state == MqttConnectionState.connected;
 
   Exception? _connectionError;
   Exception? get connectionError => _connectionError;
 
+  bool disposed = false;
+
+  late final Logger _logger;
+  late final Random _random;
+
   late MqttServerClient _client;
 
-  final LinkedHashSet<DigitransitMqttSubscription> _subscriptions =
-      LinkedHashSet();
+  late final Map<GtfsId, _InternalSubscription?> _subs;
+  late final LinkedHashSet<DigitransitMqttSubscription> _digiSubs;
+
+  Timer? _reconnect;
 
   @override
   Widget build(BuildContext context) {
@@ -57,106 +66,209 @@ class DigitransitMqttState extends State<DigitransitMqtt> {
   void initState() {
     super.initState();
 
+    _logger = Logger("DigitransitMqttState");
+
+    _random = Random();
     _client = MqttServerClient(digitransitMqttEndpoint, RequestInfo.userAgent);
     _client.keepAlivePeriod = 30;
 
-    _client.onDisconnected = _onDisconnected;
+    _client.onDisconnected = _callbackDisconnect;
+
+    _client.onSubscribeFail = _callbackSubscribeFailed;
+    _client.onSubscribed = _callbackSubscribe;
+    _client.onUnsubscribed = _callbackUnsubscribe;
+
+    // ignore: prefer_collection_literals
+    _subs = Map();
+    _digiSubs = LinkedHashSet();
 
     _connect();
   }
 
-  void _listen(List<MqttReceivedMessage<MqttMessage>> event) {
-    for (MqttReceivedMessage<MqttMessage> message in event) {
-      final MqttPublicationTopic messageTopic =
-          MqttPublicationTopic(message.topic);
-
-      final MqttPublishMessage payload = message.payload as MqttPublishMessage;
-      final msgBuffer = payload.payload.message!;
-
-      final DigitransitMqttMessage digitransitMessage = DigitransitMqttMessage(
-        bytes: Uint8List.view(msgBuffer.buffer).asUnmodifiableView(),
-      );
-
-      for (final DigitransitMqttSubscription sub in _subscriptions) {
-        if (sub._anyTopicHasMatch(messageTopic)) {
-          sub._newData(digitransitMessage);
-        }
-      }
-    }
-  }
-
   @override
   void dispose() {
+    disposed = true;
     _disconnect();
-
     super.dispose();
   }
 
-  void _connect() async {
+  Future _connect() async {
+    _client.clientIdentifier = RequestInfo.mqttClientId(_random);
     try {
       await _client.connect();
+      _client.updates.listen(_callbackUpdate);
+      setState(() {
+        _connectionError = null;
+      });
     } on Exception catch (e) {
-      assert(!isConnected);
-      _connectionError = e;
       _disconnect();
-      return;
+      setState(() {
+        _connectionError = e;
+      });
+
+      _scheduleReconnect();
     }
 
-    if (_client.connectionStatus!.state == MqttConnectionState.connected) {
-      _isConnected = true;
-      _client.updates.listen(_listen);
-    } else {
-      _connectionError = UnknownDigitransitMqttConnectionError();
-      assert(!isConnected);
+    if (_client.connectionStatus?.state != MqttConnectionState.connected) {
       _disconnect();
     }
   }
 
   void _disconnect() {
-    _isConnected = false;
     _client.disconnect();
   }
 
-  void _onDisconnected() {
-    _isConnected = false;
+  void _callbackDisconnect() {
+    final MqttDisconnectionOrigin? origin =
+        _client.connectionStatus?.disconnectionOrigin;
+
+    if (origin == MqttDisconnectionOrigin.solicited) {
+      _logger.info("MQTT Disconnect requested by user.");
+    } else if (origin == MqttDisconnectionOrigin.brokerSolicited) {
+      _logger.info("MQTT Disconnect requested by server.");
+    } else if (origin == MqttDisconnectionOrigin.unsolicited) {
+      _logger.info("MQTT Disconnected, scheduling reconnect...");
+      _scheduleReconnect();
+    } else {
+      _logger.info("MQTT Disconnected.");
+    }
   }
 
-  DigitransitMqttSubscription? subscribe(String topic, MqttQos qosLevel) {
-    final MqttSubscription? sub = _client.subscribe(topic, qosLevel);
-    if (sub == null) {
-      return null;
-    }
-
-    final digitransitSub = DigitransitMqttSubscription._create(sub);
-    _subscriptions.add(digitransitSub);
-
-    return digitransitSub;
+  void _callbackSubscribeFailed(MqttSubscription sub) {
+    _logger.warning("MQTT Subscribe failed: '${sub.topic}'");
   }
 
-  DigitransitMqttSubscription? subscribeAll(
-    Iterable<String> topics,
-    MqttQos qosLevel,
-  ) {
-    final List<MqttSubscription> topicSubs =
-        topics.map((t) => MqttSubscription(MqttSubscriptionTopic(t))).toList();
+  void _callbackSubscribe(MqttSubscription sub) {
+    _logger.info("MQTT Subscribed: '${sub.topic}'");
+  }
 
-    final List<MqttSubscription>? subs =
-        _client.subscribeWithSubscriptionList(topicSubs);
-    if (subs == null) {
-      return null;
+  void _callbackUnsubscribe(MqttSubscription sub) {
+    _logger.info("MQTT Unsubscribed: '${sub.topic}'");
+  }
+
+  void _callbackUpdate(List<MqttReceivedMessage<MqttMessage>> event) {
+    for (MqttReceivedMessage<MqttMessage> message in event) {
+      // print(message.topic);
+
+      final String? topicString = message.topic;
+      if (topicString == null) continue;
+
+      final DigitransitPositioningTopic topic =
+          DigitransitPositioningTopic.fromString(topicString);
+
+      final MqttPublishMessage payload = message.payload as MqttPublishMessage;
+      final msgBuffer = payload.payload.message!;
+
+      final FeedEntity entity = FeedEntity.fromBuffer(msgBuffer);
+
+      for (final DigitransitMqttSubscription sub in _digiSubs) {
+        sub._newData(topic, entity);
+      }
+    }
+  }
+
+  void _scheduleReconnect() {
+    assert(_client.connectionStatus?.state != MqttConnectionState.connected);
+
+    if (_reconnect?.isActive == true) {
+      return; // A reconnect is already scheduled.
     }
 
-    final DigitransitMqttSubscription digitransitSub =
-        DigitransitMqttSubscription._createCombined(subs);
-    _subscriptions.add(digitransitSub);
+    _reconnect = Timer(RequestInfo.mqttReconnectDelay, _connect);
+  }
 
-    return digitransitSub;
+  DigitransitMqttSubscription? subscribeRoute(GtfsId routeId) =>
+      _subscribe(routeId, trip: false);
+
+  DigitransitMqttSubscription? subscribeTrip(GtfsId tripId) =>
+      _subscribe(tripId, trip: true);
+
+  _InternalSubscription? _internalSubscribe(
+    GtfsId id, {
+    required bool trip,
+    required int count,
+  }) {
+    final DigitransitPositioningTopic topic = trip
+        ? DigitransitPositioningTopic.trip(id)
+        : DigitransitPositioningTopic.route(id);
+
+    final MqttSubscription? sub = _client.subscribeWithSubscription(
+      MqttSubscription.withMaximumQos(
+        topic.buildTopic(),
+        MqttQos.atMostOnce,
+      ),
+    );
+
+    if (sub != null) {
+      return _InternalSubscription(subscription: sub, subscriptionCount: count);
+    } else {
+      return null;
+    }
+  }
+
+  DigitransitMqttSubscription? _subscribe(GtfsId id, {required bool trip}) {
+    _InternalSubscription? sub = _subs.update(
+      id,
+      (x) {
+        if (x != null) {
+          assert(x.subscriptionCount > 0);
+          x.subscriptionCount++;
+          return x;
+        } else {
+          return _internalSubscribe(id, trip: trip, count: 1);
+        }
+      },
+      ifAbsent: () {
+        return _internalSubscribe(id, trip: trip, count: 1);
+      },
+    );
+
+    if (sub != null) {
+      final DigitransitMqttSubscription digiSub =
+          DigitransitMqttSubscription._create(trip: trip, id: id);
+
+      bool added = _digiSubs.add(digiSub);
+      assert(added);
+
+      return digiSub;
+    } else {
+      return null;
+    }
   }
 
   void unsubscribe(DigitransitMqttSubscription subscription) {
-    _subscriptions.remove(subscription);
-    _client.unsubscribeSubscriptionList(subscription.__subscriptions);
+    bool removed = _digiSubs.remove(subscription);
+
+    if (!removed) {
+      throw ArgumentError("Subscription has already been unsubscribed.");
+    }
+
+    _subs.update(
+      subscription.id,
+      (x) {
+        if (x == null) return null;
+
+        x.subscriptionCount--;
+        if (x.subscriptionCount < 1) {
+          _client.unsubscribeSubscription(x.subscription);
+          return null;
+        } else {
+          return x;
+        }
+      },
+    );
+
+    _subs.removeWhere((key, value) => value == null);
   }
+
+/* Removed due to added complexity
+  void unsubscribeAll(Iterable<DigitransitMqttSubscription> subscriptions) {
+    _subscriptions.removeAll(subscriptions);
+    _client.unsubscribeSubscriptionList(
+      _subscriptions.map((s) => s._sub).toList(growable: false),
+    );
+  }
+*/
 }
 
 class _DigitransitMqttInherited extends InheritedWidget {
@@ -171,29 +283,41 @@ class _DigitransitMqttInherited extends InheritedWidget {
   bool updateShouldNotify(covariant InheritedWidget oldWidget) => true;
 }
 
-class DigitransitMqttMessage {
-  final Uint8List bytes;
+class _InternalSubscription {
+  final MqttSubscription subscription;
+  int subscriptionCount;
 
-  DigitransitMqttMessage({required this.bytes});
+  _InternalSubscription({
+    required this.subscription,
+    required this.subscriptionCount,
+  });
 }
 
 class DigitransitMqttSubscription {
-  final List<MqttSubscription> __subscriptions;
+  final bool trip;
+  final GtfsId id;
 
-  void Function(DigitransitMqttMessage msg)? onMessageReceived;
+  void Function(FeedEntity msg)? onMessageReceived;
 
-  bool _anyTopicHasMatch(MqttPublicationTopic topic) =>
-      __subscriptions.any((e) => e.topic.matches(topic));
+  DigitransitMqttSubscription._create({
+    required this.trip,
+    required this.id,
+  });
 
-  DigitransitMqttSubscription._create(MqttSubscription subscription)
-      : __subscriptions = [subscription];
-  DigitransitMqttSubscription._createCombined(
-      List<MqttSubscription> subsciptions)
-      : __subscriptions = subsciptions;
+  bool _topicMatches(DigitransitPositioningTopic topic) {
+    String? otherId;
+    if (trip) {
+      otherId = topic.tripId;
+    } else {
+      otherId = topic.routeId;
+    }
 
-  void _newData(DigitransitMqttMessage msg) {
-    if (onMessageReceived != null) {
-      onMessageReceived!(msg);
+    return id.rawId == otherId;
+  }
+
+  void _newData(DigitransitPositioningTopic topic, FeedEntity entity) {
+    if (onMessageReceived != null && _topicMatches(topic)) {
+      onMessageReceived!(entity);
     }
   }
 }

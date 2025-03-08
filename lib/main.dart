@@ -104,6 +104,7 @@ class _Asemanaytto extends StatelessWidget {
                 "digitransit-subscription-key":
                     config.digitransitSubscriptionKey!,
                 "User-Agent": RequestInfo.userAgent,
+                "Accept-Language": "fi",
               },
               httpResponseDecoder: _handleGraphQLResponse,
             ),

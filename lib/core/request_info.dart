@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 class RequestInfo {
   static const String packageName = "com.nalstudio.nysse_asemanaytto";
@@ -6,6 +7,13 @@ class RequestInfo {
 
   static const String philipsHueAppName = "NysseAsemanaytto";
   static String get philipsHueInstanceName => Platform.operatingSystem;
+
+  static const int mqttKeepAliveSeconds = 30;
+  static const Duration mqttReconnectDelay = Duration(seconds: 30);
+  static String mqttClientId(Random random) {
+    String hex = random.nextInt(65536).toRadixString(16).padLeft(4, '0');
+    return "NysseAsemanaytto_$hex";
+  }
 
   /// GraphQL request timeout
   // We picked a suitably long time that is below our rate limits

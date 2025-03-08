@@ -2,12 +2,11 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:mqtt5_client/mqtt5_client.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
-import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
 import 'package:nysse_asemanaytto/core/components/error_widgets.dart';
 import 'package:nysse_asemanaytto/digitransit/digitransit.dart';
@@ -37,7 +36,7 @@ class MapLinesEmbed extends Embed {
 
   @override
   EmbedSettings<MapLinesEmbed> createDefaultSettings() => MapLinesEmbedSettings(
-        tileProvider: MapEmbedTileProvider.digitransitRetina,
+        tileProvider: MapEmbedTiles.digitransit512,
         showStops: false,
         showRouteInfo: true,
       );
@@ -80,14 +79,10 @@ class MapLinesEmbedWidget extends StatelessWidget
         final DigitransitTripRouteQuery? parsed =
             data != null ? DigitransitTripRouteQuery.parse(data) : null;
 
-        final DigitransitStopInfoRoute? route =
-            StopInfo.of(context)?.routes[stoptime.routeGtfsId];
-
         return _MapLinesEmbedWidget(
           settings,
           key: _mapKey,
           tripRoute: parsed,
-          route: route,
         );
       },
     );
@@ -107,13 +102,11 @@ class MapLinesEmbedWidget extends StatelessWidget
 class _MapLinesEmbedWidget extends StatefulWidget {
   final MapLinesEmbedSettings settings;
   final DigitransitTripRouteQuery? tripRoute;
-  final DigitransitStopInfoRoute? route;
 
   const _MapLinesEmbedWidget(
     this.settings, {
     super.key,
     required this.tripRoute,
-    required this.route,
   });
 
   @override
@@ -122,6 +115,7 @@ class _MapLinesEmbedWidget extends StatefulWidget {
 
 class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
   late final MapController _mapController;
+  late final TileProvider _tileProvider;
 
   DigitransitMqttSubscription? _positioningSub;
   GtfsId? _subbedRouteId;
@@ -136,79 +130,61 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
 
   DigitransitMqttState? _mqtt;
 
-  bool _embedIsEnabled = false;
   bool _mapReady = false;
 
   @override
   void initState() {
     super.initState();
     _mapController = MapController();
+    _tileProvider = CancellableNetworkTileProvider(silenceExceptions: true);
   }
 
   @override
   void didChangeDependencies() {
     _mqtt = DigitransitMqtt.maybeOf(context);
+
     super.didChangeDependencies();
   }
 
   @override
   void dispose() {
     onDisabled();
+    _unsubscribeMqtt();
+
     _mapController.dispose();
+    _tileProvider.dispose();
+
     super.dispose();
   }
 
   void onEnabled() {
-    _embedIsEnabled = true;
-
-    if (widget.route != null) {
-      _subscribeMqtt(widget.route!.gtfsId);
-    }
-
     _vehiclesKey.currentState?.startUpdate();
-
     // Fit camera always on enable in case we lose our state
     // This will sometimes re-fit twice if the route changes on the first build after enabling embed
     _fitCamera();
   }
 
   void onDisabled() {
-    _embedIsEnabled = false;
-    _unsubscribeMqtt();
-
     _vehiclesKey.currentState?.stopUpdate();
-    _vehiclesKey.currentState?.clearVehicleData();
   }
 
   void _subscribeMqtt(GtfsId routeId) {
-    assert(_embedIsEnabled);
     assert(!_isSubbed);
 
-    if (_mqtt?.isConnected != true) {
+    if (_mqtt?.healthy != true) {
       _positioningSubError = MqttOfflineErrorWidget(_mqtt);
       return;
     }
 
-    final GtfsId stopId = Config.of(context).stopId;
-
     _positioningSubError = null;
-    _positioningSub = _mqtt!.subscribe(
-      DigitransitPositioningTopic(
-        feedId: stopId.feedId,
-        routeId: routeId.rawId,
-      ).buildTopicString(),
-      MqttQos.atMostOnce,
-    );
+    _positioningSub = _mqtt!.subscribeRoute(routeId);
     _subbedRouteId = routeId;
 
     _positioningSub!.onMessageReceived = _onVehiclePositionUpdate;
   }
 
-  void _onVehiclePositionUpdate(DigitransitMqttMessage msg) {
-    final FeedEntity ent = FeedEntity.fromBuffer(msg.bytes);
-    setState(() {
-      _vehiclesKey.currentState?.updateVehicle(ent);
-    });
+  void _onVehiclePositionUpdate(FeedEntity ent) {
+    _vehiclesKey.currentState?.updateVehicle(ent);
   }
 
   /// Safe to call multiple times.
@@ -242,7 +218,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
       bounds: LatLngBounds.fromPoints(_computedRoute!.geometry),
       padding: EdgeInsets.fromLTRB(
         cameraFitPadding + cameraFitPaddingAdjust,
-        cameraTopPadding + cameraFitPaddingAdjust, // NOTE: Top is different
+        cameraTopPadding + cameraFitPaddingAdjust,
         cameraFitPadding + cameraFitPaddingAdjust,
         cameraFitPadding + cameraFitPaddingAdjust,
       ),
@@ -257,17 +233,20 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
       _computedRoute = _ComputedRoute.decode(widget.tripRoute!.pattern);
       _fitCamera();
     }
-    if (widget.route != null && _subbedRouteId != widget.route!.gtfsId) {
+    if (widget.tripRoute == null) {
+      _unsubscribeMqtt();
+    } else if (_subbedRouteId != widget.tripRoute?.route.gtfsId) {
       _unsubscribeMqtt();
       _vehiclesKey.currentState?.clearVehicleData();
-
-      if (_embedIsEnabled) {
-        _subscribeMqtt(widget.route!.gtfsId);
-      }
+      _subscribeMqtt(widget.tripRoute!.route.gtfsId);
     }
 
     final List<Widget> mapChildren = [
-      buildMapEmbedTileProvider(context, widget.settings.tileProvider),
+      buildMapEmbedTileProvider(
+        context,
+        tileProvider: _tileProvider,
+        tileStyle: widget.settings.tileProvider,
+      ),
     ];
 
     if (_computedRoute != null) {
@@ -279,7 +258,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
           polylines: [
             Polyline(
               points: _computedRoute!.geometry,
-              color: widget.route?.color ?? Colors.grey,
+              color: widget.tripRoute?.route.color ?? Colors.grey,
               strokeWidth: routeLineStrokeWidth,
             ),
           ],
@@ -296,7 +275,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     mapChildren.add(VehicleMarkerLayer(key: _vehiclesKey));
 
     if (widget.settings.showRouteInfo) {
-      mapChildren.add(_RouteTitleHeader(route: widget.route));
+      mapChildren.add(_RouteTitleHeader(route: widget.tripRoute?.route));
     }
 
     if (_positioningSubError != null) {
@@ -320,7 +299,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
 }
 
 class _RouteTitleHeader extends StatelessWidget {
-  final DigitransitStopInfoRoute? route;
+  final DigitransitRoute? route;
 
   const _RouteTitleHeader({required this.route});
 

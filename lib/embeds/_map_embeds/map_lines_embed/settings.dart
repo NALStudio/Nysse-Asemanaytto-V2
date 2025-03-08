@@ -8,7 +8,7 @@ import 'package:nysse_asemanaytto/embeds/embeds.dart';
 import 'package:nysse_asemanaytto/settings/settings_switch_form_field.dart';
 
 class MapLinesEmbedSettings extends EmbedSettings<MapLinesEmbed> {
-  MapEmbedTileProvider tileProvider;
+  MapEmbedTiles tileProvider;
   bool showStops;
   bool showRouteInfo;
 
@@ -23,8 +23,11 @@ class MapLinesEmbedSettings extends EmbedSettings<MapLinesEmbed> {
     final Map<String, dynamic> map = json.decode(serialized);
 
     final String tileProviderStr = map["tileProvider"];
-    tileProvider = MapEmbedTileProvider.values
-        .firstWhere((element) => element.name == tileProviderStr);
+
+    tileProvider = MapEmbedTiles.values.firstWhere(
+      (element) => element.name == tileProviderStr,
+      orElse: () => tileProvider,
+    );
 
     final bool? showStops = map["showStops"];
     if (showStops != null) {
@@ -59,7 +62,7 @@ class MapLinesEmbedSettings extends EmbedSettings<MapLinesEmbed> {
 
 class MapLinesEmbedSettingsForm
     extends EmbedSettingsForm<MapLinesEmbedSettings> {
-  MapEmbedTileProvider? _tileProviderSetting;
+  MapEmbedTiles? _tileProviderSetting;
 
   MapLinesEmbedSettingsForm({
     required super.parentSettings,
@@ -102,13 +105,13 @@ class MapLinesEmbedSettingsForm
 
     return Column(
       children: [
-        DropdownButtonFormField<MapEmbedTileProvider?>(
+        DropdownButtonFormField<MapEmbedTiles?>(
           decoration: InputDecoration(
             labelText: "Tile Provider",
             hintText: _formatEnumName(defaultSettings.tileProvider),
           ),
           items: _buildDropdownMenuItems(
-            MapEmbedTileProvider.values,
+            MapEmbedTiles.values,
             defaultValue: defaultSettings.tileProvider,
             tooltips: null,
           ),

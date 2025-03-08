@@ -61,8 +61,10 @@ class DigitransitRoutingEndpoint extends DigitransitEnum {
       DigitransitRoutingEndpoint("waltti");
   static const DigitransitRoutingEndpoint finland =
       DigitransitRoutingEndpoint("finland");
+  static const DigitransitRoutingEndpoint varely =
+      DigitransitRoutingEndpoint("varely");
 
   String getEndpoint() {
-    return "https://api.digitransit.fi/routing/v1/routers/$value/index/graphql";
+    return "https://api.digitransit.fi/routing/v2/$value/gtfs/v1";
   }
 }

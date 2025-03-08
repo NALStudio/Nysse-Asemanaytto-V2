@@ -1,6 +1,6 @@
 import 'dart:collection';
 
-import 'package:nysse_asemanaytto/digitransit/_models/gtfs_id.dart';
+import 'package:nysse_asemanaytto/digitransit/_models/route.dart';
 
 class DigitransitTripRouteQuery {
   static const String query = """
@@ -9,6 +9,10 @@ query getTripRoute(\$tripId: String!)
   trip(id: \$tripId) {
     route {
       gtfsId
+      shortName
+      longName
+      color
+      mode
     }
     pattern {
       code
@@ -24,21 +28,19 @@ query getTripRoute(\$tripId: String!)
 }
 """;
 
-  final GtfsId routeGtfsId;
+  final DigitransitRoute route;
   final DigitransitPattern pattern;
 
   DigitransitTripRouteQuery({
-    required this.routeGtfsId,
     required this.pattern,
+    required this.route,
   });
 
   static DigitransitTripRouteQuery parse(Map<String, dynamic> data) {
     final Map<String, dynamic> map = data["trip"];
 
-    final String routeGtfsId = map["route"]["gtfsId"];
-
     return DigitransitTripRouteQuery(
-      routeGtfsId: GtfsId(routeGtfsId),
+      route: DigitransitRoute.parse(map["route"]),
       pattern: DigitransitPattern._parse(map["pattern"]),
     );
   }

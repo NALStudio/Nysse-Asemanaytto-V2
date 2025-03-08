@@ -61,6 +61,8 @@ String formatTime2(int hour, int minute, [int? second]) {
   }).join(':');
 }
 
+final String numbers = "0123456789";
+
 // Convert snakeCase to a sentence with capitalized words.
 String snakeCase2Sentence(String snakeCase) {
   final List<String> output = List.empty(growable: true);
@@ -69,8 +71,12 @@ String snakeCase2Sentence(String snakeCase) {
   // But we want to take the portion from start to the first upper-case character
   // So we set this as 0 at start.
   int lastUpperIndex = 0;
+  int? lastNumberIndex;
   for (final (int index, String char) in snakeCase.characters.indexed) {
-    if (char == char.toUpperCase()) {
+    bool isNumber = numbers.contains(char);
+
+    if ((char == char.toUpperCase() && !isNumber) ||
+        (isNumber && lastNumberIndex != (index - 1))) {
       // Take the portion between these upper characters, end exclusive.
       String word = snakeCase.substring(lastUpperIndex, index);
       if (lastUpperIndex == 0) {
@@ -80,6 +86,10 @@ String snakeCase2Sentence(String snakeCase) {
 
       output.add(word);
       lastUpperIndex = index;
+    }
+
+    if (isNumber) {
+      lastNumberIndex = index;
     }
   }
   // Add the rest of the name

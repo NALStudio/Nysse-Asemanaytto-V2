@@ -1,6 +1,7 @@
 export '_enums.dart';
 
 export '_models/gtfs_id.dart';
+export '_models/route.dart';
 
 export '_queries/alerts.dart';
 export '_queries/stop_info.dart';
