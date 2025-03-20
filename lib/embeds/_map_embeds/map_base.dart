@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:logging/logging.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/request_info.dart';
 
@@ -95,7 +97,28 @@ TileLayer _buildTileLayer({
     zoomOffset: size512 ? -1 : 0,
     panBuffer: performance ? 0 : 1,
     keepBuffer: performance ? 0 : 2,
+    // TileDisplay.instantaneous rendering is broken.
+    // It doesn't render tiles before the map animation has actually ran.
+    tileDisplay: const TileDisplay.fadeIn(),
   );
+}
+
+final class DigitransitTileProvider extends CancellableNetworkTileProvider {
+  // static const Level _logLevel = Level.FINE;
+
+  // There was no good way of determining when tiles were downloaded
+  // or loaded from cache as both of those actions use the same function
+  // ignore: unused_field
+  final Logger _logger;
+
+  DigitransitTileProvider()
+      : _logger = Logger("DigitransitTileProvider"),
+        super(
+          headers: {
+            "User-Agent": RequestInfo.userAgent,
+          },
+          silenceExceptions: true,
+        );
 }
 
 class MapErrorLayer extends StatelessWidget {

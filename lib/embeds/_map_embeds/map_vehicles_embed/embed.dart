@@ -4,7 +4,6 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
 import 'package:nysse_asemanaytto/core/helpers/helpers.dart';
@@ -67,8 +66,7 @@ class MapVehiclesEmbedWidget extends StatefulWidget
     // Reset animation so that the tiles don't pop in during enable
     _mapKey.currentState?.resetMapAnimation();
 
-    _vehiclesKey.currentState?.stopUpdate();
-    _vehiclesKey.currentState?.clearVehicleData();
+    _vehiclesKey.currentState?.onDisable();
   }
 
   @override
@@ -77,7 +75,7 @@ class MapVehiclesEmbedWidget extends StatefulWidget
       durationFromDouble(seconds: settings.beforeAnimationSeconds),
     );
 
-    _vehiclesKey.currentState?.startUpdate();
+    _vehiclesKey.currentState?.onEnable();
   }
 }
 
@@ -116,7 +114,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
       () => _updateMapAnimation(_mapAnimationController.value),
     );
 
-    _tileProvider = CancellableNetworkTileProvider(silenceExceptions: true);
+    _tileProvider = DigitransitTileProvider();
   }
 
   @override
@@ -207,7 +205,7 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
   }
 
   void _onVehiclePositionUpdate(FeedEntity entity) {
-    _vehiclesKey.currentState?.updateVehicle(entity);
+    _vehiclesKey.currentState?.updateVehicle(entity.vehicle);
   }
 
   void _unsubscribeMqtt() {
@@ -262,11 +260,13 @@ class _MapVehiclesEmbedWidgetState extends State<MapVehiclesEmbedWidget>
 
         if (widget.settings.cameraFit ==
             MapEmbedCameraFit.fitArrivingVehicles) {
-          vehiclePos = _vehiclesKey.currentState?.getVehiclePositions(
+          vehiclePos =
+              _vehiclesKey.currentState?.getNonInterpolatedVehiclePositions(
             filter: (v) => v.stopId == stopRawId,
           );
         } else {
-          vehiclePos = _vehiclesKey.currentState?.getVehiclePositions();
+          vehiclePos =
+              _vehiclesKey.currentState?.getNonInterpolatedVehiclePositions();
         }
 
         final List<LatLng>? fitPositions = vehiclePos?.toList(growable: true);

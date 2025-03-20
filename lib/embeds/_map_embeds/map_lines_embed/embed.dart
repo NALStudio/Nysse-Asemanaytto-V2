@@ -2,7 +2,6 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:graphql_flutter/graphql_flutter.dart';
 import 'package:latlong2/latlong.dart';
@@ -136,7 +135,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
   void initState() {
     super.initState();
     _mapController = MapController();
-    _tileProvider = CancellableNetworkTileProvider(silenceExceptions: true);
+    _tileProvider = DigitransitTileProvider();
   }
 
   @override
@@ -158,14 +157,16 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
   }
 
   void onEnabled() {
-    _vehiclesKey.currentState?.startUpdate();
+    _vehiclesKey.currentState?.onEnable();
+
+    // Not needed, we shouldn't lose our state as frequently anymore
     // Fit camera always on enable in case we lose our state
     // This will sometimes re-fit twice if the route changes on the first build after enabling embed
-    _fitCamera();
+    // _fitCamera();
   }
 
   void onDisabled() {
-    _vehiclesKey.currentState?.stopUpdate();
+    _vehiclesKey.currentState?.onDisable();
   }
 
   void _subscribeMqtt(GtfsId routeId) {
@@ -184,7 +185,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
   }
 
   void _onVehiclePositionUpdate(FeedEntity ent) {
-    _vehiclesKey.currentState?.updateVehicle(ent);
+    _vehiclesKey.currentState?.updateVehicle(ent.vehicle);
   }
 
   /// Safe to call multiple times.
@@ -235,7 +236,7 @@ class _MapLinesEmbedWidgetState extends State<_MapLinesEmbedWidget> {
     }
     if (widget.tripRoute == null) {
       _unsubscribeMqtt();
-    } else if (_subbedRouteId != widget.tripRoute?.route.gtfsId) {
+    } else if (_subbedRouteId != widget.tripRoute!.route.gtfsId) {
       _unsubscribeMqtt();
       _vehiclesKey.currentState?.clearVehicleData();
       _subscribeMqtt(widget.tripRoute!.route.gtfsId);

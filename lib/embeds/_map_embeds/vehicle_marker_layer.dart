@@ -1,3 +1,4 @@
+import 'dart:collection';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -23,19 +24,22 @@ class VehicleMarkerLayer extends StatefulWidget {
 }
 
 class _VehicleData {
-  static const Duration defaultTimeout = Duration(seconds: 3);
+  /// Whether this data should be deleted at the end of frame.
+  /// This should be true from the start of the frame until the first received update.
+  bool unsafe;
 
-  Duration elapsed;
-  final Duration timeout;
+  Duration elapsedTowardsNextPos;
+  VehiclePosition latest;
 
-  final VehiclePosition? previousPosition;
-  final VehiclePosition position;
+  Position currentPosition;
+  final Queue<Position> nextPositions;
 
   _VehicleData({
-    required this.timeout,
-    required this.previousPosition,
-    required this.position,
-  }) : elapsed = Duration.zero;
+    required this.latest,
+  })  : currentPosition = latest.position,
+        nextPositions = Queue(),
+        unsafe = false,
+        elapsedTowardsNextPos = Duration.zero;
 }
 
 class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
@@ -58,25 +62,32 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
     _ticker = Ticker(_tickerTick);
   }
 
-  void updateVehicle(
-    FeedEntity vehicle, {
-    Duration timeout = _VehicleData.defaultTimeout,
-  }) {
+  void updateVehicle(VehiclePosition pos) {
     _startTickerIfPossible();
 
     _vehicles.update(
-      vehicle.id,
-      (previous) => _VehicleData(
-        timeout: timeout,
-        previousPosition: _ticker.isTicking ? previous.position : null,
-        position: vehicle.vehicle,
-      ),
+      pos.vehicle.id,
+      (existing) {
+        existing.unsafe = false;
+        existing.latest = pos;
+
+        if (_ticker.isTicking) {
+          // Only add the new position if it doesn't match the previous.
+          // We might get double updates if both lines and vehicles embed
+          // have subscribed to the same vehicle on different events.
+          if (existing.nextPositions.lastOrNull != pos.position) {
+            existing.nextPositions.add(pos.position);
+          }
+        } else {
+          existing.nextPositions.clear();
+          existing.elapsedTowardsNextPos = Duration.zero;
+          existing.currentPosition = pos.position;
+        }
+
+        return existing;
+      },
       ifAbsent: () {
-        return _VehicleData(
-          timeout: timeout,
-          previousPosition: null,
-          position: vehicle.vehicle,
-        );
+        return _VehicleData(latest: pos);
       },
     );
   }
@@ -86,24 +97,26 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
   }
 
   /// Only include values that satisfy the filter. All values are returned if filter is null.
-  Iterable<LatLng> getVehiclePositions({
+  Iterable<LatLng> getNonInterpolatedVehiclePositions({
     bool Function(VehiclePosition pos)? filter,
   }) {
     Iterable<_VehicleData> data;
     if (filter == null) {
       data = _vehicles.values;
     } else {
-      data = _vehicles.values.where((v) => filter(v.position));
+      data = _vehicles.values.where((v) => filter(v.latest));
     }
 
-    return data.map((v) => _positionToLatLng(v.position.position));
+    return data.map((v) => _positionToLatLng(v.latest.position));
   }
 
-  void startUpdate() {
-    _canStartTicker = true;
+  void onEnable() {
+    _markAllVehiclesAsUnsafe();
 
+    _canStartTicker = true;
     if (_vehicles.isNotEmpty) {
-      // Start ticker so that we can timeout any vehicles that have stopped updating
+      // Vehicle positions have updated during the time this embed was disabled,
+      // update them as soon as possible
       _startTickerIfPossible();
     }
   }
@@ -116,10 +129,36 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
     }
   }
 
-  void stopUpdate() {
+  void onDisable() {
     _canStartTicker = false;
     _ticker.stop();
     lastTickerUpdate = null;
+
+    // Timeout all vehicles that didn't receive an update during the time this embed was enabled
+    _removeUnsafeVehicles();
+
+    // We do not do the same thing for the duration the embed is disabled
+    // since the embed is disabled for quite a long time and thus the likelihood
+    // of this happening in reverse is pretty low
+  }
+
+  void _markAllVehiclesAsUnsafe() {
+    _vehicles.updateAll((_, data) {
+      data.unsafe = true;
+      return data;
+    });
+  }
+
+  void _removeUnsafeVehicles() {
+    int beforeCount = _vehicles.length;
+    _vehicles.removeWhere((_, data) => data.unsafe);
+    int afterCount = _vehicles.length;
+
+    if (beforeCount != afterCount && _logger.isLoggable(Level.INFO)) {
+      final int diff = beforeCount - afterCount;
+      final String msg = "$diff vehicle${diff != 1 ? 's' : ''} timed out.";
+      _logger.info(msg);
+    }
   }
 
   void _tickerTick(Duration elapsed) {
@@ -135,42 +174,48 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
     Duration elapsed;
     Duration? lastUpdate = lastTickerUpdate;
     if (lastUpdate == null) {
-      elapsed = elapsedSinceStart;
+      elapsed = Duration.zero;
     } else {
       elapsed = elapsedSinceStart - lastUpdate;
     }
-
     lastTickerUpdate = elapsedSinceStart;
 
     _vehicles.updateAll((_, data) {
-      data.elapsed += elapsed;
+      if (data.nextPositions.isNotEmpty) {
+        data.elapsedTowardsNextPos += elapsed;
+        if (data.elapsedTowardsNextPos > moveDuration) {
+          // Set as 0, since we don't want to leave a partial state to the next position,
+          // which might have a long delay before coming
+          data.elapsedTowardsNextPos = Duration.zero;
+          data.currentPosition = data.nextPositions.removeFirst();
+        }
+      }
+
       return data;
     });
-
-    int beforeCount = _vehicles.length;
-    _vehicles.removeWhere((_, data) => data.elapsed >= data.timeout);
-    int afterCount = _vehicles.length;
-
-    if (beforeCount != afterCount && _logger.isLoggable(Level.INFO)) {
-      final int diff = beforeCount - afterCount;
-      final String msg = "$diff vehicle${diff != 1 ? 's' : ''} timed out.";
-      _logger.info(msg);
-    }
   }
 
   LatLng _computePos(_VehicleData data) {
-    Position? prev = data.previousPosition?.position;
-    Position cur = data.position.position;
+    Duration elapsed = data.elapsedTowardsNextPos;
 
-    if (prev == null || data.elapsed > moveDuration) {
-      return _positionToLatLng(cur);
+    Position current = data.currentPosition;
+    Position? next = data.nextPositions.firstOrNull;
+
+    // This should rarely be true
+    if (elapsed > moveDuration) {
+      return _positionToLatLng(next ?? current);
     }
-    // Verify that elapsed is computed correctly
-    assert(!data.elapsed.isNegative);
 
-    double t = data.elapsed.inMicroseconds / moveDuration.inMicroseconds;
-    double lat = lerpDouble(prev.latitude, cur.latitude, t)!;
-    double lng = lerpDouble(prev.longitude, cur.longitude, t)!;
+    if (next == null) {
+      return _positionToLatLng(current);
+    }
+
+    // Verify that elapsed is computed correctly
+    assert(!elapsed.isNegative);
+
+    double t = elapsed.inMicroseconds / moveDuration.inMicroseconds;
+    double lat = lerpDouble(current.latitude, next.latitude, t)!;
+    double lng = lerpDouble(current.longitude, next.longitude, t)!;
 
     return LatLng(lat, lng);
   }
@@ -183,7 +228,7 @@ class VehicleMarkerLayerState extends State<VehicleMarkerLayer>
             (data) => _buildVehicleMarker(
               context,
               renderPos: _computePos(data),
-              pos: data.position,
+              data: data.latest,
             ),
           )
           .toList(),
@@ -205,7 +250,7 @@ LatLng _positionToLatLng(Position pos) {
 Marker _buildVehicleMarker(
   BuildContext context, {
   required LatLng renderPos,
-  required VehiclePosition pos,
+  required VehiclePosition data,
 }) {
   final Config config = Config.of(context);
   final stopInfo = StopInfo.of(context);
@@ -213,17 +258,18 @@ Marker _buildVehicleMarker(
   double size = MapCamera.of(context).getScaleZoom(10);
 
   // example: 6921_91
-  final String vehicleId = pos.vehicle.id;
+  final String vehicleId = data.vehicle.id;
+
   // 6921_91 => 6921
-  final String vehicleIdHeader = vehicleId.substring(0, vehicleId.indexOf('_'));
+  int vehicleIdHeaderLength = vehicleId.indexOf('_');
 
   // example: 86921
-  final String routeIdFull = pos.trip.routeId;
-  assert(routeIdFull.endsWith(vehicleIdHeader));
+  final String routeIdFull = data.trip.routeId;
+  assert(routeIdFull.endsWith(vehicleId.substring(0, vehicleIdHeaderLength)));
   // ^^ No idea why routeId has this weird ass suffix
   // 86921 => 8
   final String routeId =
-      routeIdFull.substring(0, routeIdFull.length - vehicleIdHeader.length);
+      routeIdFull.substring(0, routeIdFull.length - vehicleIdHeaderLength);
 
   final GtfsId routeGtfsId = GtfsId.combine(config.stopId.feedId, routeId);
 
@@ -238,7 +284,7 @@ Marker _buildVehicleMarker(
     child: CustomPaint(
       painter: BusMarkerPainter(
         // deg2rad = math.pi / 180
-        bearing: pos.position.bearing * (math.pi / 180),
+        bearing: data.position.bearing * (math.pi / 180),
         borderColor: route?.color ?? Colors.grey,
         borderWidth: borderWidth,
         lineNumber: route?.shortName ?? "??",
