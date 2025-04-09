@@ -10,7 +10,8 @@ enum MapEmbedTiles {
   digitransit256,
   digitransit512,
   digitransitEnglish512,
-  digitransitNoText512,
+  // Removed in background map v3
+  // digitransitNoText512,
   openStreetMap,
   solidWhite,
 }
@@ -45,6 +46,7 @@ Widget buildMapEmbedTileProvider(
         retina: true,
         size512: true,
       );
+    /*
     case MapEmbedTiles.digitransitNoText512:
       return _buildDigitransit(
         context,
@@ -53,6 +55,7 @@ Widget buildMapEmbedTileProvider(
         retina: true,
         size512: true,
       );
+    */
     case MapEmbedTiles.openStreetMap:
       return _buildTileLayer(
         tileProvider: tileProvider,
@@ -74,7 +77,7 @@ TileLayer _buildDigitransit(
   return _buildTileLayer(
     tileProvider: tileProvider,
     urlTemplate:
-        "https://cdn.digitransit.fi/map/v2/$tileSource/{z}/{x}/{y}{r}.png?digitransit-subscription-key=${Config.of(context).digitransitSubscriptionKey!}",
+        "https://cdn.digitransit.fi/map/v3/$tileSource/{z}/{x}/{y}{r}.png?digitransit-subscription-key=${Config.of(context).digitransitSubscriptionKey!}",
     retina: retina,
     size512: size512,
   );
