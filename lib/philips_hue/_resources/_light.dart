@@ -82,9 +82,31 @@ class HueLightColor implements HueBase {
     if (json == null) return;
 
     xy.update(json["xy"]);
-    gamut = HueBase.updateNullable(gamut, HueLightGamut.fromJson, json);
+    gamut =
+        HueBase.updateNullable(gamut, HueLightGamut.fromJson, json["gamut"]);
 
     gamutType = json.containsKey("gamut_type") ? json["gamut_type"] : gamutType;
+  }
+}
+
+class HueLightDynamics implements HueBase {
+  String status;
+  double speed;
+  bool speedValid;
+
+  HueLightDynamics.fromJson(Map json)
+      : status = json["status"],
+        speed = json["speed"],
+        speedValid = json["speed_valid"];
+
+  @override
+  void update(Map? json) {
+    if (json == null) return;
+
+    status = json.containsKey("status") ? json["status"] : status;
+    speed = json.containsKey("speed") ? json["speed"] : speed;
+    speedValid =
+        json.containsKey("speed_valid") ? json["speed_valid"] : speedValid;
   }
 }
 
@@ -99,12 +121,18 @@ class HueLight extends HueResource {
   HueLightDimming dimming;
   HueLightColor color;
 
+  HueLightDynamics? dynamics;
+  String mode;
+
   HueLight.fromJson(super.json)
       : owner = HueOwner.fromJson(json["owner"]),
         metadata = HueLightMetadata.fromJson(json["metadata"]),
         isOn = json["on"]["on"],
         dimming = HueLightDimming.fromJson(json["dimming"]),
         color = HueLightColor.fromJson(json["color"]),
+        dynamics = HueBase.fromJsonNullable(
+            HueLightDynamics.fromJson, json["dynamics"]),
+        mode = json["mode"],
         super.fromJson();
 
   @override
@@ -125,5 +153,9 @@ class HueLight extends HueResource {
 
     dimming.update(json["dimming"]);
     color.update(json["color"]);
+
+    dynamics = HueBase.updateNullable(
+        dynamics, HueLightDynamics.fromJson, json["dynamics"]);
+    mode = json.containsKey("mode") ? json["mode"] : mode;
   }
 }

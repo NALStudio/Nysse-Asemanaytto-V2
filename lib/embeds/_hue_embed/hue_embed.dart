@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logging/logging.dart';
 import 'package:nysse_asemanaytto/core/components/layout.dart';
 import 'package:nysse_asemanaytto/core/components/screen_darken.dart';
 import 'package:nysse_asemanaytto/embeds/_hue_embed/hue_embed_settings.dart';
@@ -7,6 +8,10 @@ import 'package:nysse_asemanaytto/philips_hue/_icons.dart';
 import 'package:nysse_asemanaytto/philips_hue/philips_hue.dart';
 
 GlobalKey<_HueEmbedState> _hueWidget = GlobalKey();
+
+bool _isLightEntertaining(HueLight light) {
+  return light.mode != "normal";
+}
 
 class HueEmbed extends Embed {
   const HueEmbed({required super.name});
@@ -46,12 +51,13 @@ class _HueEmbedWidget extends StatefulWidget with EmbedWidgetMixin<HueEmbed> {
 }
 
 class _HueEmbedState extends State<_HueEmbedWidget> {
+  final Logger _logger = Logger("HueEmbed");
+
   HueEventApi? _hue;
 
   ScreenDarkenHandle? _screenDarkenHandle;
 
   List<HueLight> _lights = List.empty();
-  bool _entertainmentOn = false;
 
   @override
   void didChangeDependencies() {
@@ -78,10 +84,7 @@ class _HueEmbedState extends State<_HueEmbedWidget> {
 
     return await HueEventApi.listen(
       bridge: bridge,
-      types: [
-        HueResourceType.light,
-        HueResourceType.entertainmentConfiguration
-      ],
+      types: [HueResourceType.light],
     );
   }
 
@@ -115,15 +118,15 @@ class _HueEmbedState extends State<_HueEmbedWidget> {
         itemCount: _lights.length,
         itemBuilder: (context, index) {
           HueLight l = _lights[index];
-          return _HueEmbedLight(l, isEntertaining: _entertainmentOn);
+          return _HueEmbedLight(l);
         },
       ),
     );
   }
 
   void updateHueState() {
-    bool entertainmentOn = false;
     bool anyLightsOn = false;
+    bool anyLightsEntertaining = false;
     List<HueLight> lights = List.empty(growable: true);
     for (HueResource r in _hue!.resources) {
       if (r is HueLight) {
@@ -132,8 +135,14 @@ class _HueEmbedState extends State<_HueEmbedWidget> {
         if (r.isOn) {
           anyLightsOn = true;
         }
-      } else if (r is HueEntertainmentConfiguration && r.isActive) {
-        entertainmentOn = true;
+        if (_isLightEntertaining(r)) {
+          anyLightsEntertaining = true;
+        }
+      } else {
+        _logger.log(
+          Level.WARNING,
+          "Unexpected Hue resource type: ${r.type?.name}",
+        );
       }
     }
 
@@ -145,11 +154,10 @@ class _HueEmbedState extends State<_HueEmbedWidget> {
 
     setState(() {
       _lights = lights;
-      _entertainmentOn = entertainmentOn;
     });
 
     if ((!anyLightsOn && widget.settings.darkenOnLightsOff) ||
-        (entertainmentOn && widget.settings.darkenOnEntertainment)) {
+        (anyLightsEntertaining && widget.settings.darkenOnEntertainment)) {
       _screenDarkenHandle?.activate();
     } else {
       _screenDarkenHandle?.deactivate();
@@ -170,13 +178,14 @@ class _HueEmbedState extends State<_HueEmbedWidget> {
 
 class _HueEmbedLight extends StatelessWidget {
   final HueLight light;
-  final bool isEntertaining;
 
-  const _HueEmbedLight(this.light, {required this.isEntertaining});
+  const _HueEmbedLight(this.light);
 
   @override
   Widget build(BuildContext context) {
     final layout = Layout.of(context);
+
+    final bool isEntertaining = _isLightEntertaining(light);
 
     Color? color;
     if (isEntertaining) {
