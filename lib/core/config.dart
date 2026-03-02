@@ -31,6 +31,9 @@ abstract class Config {
   int get stoptimesCount;
   set stoptimesCount(int? count);
 
+  bool get hideCursor;
+  set hideCursor(bool hidden);
+
   double? get screenDarkenStrength;
   set screenDarkenStrength(double? strength);
 
@@ -94,6 +97,11 @@ class _DefaultConfig implements Config {
   EmbedSettings? getEmbedSettings(Embed embed) => null;
   @override
   void saveEmbedSettings(Embed embed) => _throw();
+
+  @override
+  final bool hideCursor = false;
+  @override
+  set hideCursor(bool hidden) => _throw();
 
   @override
   double? get screenDarkenStrength => null;
@@ -253,6 +261,14 @@ class _SharedPrefsConfig extends State<ConfigWidget> implements Config {
         _prefs.setInt(
             "stoptimeCount", count ?? Config.defaultConfig.stoptimesCount);
       });
+
+  @override
+  bool get hideCursor =>
+      _prefs.getBool("hideCursor") ?? Config.defaultConfig.hideCursor;
+  @override
+  set hideCursor(bool hidden) {
+    _prefs.setBool("hideCursor", hidden);
+  }
 
   @override
   double? get screenDarkenStrength =>

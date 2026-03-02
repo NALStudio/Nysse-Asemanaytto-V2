@@ -197,6 +197,16 @@ class _DynamicAppServices extends StatelessWidget {
     final Config config = Config.of(context);
 
     Widget child = this.child;
+
+    // Must be before Screen Darken so that cursor
+    // isn't visible when darken is enabled
+    if (config.hideCursor) {
+      child = MouseRegion(
+        cursor: SystemMouseCursors.none,
+        child: child,
+      );
+    }
+
     if (config.screenDarkenStrength != null) {
       child = ScreenDarkenWidget(
         defaultStrength: config.screenDarkenStrength!,
@@ -228,38 +238,35 @@ class AppCanvas extends StatelessWidget {
   Widget build(BuildContext context) {
     final mediaQuery = MediaQuery.of(context);
 
-    return MouseRegion(
-      cursor: SystemMouseCursors.none,
-      child: Stack(
-        children: [
-          SizedBox.expand(
-            child: ColoredBox(
-              color: NysseColors.mediumBlue,
-              child: CustomPaint(
-                painter: NysseWavePainter.fromAngle(
-                  start: Offset(mediaQuery.size.width * 0.875, 0),
-                  waveStartOffset: 0.375,
-                  angleRadians: (3 * math.pi) / 4,
-                  waveLength: mediaQuery.size.width / 3.6,
-                  waveSize: mediaQuery.size.width / 40,
-                  invert: false,
-                ),
+    return Stack(
+      children: [
+        SizedBox.expand(
+          child: ColoredBox(
+            color: NysseColors.mediumBlue,
+            child: CustomPaint(
+              painter: NysseWavePainter.fromAngle(
+                start: Offset(mediaQuery.size.width * 0.875, 0),
+                waveStartOffset: 0.375,
+                angleRadians: (3 * math.pi) / 4,
+                waveLength: mediaQuery.size.width / 3.6,
+                waveSize: mediaQuery.size.width / 40,
+                invert: false,
               ),
             ),
           ),
-          const Scaffold(
-            backgroundColor: Colors.transparent,
-            body: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                MainCanvas(),
-                EmbedCanvas(),
-                _Footer(),
-              ],
-            ),
+        ),
+        const Scaffold(
+          backgroundColor: Colors.transparent,
+          body: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              MainCanvas(),
+              EmbedCanvas(),
+              _Footer(),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

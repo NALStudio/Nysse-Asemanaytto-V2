@@ -86,6 +86,12 @@ class MainSettings extends SettingsForm {
           onSaved: (newValue) =>
               config.digitransitMqttProviderEnabled = newValue!,
         ),
+        SettingsSwitchFormField(
+          initialValue: config.hideCursor,
+          titleText: "Hide Cursor",
+          subtitleText: "Hide the cursor in the main view for kiosk use.",
+          onSaved: (newValue) => config.hideCursor = newValue!,
+        ),
         const SizedBox(height: 16),
         Text(
           "Stoptime count: $_stoptimesCount",
