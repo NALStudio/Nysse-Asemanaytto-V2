@@ -68,10 +68,6 @@ static void my_application_activate(GApplication* application) {
   // Set fullscreen
   gtk_window_fullscreen(window);
 
-  // Hide cursor
-  GdkCursor* hide_cursor = gdk_cursor_new_from_name(gtk_widget_get_display(GTK_WIDGET(view)), "none");
-  gdk_window_set_cursor(gtk_widget_get_window(GTK_WIDGET(view)), hide_cursor);
-
   // CUSTOM
 }
 
