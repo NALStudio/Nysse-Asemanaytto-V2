@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
-import 'package:flutter_map_cancellable_tile_provider/flutter_map_cancellable_tile_provider.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:logging/logging.dart';
 import 'package:nysse_asemanaytto/core/config.dart';
@@ -106,7 +105,7 @@ TileLayer _buildTileLayer({
   );
 }
 
-final class DigitransitTileProvider extends CancellableNetworkTileProvider {
+final class DigitransitTileProvider extends NetworkTileProvider {
   // static const Level _logLevel = Level.FINE;
 
   // There was no good way of determining when tiles were downloaded

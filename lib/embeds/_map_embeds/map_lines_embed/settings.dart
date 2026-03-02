@@ -115,7 +115,7 @@ class MapLinesEmbedSettingsForm
             defaultValue: defaultSettings.tileProvider,
             tooltips: null,
           ),
-          value: _tileProviderSetting,
+          initialValue: _tileProviderSetting,
           onChanged: (value) => _tileProviderSetting = value,
           onSaved: (newValue) => parentSettings.tileProvider =
               newValue ?? defaultSettings.tileProvider,

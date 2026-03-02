@@ -33,7 +33,7 @@ class MainSettings extends SettingsForm {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DropdownButtonFormField<DigitransitRoutingEndpoint>(
-          value: config.endpoint,
+          initialValue: config.endpoint,
           items: endpoints
               .map(
                 (e) => DropdownMenuItem(

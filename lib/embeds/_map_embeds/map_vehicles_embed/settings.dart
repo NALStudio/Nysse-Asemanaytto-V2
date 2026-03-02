@@ -239,7 +239,7 @@ class MapVehiclesEmbedSettingsForm
             defaultValue: defaultSettings.tileProvider,
             tooltips: null,
           ),
-          value: _tileProviderSetting,
+          initialValue: _tileProviderSetting,
           onChanged: (value) => _tileProviderSetting = value,
           onSaved: (newValue) => parentSettings.tileProvider =
               newValue ?? defaultSettings.tileProvider,
@@ -254,7 +254,7 @@ class MapVehiclesEmbedSettingsForm
             defaultValue: defaultSettings.cameraFit,
             tooltips: _mapEmbedCameraFitNotes,
           ),
-          value: _cameraFitSetting,
+          initialValue: _cameraFitSetting,
           onChanged: (value) => _cameraFitSetting = value,
           onSaved: (newValue) =>
               parentSettings.cameraFit = newValue ?? defaultSettings.cameraFit,
@@ -269,7 +269,7 @@ class MapVehiclesEmbedSettingsForm
             defaultValue: defaultSettings.vehicles,
             tooltips: _mapEmbedVehiclesNotes,
           ),
-          value: _vehicleSetting,
+          initialValue: _vehicleSetting,
           onChanged: (value) => _vehicleSetting = value,
           onSaved: (newValue) =>
               parentSettings.vehicles = newValue ?? defaultSettings.vehicles,
