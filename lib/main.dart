@@ -198,18 +198,18 @@ class _DynamicAppServices extends StatelessWidget {
 
     Widget child = this.child;
 
-    // Must be before Screen Darken so that cursor
-    // isn't visible when darken is enabled
-    if (config.hideCursor) {
-      child = MouseRegion(
-        cursor: SystemMouseCursors.none,
+    if (config.screenDarkenStrength != null) {
+      child = ScreenDarkenWidget(
+        defaultStrength: config.screenDarkenStrength!,
         child: child,
       );
     }
 
-    if (config.screenDarkenStrength != null) {
-      child = ScreenDarkenWidget(
-        defaultStrength: config.screenDarkenStrength!,
+    // Must be AFTER Screen Darken so that cursor
+    // isn't visible when darken is enabled
+    if (config.hideCursor) {
+      child = MouseRegion(
+        cursor: SystemMouseCursors.none,
         child: child,
       );
     }
