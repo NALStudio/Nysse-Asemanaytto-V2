@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:nysse_asemanaytto/core/helpers/helpers.dart';
 import 'package:nysse_asemanaytto/core/components/reorderable_add_remove_list.dart';
 import 'package:nysse_asemanaytto/embeds/embeds.dart';
-import 'dart:math' as math;
 
 class EmbedsFormField extends FormField<UnmodifiableListView<Embed>> {
   final void Function(List<Embed>? list)? onChanged;
@@ -62,22 +61,23 @@ Widget _buildFormField(FormFieldState<UnmodifiableListView<Embed>> state) {
           ),
         )
         .toList(),
-    addItem: (val) {
+    onAddItem: (val) {
       final List<Embed> list = List.from(state.value ?? const Iterable.empty());
       list.add(val);
       state.didChange(UnmodifiableListView(list));
     },
-    moveItem: (oldIndex, newIndex) {
+    onMoveItem: (oldIndex, newIndex) {
       final List<Embed> list = List.from(state.value ?? const Iterable.empty());
       final Embed removed = list.removeAt(oldIndex);
 
       // Apparently when dragging a certain way, newIndex can be list.length which is a no-no
-      newIndex = math.min(newIndex, list.length - 1);
+      // Should be fixed in Flutter 3.41
+      // newIndex = math.min(newIndex, list.length - 1);
 
       list.insert(newIndex, removed);
       state.didChange(UnmodifiableListView(list));
     },
-    removeItem: (index) {
+    onRemoveItem: (index) {
       final List<Embed> list = List.from(state.value ?? const Iterable.empty());
       list.removeAt(index);
       state.didChange(UnmodifiableListView(list));

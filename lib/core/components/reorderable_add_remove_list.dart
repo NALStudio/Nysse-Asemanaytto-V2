@@ -15,9 +15,9 @@ class ReorderableAddRemoveList<T> extends StatefulWidget {
 
   final ReorderableItemRecord<T> Function(int index) builder;
 
-  final void Function(T value) addItem;
-  final void Function(int oldIndex, int newIndex) moveItem;
-  final void Function(int index) removeItem;
+  final void Function(T value) onAddItem;
+  final void Function(int oldIndex, int newIndex) onMoveItem;
+  final void Function(int index) onRemoveItem;
 
   final int itemCount;
 
@@ -25,9 +25,9 @@ class ReorderableAddRemoveList<T> extends StatefulWidget {
     super.key,
     required this.itemOptions,
     required this.builder,
-    required this.addItem,
-    required this.moveItem,
-    required this.removeItem,
+    required this.onAddItem,
+    required this.onMoveItem,
+    required this.onRemoveItem,
     required this.itemCount,
   });
 
@@ -79,7 +79,7 @@ class _ReorderableAddRemoveListState<T>
       icon: const Icon(Icons.add_circle_outline),
       onPressed: selected != null
           ? () {
-              widget.addItem(selected!.value);
+              widget.onAddItem(selected!.value);
               _unselect();
             }
           : null,
@@ -116,12 +116,12 @@ class _ReorderableAddRemoveListState<T>
               trailing: IconButton(
                 icon: const Icon(Icons.remove_circle_outline),
                 color: Colors.red,
-                onPressed: () => widget.removeItem(index),
+                onPressed: () => widget.onRemoveItem(index),
               ),
             );
           },
           itemCount: widget.itemCount,
-          onReorder: widget.moveItem,
+          onReorderItem: widget.onMoveItem,
         ),
       ],
     );
